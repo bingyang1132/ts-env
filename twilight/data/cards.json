@@ -1,0 +1,5257 @@
+{
+ "1 Op AI Proxy": {
+  "can_headline": true,
+  "effect_spec": {},
+  "event_text": "1 Op Proxy.  For AI Use Only.",
+  "may_be_held": true,
+  "name": "1 Op AI Proxy",
+  "number": 201,
+  "ops": 1,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "1945 UK Election": {
+  "can_headline": true,
+  "effect_spec": {
+   "crisis_effects": [
+    {
+     "_seq": [
+      "RemoveOpponentInfluenceInUK",
+      2
+     ],
+     "condition": [
+      "IfCrisisResultIs1",
+      0
+     ]
+    },
+    {
+     "_seq": [
+      "MoveSocialistGovernmentsToMidWar",
+      0
+     ],
+     "condition": [
+      "IfCrisisResultIs6",
+      0
+     ]
+    }
+   ]
+  },
+  "event_text": "1:   Labour wins in a huge landslide; Tories fail to reach 100 seats in the Commons. US shies from left-wing elements. US Influence in the UK is reduced by 2.\n2/3: Labour wins in a landslide. No effect.\n4/5: Coalition government. Socialist Governments event has no effect in Turns 1 or 2.\n6:   Tories return to power; Churchill and Eden dominate. Move Socialist Governments to the Mid War deck; Suez Crisis event has no effect (permanently).",
+  "may_be_held": true,
+  "name": "1945 UK Election",
+  "number": 143,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "turnzero",
+  "stage": null,
+  "type": "Crisis"
+ },
+ "2 Op AI Proxy": {
+  "can_headline": true,
+  "effect_spec": {},
+  "event_text": "2 Op Proxy.  For AI Use Only.",
+  "may_be_held": true,
+  "name": "2 Op AI Proxy",
+  "number": 202,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "3 Op AI Proxy": {
+  "can_headline": true,
+  "effect_spec": {},
+  "event_text": "3 Op Proxy.  For AI Use Only.",
+  "may_be_held": true,
+  "name": "3 Op AI Proxy",
+  "number": 203,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "4 Op AI Proxy": {
+  "can_headline": true,
+  "effect_spec": {},
+  "event_text": "4 Op Proxy.  For AI Use Only.",
+  "may_be_held": true,
+  "name": "4 Op AI Proxy",
+  "number": 204,
+  "ops": 4,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "ABM Treaty": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "ImproveDEFCONLevel",
+     1
+    ],
+    [
+     "ConductOperationsWithThisCard",
+     4
+    ]
+   ]
+  },
+  "event_text": "Improve DEFCON one level.\nThen player may Conduct Operations as if they played a 4 Ops card.",
+  "may_be_held": true,
+  "name": "ABM Treaty",
+  "number": 57,
+  "ops": 4,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "AWACS Sale to Saudis": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "GainInfluenceInSaudiArabia",
+     2
+    ],
+    [
+     "PauseForAnimationToMap",
+     0
+    ],
+    [
+     "PutThisCardInPlay",
+     0
+    ]
+   ]
+  },
+  "event_text": "US receives 2 Influence in Saudi Arabia. Muslim Revolution may no longer be played as an event.",
+  "may_be_held": true,
+  "name": "AWACS Sale to Saudis",
+  "number": 110,
+  "ops": 3,
+  "optional": true,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Late War",
+  "type": "Event"
+ },
+ "Acheson": {
+  "can_headline": true,
+  "discard_after_play": true,
+  "effect_spec": {},
+  "event_text": "Add 1 to the die roll total for the current Crisis.",
+  "may_be_held": true,
+  "name": "Acheson",
+  "number": 135,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "turnzero",
+  "stage": null,
+  "statecraft_modifier": 1,
+  "type": "Statecraft"
+ },
+ "Africa Scoring": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "ScoreAfrica",
+     0
+    ]
+   ]
+  },
+  "event_text": "Both sides score:\nPresence: 1\nDomination: 4\nControl: 6\n+1 per controlled Battleground Country in Region",
+  "may_be_held": false,
+  "name": "Africa Scoring",
+  "number": 79,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": "Africa",
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Scoring"
+ },
+ "Aldrich Ames Remix": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "CommitPlayerDecision",
+     0
+    ],
+    [
+     "DiscardCardFromOpponentHand",
+     0
+    ]
+   ]
+  },
+  "event_text": "US player exposes his hand to USSR player for remainder of turn. USSR then chooses one card from US hand; this card is discarded.",
+  "may_be_held": true,
+  "name": "Aldrich Ames Remix",
+  "number": 98,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Late War",
+  "type": "Event"
+ },
+ "Allende": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "GainInfluenceInChile",
+     2
+    ],
+    [
+     "PauseForAnimationToMap",
+     0
+    ]
+   ]
+  },
+  "event_text": "USSR receives 2 Influence in Chile.",
+  "may_be_held": true,
+  "name": "Allende",
+  "number": 54,
+  "ops": 1,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Alliance for Progress": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "GainVPForAllianceForProgress",
+     1
+    ]
+   ]
+  },
+  "event_text": "US gains 1 VP for each US controlled Battleground country in Central America and South America.",
+  "may_be_held": true,
+  "name": "Alliance for Progress",
+  "number": 78,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "An Evil Empire": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "RemoveFlowerPowerFromPlay",
+     0
+    ],
+    [
+     "GainVictoryPoints",
+     1
+    ],
+    {
+     "_seq": [
+      "PutThisCardInPlay",
+      0
+     ],
+     "condition": [
+      "IfFlowerPowerIsNotInRemovedPile",
+      0
+     ]
+    }
+   ]
+  },
+  "event_text": "Cancels/Prevents Flower Power.\nUS gains 1 VP.",
+  "may_be_held": true,
+  "name": "An Evil Empire",
+  "number": 97,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Late War",
+  "type": "Event"
+ },
+ "Andropov": {
+  "can_headline": true,
+  "discard_after_play": true,
+  "effect_spec": {},
+  "event_text": "Subtract 1 from the die roll total for the current Crisis.",
+  "may_be_held": true,
+  "name": "Andropov",
+  "number": 129,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "turnzero",
+  "stage": null,
+  "statecraft_modifier": -1,
+  "type": "Statecraft"
+ },
+ "Arab-Israeli War": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": {
+    "_seq": [
+     [
+      "CommitPlayerDecision",
+      0
+     ],
+     [
+      "WarInIsrael",
+      514
+     ]
+    ],
+    "usageconditions": [
+     [
+      "IfHasNotBeenPlayedCampDavidAccords",
+      0
+     ]
+    ]
+   }
+  },
+  "event_text": "A Pan-Arab Coalition invades Israel. Roll one die and subtract 1 for US Control of Israel and for US-controlled country adjacent to Israel. USSR Victory on modified die roll 4-6. USSR adds 2 to Military Ops Track.\nEffects of Victory: USSR gains 2 VP and replaces all US Influence in Israel with USSR Influence.",
+  "may_be_held": true,
+  "name": "Arab-Israeli War",
+  "number": 13,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Arms Race": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    {
+     "_seq": [
+      "GainVictoryPoints",
+      1
+     ],
+     "condition": [
+      "IfHasMoreMilOpsAndNotRequired",
+      0
+     ]
+    },
+    {
+     "_seq": [
+      "GainVictoryPoints",
+      3
+     ],
+     "condition": [
+      "IfHasMoreMilOpsAndRequired",
+      0
+     ]
+    }
+   ]
+  },
+  "event_text": "Compare each player's status on the Military Operations Track. If Phasing Player has more Military Operations points, he scores 1 VP. If Phasing Player has more Military Operations points and has met the Required Military Operations amount, he scores 3 VP instead.",
+  "may_be_held": true,
+  "name": "Arms Race",
+  "number": 39,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Asia Scoring": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "ScoreAsia",
+     0
+    ]
+   ]
+  },
+  "event_text": "Both sides score:\nPresence: 3\nDomination: 7\nControl: 9\n+1 per controlled Battleground Country in Region\n+1 per Country controlled that is adjacent to enemy superpower",
+  "may_be_held": false,
+  "name": "Asia Scoring",
+  "number": 1,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": "Asia",
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Scoring"
+ },
+ "Ask Not What Your Country Can Do For You...": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "MayDiscardEntireHand",
+     0
+    ],
+    [
+     "CommitPlayerDecision",
+     0
+    ],
+    [
+     "DrawCardForEachDiscard",
+     0
+    ]
+   ]
+  },
+  "event_text": "US player may discard up to entire hand (including Scoring cards) and draw replacements from the deck. The number of cards discarded must be decided prior to drawing any replacements.",
+  "may_be_held": true,
+  "name": "Ask Not What Your Country Can Do For You...",
+  "number": 77,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Bear Trap": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "PutOpponentIntoBearTrap",
+     0
+    ]
+   ]
+  },
+  "event_text": "On next action round, USSR player must discard an Operations card worth 2 or more and roll 1-4 to cancel this event. Repeat each USSR player Action Round until successful or no appropriate cards remain. If out of appropriate cards, the USSR player may only play scoring cards until the next turn.",
+  "may_be_held": true,
+  "name": "Bear Trap",
+  "number": 44,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Beria": {
+  "can_headline": true,
+  "discard_after_play": true,
+  "effect_spec": {},
+  "event_text": "Cancel effect of US card for the current Crisis.",
+  "may_be_held": true,
+  "name": "Beria",
+  "number": 132,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "turnzero",
+  "stage": null,
+  "statecraft_cancel_opponent": true,
+  "type": "Statecraft"
+ },
+ "Berlin Wall": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "GainInfluenceInEastGermany",
+     2
+    ],
+    {
+     "_seq": [
+      "AdvanceSpaceRaceTrack",
+      1
+     ],
+     "condition": [
+      "IfYouAreBehindOrTiedOnSpaceRaceTrack",
+      0
+     ]
+    }
+   ]
+  },
+  "event_text": "Add 2 Influence in East Germany and, if you are behind or tied with the US in the Space Race, advance your Space Race marker by one box.",
+  "may_be_held": true,
+  "name": "Berlin Wall",
+  "number": 123,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "promo",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Blockade": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": {
+    "_seq": [
+     [
+      "OpponentMayDiscardCardWithOpsPoints",
+      3
+     ],
+     {
+      "_seq": [
+       "RemoveAllOpponentInfluenceInWestGermany",
+       0
+      ],
+      "condition": [
+       "IfYouDoNot",
+       0
+      ]
+     },
+     [
+      "PauseForAnimationToMap",
+      0
+     ]
+    ],
+    "usageconditions": [
+     [
+      "IfCrisisResultVEDayIsNot6",
+      0
+     ]
+    ]
+   }
+  },
+  "event_text": "Unless US Player immediately discards a '3' or more value Operations card, eliminate all US Influence in West Germany.",
+  "may_be_held": true,
+  "name": "Blockade",
+  "number": 10,
+  "ops": 1,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Brezhnev Doctrine": {
+  "can_headline": true,
+  "effect_spec": {
+   "continuous_effects": [
+    {
+     "effect": [
+      "IncreaseOperationsPointsForYourCards",
+      1
+     ]
+    }
+   ],
+   "event_effects": [
+    [
+     "PutThisCardInPlay",
+     1
+    ]
+   ],
+   "triggered_effects": [
+    {
+     "conditions": [
+      [
+       "AtEndOfTurn",
+       0
+      ]
+     ],
+     "triggereffect": [
+      [
+       "TriggerRemoveThisCardFromPlay",
+       1
+      ]
+     ]
+    }
+   ]
+  },
+  "event_text": "All further Operations cards played by the USSR this turn increase their Ops value by one (to a maximum of 4).",
+  "may_be_held": true,
+  "name": "Brezhnev Doctrine",
+  "number": 51,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Brush War": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "BrushWarInStabilityLowerThan2",
+     769
+    ]
+   ]
+  },
+  "event_text": "Attack any country with a stability of 1 or 2. Roll a die and subtract 1 for every adjacent enemy controlled country. Success on 3-6. Player adds 3 to his Military Ops Track.\nEffects of Victory: Player gains 1 VP and replaces all opponent's Influence with his Influence.",
+  "may_be_held": true,
+  "name": "Brush War",
+  "number": 36,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "CIA Created": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "CommitPlayerDecision",
+     0
+    ],
+    [
+     "RestorePendingDefconLevel",
+     0
+    ],
+    [
+     "OpponentRevealsHand",
+     0
+    ],
+    [
+     "ConductOperationsWithThisCard",
+     1
+    ]
+   ]
+  },
+  "event_text": "USSR reveals hand this turn.\nThen the US may Conduct Operations as if they played a 1 Op card.",
+  "may_be_held": true,
+  "name": "CIA Created",
+  "number": 26,
+  "ops": 1,
+  "optional": false,
+  "pending_defcon": [
+   -1,
+   0
+  ],
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "COMECON": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "AddInfluenceInUncontrolledEasternEuropeMax1",
+     4
+    ]
+   ]
+  },
+  "event_text": "Add 1 USSR Influence in each of four non-US Controlled countries in Eastern Europe.",
+  "may_be_held": true,
+  "name": "COMECON",
+  "number": 14,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Camp David Accords": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "GainVictoryPoints",
+     1
+    ],
+    [
+     "GainInfluenceInIsrael",
+     1
+    ],
+    [
+     "GainInfluenceInJordan",
+     1
+    ],
+    [
+     "GainInfluenceInEgypt",
+     1
+    ],
+    [
+     "PauseForAnimationToMap",
+     0
+    ],
+    [
+     "PutThisCardInPlay",
+     0
+    ]
+   ]
+  },
+  "event_text": "US gains 1 VP.\nUS receives 1 Influence in Israel, Jordan and Egypt.\nArab-Israeli War event no longer playable.",
+  "may_be_held": true,
+  "name": "Camp David Accords",
+  "number": 65,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Captured Nazi Scientist": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "AdvanceSpaceRaceTrack",
+     1
+    ]
+   ]
+  },
+  "event_text": "Advance player's Space Race marker one box.",
+  "may_be_held": true,
+  "name": "Captured Nazi Scientist",
+  "number": 18,
+  "ops": 1,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Central America Scoring": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "ScoreCentralAmerica",
+     0
+    ]
+   ]
+  },
+  "event_text": "Both sides score:\nPresence: 1\nDomination: 3\nControl: 5\n+1 per controlled Battleground Country in Region\n+1 per Country controlled that is adjacent to enemy superpower",
+  "may_be_held": false,
+  "name": "Central America Scoring",
+  "number": 37,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": "Central America",
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Scoring"
+ },
+ "Che": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "MakeCoupAttemptInNonBattlegroundInAmericasOrAfrica",
+     3
+    ],
+    {
+     "_seq": [
+      "MakeCoupAttemptInNonBattlegroundInAmericasOrAfrica",
+      3
+     ],
+     "condition": [
+      "IfYouDo",
+      0
+     ]
+    }
+   ]
+  },
+  "event_text": "USSR may immediately make a Coup attempt using this card's Operations value against a non-battleground country in Central America, South America, or Africa. If the Coup removes any US Influence, USSR may make a second Coup attempt against a different target under the same restrictions.",
+  "may_be_held": true,
+  "name": "Che",
+  "number": 107,
+  "ops": 3,
+  "optional": true,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Chernobyl": {
+  "can_headline": true,
+  "effect_spec": {
+   "continuous_effects": [
+    {
+     "effect": [
+      "OpponentMayNotPlaceInfluenceInSelectedRegion",
+      0
+     ]
+    }
+   ],
+   "event_effects": [
+    [
+     "ChooseOneRegion",
+     0
+    ],
+    [
+     "PutThisCardInPlayWithRegionChoice",
+     0
+    ]
+   ],
+   "triggered_effects": [
+    {
+     "conditions": [
+      [
+       "AtEndOfTurn",
+       0
+      ]
+     ],
+     "triggereffect": [
+      [
+       "TriggerRemoveThisCardFromPlay",
+       1
+      ]
+     ]
+    }
+   ]
+  },
+  "event_text": "The US player may designate one Region. For the remainder of the turn the USSR may not add additional Influence to that Region by the play of Operations Points via placing Influence.",
+  "may_be_held": true,
+  "name": "Chernobyl",
+  "number": 94,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Late War",
+  "type": "Event"
+ },
+ "Chinese Civil War": {
+  "can_headline": true,
+  "effect_spec": {
+   "crisis_effects": [
+    {
+     "_seq": [
+      "RemoveUssuriRiverSkirmish",
+      0
+     ],
+     "condition": [
+      "IfCrisisResultIs1",
+      0
+     ]
+    },
+    {
+     "_seq": [
+      "MakeBattlegroundInTaiwan",
+      0
+     ],
+     "condition": [
+      "IfCrisisResultIs6",
+      0
+     ]
+    },
+    {
+     "_seq": [
+      "GainInfluenceInTaiwan",
+      3
+     ],
+     "condition": [
+      "IfCrisisResultIs6",
+      0
+     ]
+    },
+    {
+     "_seq": [
+      "ReplaceFormosanResolution",
+      0
+     ],
+     "condition": [
+      "IfCrisisResultIs6",
+      0
+     ]
+    }
+   ]
+  },
+  "event_text": "1:   Sino-Soviet relations remain cordial, even if strained on occasion. Remove Ussuri River Skirmish from the game.\n2/3: US aid slow to arrive; Huaihai campaign knocks out Nationalists. No effect.\n4/5: Nationalists prolong struggle with early US aid. The China Card begins face down.\n6:   US rapidly reinforces Chiang; Nationalist retain a stronghold on the mainland. Apply the 4-5 result, and Taiwan is now permanently a Battleground country. Add 3 US Influence in Taiwan during setup. Replace Formosan Resolution with the Nationalist China card.",
+  "may_be_held": true,
+  "name": "Chinese Civil War",
+  "number": 146,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "turnzero",
+  "stage": null,
+  "type": "Crisis"
+ },
+ "Colonial Rear Guards": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "AddInfluenceInAfricaOrSEAsiaMax1",
+     4
+    ]
+   ]
+  },
+  "event_text": "Add 1 US Influence in each of four different African and/or Southeast Asian countries.",
+  "may_be_held": true,
+  "name": "Colonial Rear Guards",
+  "number": 63,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Containment": {
+  "can_headline": true,
+  "effect_spec": {
+   "continuous_effects": [
+    {
+     "effect": [
+      "IncreaseOperationsPointsForYourCards",
+      1
+     ]
+    }
+   ],
+   "event_effects": [
+    [
+     "PutThisCardInPlay",
+     1
+    ]
+   ],
+   "triggered_effects": [
+    {
+     "conditions": [
+      [
+       "AtEndOfTurn",
+       0
+      ]
+     ],
+     "triggereffect": [
+      [
+       "TriggerRemoveThisCardFromPlay",
+       1
+      ]
+     ]
+    }
+   ]
+  },
+  "event_text": "All further Operations cards played by US this turn add one to their value (to a maximum of 4).",
+  "may_be_held": true,
+  "name": "Containment",
+  "number": 25,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Cuban Missile Crisis": {
+  "can_headline": true,
+  "effect_spec": {
+   "cardinplay_abilities": [
+    {
+     "_seq": [
+      [
+       "RemoveInfluenceInCuba",
+       2
+      ],
+      [
+       "PauseForAnimationToMap",
+       0
+      ],
+      [
+       "RemoveThisCardFromPlay",
+       1
+      ]
+     ],
+     "ability_name": "Remove 2 Influence from Cuba",
+     "conditions": [
+      [
+       "IfPlayerIsUSSR",
+       0
+      ],
+      [
+       "IfPlayerHasInfluenceInCuba",
+       2
+      ]
+     ],
+     "description": "Remove 2 Influence from Cuba"
+    },
+    {
+     "_seq": [
+      [
+       "RemoveInfluenceInWestGermany",
+       2
+      ],
+      [
+       "PauseForAnimationToMap",
+       0
+      ],
+      [
+       "RemoveThisCardFromPlay",
+       1
+      ]
+     ],
+     "ability_name": "Remove 2 Influence from West Germany",
+     "conditions": [
+      [
+       "IfPlayerIsUS",
+       0
+      ],
+      [
+       "IfPlayerHasInfluenceInWestGermany",
+       2
+      ]
+     ],
+     "description": "Remove 2 Influence from West Germany"
+    },
+    {
+     "_seq": [
+      [
+       "RemoveInfluenceInTurkey",
+       2
+      ],
+      [
+       "PauseForAnimationToMap",
+       0
+      ],
+      [
+       "RemoveThisCardFromPlay",
+       1
+      ]
+     ],
+     "ability_name": "Remove 2 Influence from Turkey",
+     "conditions": [
+      [
+       "IfPlayerIsUS",
+       0
+      ],
+      [
+       "IfPlayerHasInfluenceInTurkey",
+       2
+      ]
+     ],
+     "description": "Remove 2 Influence from Turkey"
+    }
+   ],
+   "event_effects": [
+    [
+     "SetDEFCONLevel",
+     2
+    ],
+    [
+     "PutThisCardInPlay",
+     1
+    ]
+   ],
+   "triggered_effects": [
+    {
+     "conditions": [
+      [
+       "AtEndOfTurn",
+       0
+      ]
+     ],
+     "triggereffect": [
+      [
+       "TriggerRemoveThisCardFromPlay",
+       1
+      ]
+     ]
+    }
+   ]
+  },
+  "event_text": "Set DEFCON to Level 2. Any further Coup attempt by your opponent this turn, anywhere on the board, will result in Global Thermonuclear War. Your opponent will lose the game. This event may be cancelled at any time if the USSR player removes two Influence from Cuba or the US player removes 2 Influence from either West Germany or Turkey.",
+  "may_be_held": true,
+  "name": "Cuban Missile Crisis",
+  "number": 40,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Cultural Revolution": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": {
+    "_seq": [
+     {
+      "_seq": [
+       "GainVictoryPoints",
+       1
+      ],
+      "condition": [
+       "IfYouHaveChinaCard",
+       0
+      ]
+     },
+     {
+      "_seq": [
+       "ClaimChinaCard",
+       0
+      ],
+      "condition": [
+       "IfYouDoNotHaveChinaCard",
+       0
+      ]
+     }
+    ],
+    "usageconditions": [
+     [
+      "NotIfChinaCardIsUnclaimedAndIsUSSR",
+      0
+     ]
+    ]
+   }
+  },
+  "event_text": "If the US has 'The China Card', claim it face up and available for play. If the USSR already had it, USSR gains 1 VP.",
+  "may_be_held": true,
+  "name": "Cultural Revolution",
+  "number": 58,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "De Gaulle Leads France": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "RemoveOpponentInfluenceInFrance",
+     2
+    ],
+    [
+     "GainInfluenceInFrance",
+     1
+    ],
+    [
+     "PauseForAnimationToMap",
+     0
+    ],
+    [
+     "PutThisCardInPlay",
+     0
+    ]
+   ]
+  },
+  "event_text": "Remove 2 US Influence in France, add 1 USSR Influence. Cancels effects of NATO for France.",
+  "may_be_held": true,
+  "name": "De Gaulle Leads France",
+  "number": 17,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "De-Stalinization": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "RelocateInfluenceToUncontrolledCountriesMax2",
+     4
+    ]
+   ]
+  },
+  "event_text": "USSR may relocate up to 4 Influence points to non-US controlled countries. No more than 2 Influence may be placed in the same country.",
+  "may_be_held": true,
+  "name": "De-Stalinization",
+  "number": 33,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Decolonization": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "AddInfluenceInAfricaOrSEAsiaMax1",
+     4
+    ]
+   ]
+  },
+  "event_text": "Add one USSR Influence in each of any four African and/or SE Asian countries.",
+  "may_be_held": true,
+  "name": "Decolonization",
+  "number": 30,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Defectors": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    {
+     "_seq": [
+      "CancelPlayerHeadline",
+      0
+     ],
+     "condition": [
+      "IfIsHeadlinePhase",
+      0
+     ]
+    },
+    {
+     "_seq": [
+      "GainVictoryPoints",
+      1
+     ],
+     "condition": [
+      "IfIsOpponentActionRound",
+      0
+     ]
+    }
+   ]
+  },
+  "event_text": "Play in Headline Phase to cancel USSR Headline event, including Scoring Card. Cancelled card returns to the Discard Pile.\nIf Defectors played by USSR during Soviet action round, US gains 1 VP (unless played on the Space Race).",
+  "may_be_held": true,
+  "name": "Defectors",
+  "number": 103,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": true,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Don't Wait for the Translation": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": {
+    "_seq": [
+     [
+      "GainVictoryPoints",
+      2
+     ]
+    ],
+    "usageconditions": [
+     [
+      "IfYouAreBehindOnMilOpsTrack",
+      0
+     ]
+    ]
+   }
+  },
+  "event_text": "If the US is behind in Military Operations, the US scores 2 VP.",
+  "may_be_held": true,
+  "name": "Don't Wait for the Translation",
+  "number": 128,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "promo",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Duck and Cover": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "RestorePendingDefconLevel",
+     0
+    ],
+    [
+     "DegradeDEFCONLevel",
+     1
+    ],
+    [
+     "GainVictoryPointsForDEFCONBelow",
+     5
+    ]
+   ]
+  },
+  "event_text": "Degrade DEFCON one level.\nThen US player earns VPs equal to 5 minus current DEFCON level.",
+  "may_be_held": true,
+  "name": "Duck and Cover",
+  "number": 4,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": [
+   -1,
+   -1
+  ],
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Dulles": {
+  "can_headline": true,
+  "discard_after_play": true,
+  "effect_spec": {},
+  "event_text": "Cancel effect of USSR card for the current Crisis.",
+  "may_be_held": true,
+  "name": "Dulles",
+  "number": 137,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "turnzero",
+  "stage": null,
+  "statecraft_cancel_opponent": true,
+  "type": "Statecraft"
+ },
+ "Dummy Card - USA": {
+  "can_headline": true,
+  "effect_spec": {},
+  "event_text": "No effect.",
+  "may_be_held": true,
+  "name": "Dummy Card - USA",
+  "number": 138,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "turnzero",
+  "stage": null,
+  "statecraft_return_to_hand": true,
+  "type": "Statecraft"
+ },
+ "Dummy Card - USSR": {
+  "can_headline": true,
+  "effect_spec": {},
+  "event_text": "No effect.",
+  "may_be_held": true,
+  "name": "Dummy Card - USSR",
+  "number": 133,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "turnzero",
+  "stage": null,
+  "statecraft_return_to_hand": true,
+  "type": "Statecraft"
+ },
+ "East European Unrest": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    {
+     "_seq": [
+      "Remove1OpponentInfluenceFromEasternEuropeCountries",
+      3
+     ],
+     "condition": [
+      "IfTurnNumberLessThan",
+      7
+     ]
+    },
+    {
+     "_seq": [
+      "Remove2OpponentInfluenceFromEasternEuropeCountries",
+      3
+     ],
+     "condition": [
+      "IfTurnNumberGreaterThan",
+      8
+     ]
+    },
+    [
+     "PauseForAnimationToMap",
+     0
+    ]
+   ]
+  },
+  "event_text": "In Early or Mid War: Remove 1 USSR Influence from three countries in Eastern Europe.\nIn Late War: Remove 2 USSR Influence from three countries in Eastern Europe.",
+  "may_be_held": true,
+  "name": "East European Unrest",
+  "number": 29,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Europe Scoring": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "ScoreEurope",
+     0
+    ]
+   ]
+  },
+  "event_text": "Both sides score:\nPresence: 3\nDomination: 7\nControl: VICTORY\n+1 per controlled Battleground Country in Region\n+1 per Country controlled that is adjacent to enemy superpower",
+  "may_be_held": false,
+  "name": "Europe Scoring",
+  "number": 2,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": "Europe",
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Scoring"
+ },
+ "Europe Scoring - Allied Berlin": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "ScoreEuropeAlliedBerlin",
+     0
+    ]
+   ]
+  },
+  "event_text": "Both sides score:\nPresence: 3\nDomination: 6\nControl: 6\n+1 per controlled Battleground Country in Region\n+1 per Country controlled that is adjacent to enemy superpower",
+  "may_be_held": false,
+  "name": "Europe Scoring - Allied Berlin",
+  "number": 139,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": "Europe - Allied Berlin",
+  "side": "Neutral",
+  "source": "turnzero",
+  "stage": "Early War",
+  "type": "Scoring"
+ },
+ "Fidel": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "RemoveAllOpponentInfluenceInCuba",
+     0
+    ],
+    [
+     "GainInfluenceForControlInCuba",
+     0
+    ],
+    [
+     "PauseForAnimationToMap",
+     0
+    ]
+   ]
+  },
+  "event_text": "Remove all US Influence in Cuba. USSR gains sufficient Influence in Cuba for Control.",
+  "may_be_held": true,
+  "name": "Fidel",
+  "number": 8,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "First Lightning": {
+  "can_headline": false,
+  "effect_spec": {
+   "event_effects": {
+    "_seq": [
+     {
+      "_seq": [
+       "ConductOperationsWithOpponentEventCard",
+       0
+      ],
+      "condition": [
+       "IfHaveOpponentEventInHand",
+       0
+      ]
+     }
+    ],
+    "usageconditions": [
+     [
+      "IfIsYourMainActionRound",
+      0
+     ],
+     [
+      "IfHaveOpponentEventInHand",
+      0
+     ]
+    ]
+   }
+  },
+  "event_text": "Play at the same time you play a card with a US-affiliated Event for its Operations.\nIgnore the event text and place the card in the discard pile.\nReduce DEFCON by 1 if this card is played for Operations or its Event.",
+  "may_be_held": true,
+  "name": "First Lightning",
+  "number": 126,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "promo",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Five-Year Plan": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "CommitPlayerDecision",
+     0
+    ],
+    [
+     "RestorePendingDefconLevel",
+     0
+    ],
+    [
+     "OpponentDiscardsRandomCard",
+     1
+    ]
+   ]
+  },
+  "event_text": "USSR player must randomly discard one card. If the card is a US associated Event, the Event occurs immediately. If the card is a USSR associated Event or and Event applicable to both players, then the card must be discarded without triggering the Event.",
+  "may_be_held": true,
+  "name": "Five-Year Plan",
+  "number": 5,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": [
+   -1,
+   0
+  ],
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Flower Power": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": {
+    "_seq": [
+     [
+      "PutThisCardInPlay",
+      0
+     ]
+    ],
+    "usageconditions": [
+     [
+      "IfHasNotBeenPlayedAnEvilEmpire",
+      0
+     ]
+    ]
+   },
+   "triggered_effects": [
+    {
+     "conditions": [
+      [
+       "WhenOpponentPlaysWarCard",
+       0
+      ]
+     ],
+     "triggereffect": [
+      [
+       "TriggerAnnounceCardInPlay",
+       0
+      ],
+      [
+       "TriggerGainVictoryPoints",
+       2
+      ]
+     ]
+    }
+   ]
+  },
+  "event_text": "USSR gains 2 VP for every subsequently US played 'war card' (played as an Event or Operations) unless played on the Space Race.\nWar Cards: Arab-Israeli War, Korean War, Brush War, Indo-Pakistani War or Iran-Iraq War.\nThis event cancelled by 'An Evil Empire'.",
+  "may_be_held": true,
+  "name": "Flower Power",
+  "number": 59,
+  "ops": 4,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Formosan Resolution": {
+  "can_headline": true,
+  "effect_spec": {
+   "continuous_effects": [
+    {
+     "effect": [
+      "TaiwanIsBattlegroundForScoringIfUSControlled",
+      0
+     ]
+    }
+   ],
+   "event_effects": {
+    "_seq": [
+     [
+      "PutThisCardInPlay",
+      0
+     ]
+    ],
+    "usageconditions": [
+     [
+      "NotIfChinaCardIsUnclaimedAndIsUSA",
+      0
+     ]
+    ]
+   },
+   "triggered_effects": [
+    {
+     "conditions": [
+      [
+       "WhenYouPlayChinaCard",
+       0
+      ]
+     ],
+     "triggereffect": [
+      [
+       "TriggerRemoveThisCardFromPlay",
+       1
+      ]
+     ]
+    }
+   ]
+  },
+  "event_text": "Taiwan shall be treated as a Battleground country for scoring purposes, if the US controls Taiwan when the Asia Scoring Card is played or during Final Scoring at the end of Turn 10. Taiwan is not a battleground country for any other game purpose. This card is discarded after US play of 'The China Card'.",
+  "may_be_held": true,
+  "name": "Formosan Resolution",
+  "number": 35,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Glasnost": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "GainVictoryPoints",
+     2
+    ],
+    [
+     "ImproveDEFCONLevel",
+     1
+    ],
+    {
+     "_seq": [
+      "PlaceInfluenceOrAttemptRealignmentsWithThisCard",
+      4
+     ],
+     "condition": [
+      "IfHasBeenPlayedTheReformer",
+      0
+     ]
+    },
+    [
+     "RemoveTheReformerFromPlay",
+     0
+    ]
+   ]
+  },
+  "event_text": "USSR gains 2 VP.\nImprove DEFCON one level.\nIf The Reformer is in effect, then the USSR may place Influence or attempt Realignments as if they played a 4 Ops card.",
+  "may_be_held": true,
+  "name": "Glasnost",
+  "number": 90,
+  "ops": 4,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Late War",
+  "type": "Event"
+ },
+ "Grain Sales to Soviets": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "CommitPlayerDecision",
+     0
+    ],
+    [
+     "RestorePendingDefconLevel",
+     0
+    ],
+    [
+     "MayPlayRandomCardFromOpponentHand",
+     0
+    ],
+    {
+     "_seq": [
+      "ConductOperationsWithThisCard",
+      2
+     ],
+     "condition": [
+      "IfYouDoNot",
+      2
+     ]
+    }
+   ]
+  },
+  "event_text": "Randomly choose one card from USSR hand. Play it or return it. If Soviet player has no cards, or returned, use this card to conduct Operations normally.",
+  "may_be_held": true,
+  "name": "Grain Sales to Soviets",
+  "number": 67,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": [
+   -1,
+   0
+  ],
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "How I Learned to Stop Worrying": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "ChooseDEFCONLevel",
+     0
+    ],
+    [
+     "GainMilitaryOperationsTrack",
+     5
+    ]
+   ]
+  },
+  "event_text": "Set the DEFCON at any level you want (1-5). This event counts as 5 Military Operations for the purpose of required Military Operations.",
+  "may_be_held": true,
+  "name": "How I Learned to Stop Worrying",
+  "number": 46,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Independent Reds": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "MatchOpponentInfluenceForIndependentReds",
+     1
+    ]
+   ]
+  },
+  "event_text": "Adds sufficient US Influence in either Yugoslavia, Romania, Bulgaria, Hungary, or Czechoslavakia to equal USSR Influence.",
+  "may_be_held": true,
+  "name": "Independent Reds",
+  "number": 22,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Indo-Pakistani War": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "WarInIndiaOrPakistan",
+     514
+    ]
+   ]
+  },
+  "event_text": "India or Pakistan invades the other (player's choice). Roll one die and subtract 1 for every opponent-controlled country adjacent to the target of the invasion. Player Victory on modified die roll of 4-6. Player adds 2 to Military Ops Track. Effects of Victory: Player gains 2 VP and replaces all opponent's Influence in target country with his Influence.",
+  "may_be_held": true,
+  "name": "Indo-Pakistani War",
+  "number": 24,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Iran-Contra Scandal": {
+  "can_headline": true,
+  "effect_spec": {
+   "continuous_effects": [
+    {
+     "effect": [
+      "OpponentRealignmentRollsAreReducedBy",
+      1
+     ]
+    }
+   ],
+   "event_effects": [
+    [
+     "PutThisCardInPlay",
+     1
+    ]
+   ],
+   "triggered_effects": [
+    {
+     "conditions": [
+      [
+       "AtEndOfTurn",
+       0
+      ]
+     ],
+     "triggereffect": [
+      [
+       "TriggerRemoveThisCardFromPlay",
+       1
+      ]
+     ]
+    }
+   ]
+  },
+  "event_text": "All US Realignment rolls have a -1 die roll modifier for the remainder of the turn.",
+  "may_be_held": true,
+  "name": "Iran-Contra Scandal",
+  "number": 93,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Late War",
+  "type": "Event"
+ },
+ "Iran-Iraq War": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "WarInIranOrIraq",
+     514
+    ]
+   ]
+  },
+  "event_text": "Iran or Iraq invades the other (player's choice). Roll one die and subtract 1 for every opponent-controlled country adjacent to target of invasion. Player Victory on modified die roll of 4-6. Player adds 2 to Military Ops Track\nEffects of Victory: Player gains 2 VP and replaces opponent's Influence in target country with his own.",
+  "may_be_held": true,
+  "name": "Iran-Iraq War",
+  "number": 102,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Late War",
+  "type": "Event"
+ },
+ "Iranian Hostage Crisis": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "RemoveAllOpponentInfluenceInIran",
+     0
+    ],
+    [
+     "GainInfluenceInIran",
+     2
+    ],
+    [
+     "PauseForAnimationToMap",
+     0
+    ],
+    [
+     "PutThisCardInPlay",
+     0
+    ]
+   ]
+  },
+  "event_text": "Remove all US Influence in Iran. Add 2 USSR Influence in Iran.\nDoubles the effect of Terrorism card against US.",
+  "may_be_held": true,
+  "name": "Iranian Hostage Crisis",
+  "number": 82,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Late War",
+  "type": "Event"
+ },
+ "Israel": {
+  "can_headline": true,
+  "effect_spec": {
+   "crisis_effects": [
+    {
+     "_seq": [
+      "GainInfluenceInSyria",
+      1
+     ],
+     "condition": [
+      "IfCrisisResultIs1or2or3",
+      0
+     ]
+    },
+    {
+     "_seq": [
+      "GainInfluenceInIsrael",
+      1
+     ],
+     "condition": [
+      "IfCrisisResultIs6",
+      0
+     ]
+    },
+    {
+     "_seq": [
+      "GainInfluenceInLebanon",
+      1
+     ],
+     "condition": [
+      "IfCrisisResultIs6",
+      0
+     ]
+    },
+    {
+     "_seq": [
+      "GainInfluenceInJordan",
+      1
+     ],
+     "condition": [
+      "IfCrisisResultIs6",
+      0
+     ]
+    }
+   ]
+  },
+  "event_text": "1:   Ben-Gurion coalition shaky. Apply the 2-3 result; USSR receives 2 Influence in the Middle East during setup (no more than 1 per country).\n2/3: Soviets fund anti-Israel forces. USSR receives 1 Influence in Syria during setup.\n4/5: Both superpowers moderately distracted. No effect.\n6:   Irgun disarms; Palstinians follow suit. US receives an additional 1 Influence in each of Israel, Lebanon, and Jordan during setup.",
+  "may_be_held": true,
+  "name": "Israel",
+  "number": 144,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "turnzero",
+  "stage": null,
+  "type": "Crisis"
+ },
+ "John Paul II Elected Pope": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "RemoveOpponentInfluenceInPoland",
+     2
+    ],
+    [
+     "GainInfluenceInPoland",
+     1
+    ],
+    [
+     "PauseForAnimationToMap",
+     0
+    ],
+    [
+     "PutThisCardInPlay",
+     0
+    ]
+   ]
+  },
+  "event_text": "Remove 2 USSR Influence in Poland and then add 1 US Influence in Poland.\nAllows play of 'Solidarity'.",
+  "may_be_held": true,
+  "name": "John Paul II Elected Pope",
+  "number": 68,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Junta": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "AddInfluenceToOneCentralOrSouthAmericaCountry",
+     2
+    ],
+    [
+     "MakeFreeCoupOrRealignmentsInCentralOrSouthAmerica",
+     2
+    ]
+   ]
+  },
+  "event_text": "Place 2 Influence in any one Central or South American country.\nThen you may make a free Coup attempt or Realignment roll in one of these regions (using this card's Operations Value).",
+  "may_be_held": true,
+  "name": "Junta",
+  "number": 47,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Kennan": {
+  "can_headline": true,
+  "discard_after_play": true,
+  "effect_spec": {},
+  "event_text": "Add 1 to the die roll total for the current Crisis.",
+  "may_be_held": true,
+  "name": "Kennan",
+  "number": 134,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "turnzero",
+  "stage": null,
+  "statecraft_modifier": 1,
+  "type": "Statecraft"
+ },
+ "Khrushchev": {
+  "can_headline": true,
+  "discard_after_play": true,
+  "effect_spec": {},
+  "event_text": "Subtract 1 from the die roll total for the current Crisis.",
+  "may_be_held": true,
+  "name": "Khrushchev",
+  "number": 130,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "turnzero",
+  "stage": null,
+  "statecraft_modifier": -1,
+  "type": "Statecraft"
+ },
+ "Kitchen Debates": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": {
+    "_seq": [
+     [
+      "GainVictoryPoints",
+      2
+     ]
+    ],
+    "usageconditions": [
+     [
+      "IfYouControlMoreBattlegrounds",
+      0
+     ]
+    ]
+   }
+  },
+  "event_text": "If the US controls more Battleground countries than the USSR, poke opponent in chest and gain 2 VP!",
+  "may_be_held": true,
+  "name": "Kitchen Debates",
+  "number": 48,
+  "ops": 1,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Korean War": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "CommitPlayerDecision",
+     0
+    ],
+    [
+     "WarInSouthKorea",
+     514
+    ]
+   ]
+  },
+  "event_text": "North Korea invades South Korea. Roll one die and subtract 1 for every US Controlled country adjacent to South Korea. USSR Victory on modified die roll 4-6. USSR add 2 to Military Ops Track.\nEffects of Victory: USSR gains 2 VP and replaces all US Influence in South Korea with USSR Influence.",
+  "may_be_held": true,
+  "name": "Korean War",
+  "number": 11,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Kremlin Flu": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "ConductOperationsWithThisCard",
+     2
+    ],
+    [
+     "RestorePendingDefconLevel",
+     0
+    ],
+    [
+     "SetOpponentMustPlayScoringCard",
+     0
+    ]
+   ]
+  },
+  "event_text": "US takes Operations as if this card were played as Operations. USSR must play a scoring card on its next Action Round if it holds one; if no scoring card is in the USSR hand, the USSR forfeits its next Action Round.",
+  "may_be_held": true,
+  "name": "Kremlin Flu",
+  "number": 125,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": [
+   -1,
+   0
+  ],
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "promo",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Latin American Death Squads": {
+  "can_headline": true,
+  "effect_spec": {
+   "continuous_effects": [
+    {
+     "effect": [
+      "AdjustCoupAttemptsInCentralAndSouthAmerica",
+      1
+     ]
+    }
+   ],
+   "event_effects": [
+    [
+     "PutThisCardInPlay",
+     1
+    ]
+   ],
+   "triggered_effects": [
+    {
+     "conditions": [
+      [
+       "AtEndOfTurn",
+       0
+      ]
+     ],
+     "triggereffect": [
+      [
+       "TriggerRemoveThisCardFromPlay",
+       1
+      ]
+     ]
+    }
+   ]
+  },
+  "event_text": "All of the player's Coup attempts in Central and South America are +1 for the remainder of the turn, while all opponent's Coup attempts are -1 for the remainder of the turn.",
+  "may_be_held": true,
+  "name": "Latin American Death Squads",
+  "number": 69,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Latin American Debt Crisis": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "OpponentMayDiscardCardWithOpsPoints",
+     3
+    ],
+    {
+     "_seq": [
+      "DoubleInfluenceInSouthAmericanCountries",
+      2
+     ],
+     "condition": [
+      "IfYouDoNot",
+      0
+     ]
+    }
+   ]
+  },
+  "event_text": "Unless the US Player immediately discards a '3' or greater Operations card, double USSR Influence in two countries in South America.",
+  "may_be_held": true,
+  "name": "Latin American Debt Crisis",
+  "number": 95,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Late War",
+  "type": "Event"
+ },
+ "Liberation Theology": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "AddInfluenceInCentralAmericaMax2",
+     3
+    ]
+   ]
+  },
+  "event_text": "Add 3 USSR Influence in Central America, no more than 2 per country.",
+  "may_be_held": true,
+  "name": "Liberation Theology",
+  "number": 75,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Lone Gunman": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "CommitPlayerDecision",
+     0
+    ],
+    [
+     "RestorePendingDefconLevel",
+     0
+    ],
+    [
+     "OpponentRevealsHand",
+     0
+    ],
+    [
+     "ConductOperationsWithThisCard",
+     1
+    ]
+   ]
+  },
+  "event_text": "US player reveals his hand. Then the USSR may Conduct Operations as if they played a 1 Op card.",
+  "may_be_held": true,
+  "name": "Lone Gunman",
+  "number": 62,
+  "ops": 1,
+  "optional": false,
+  "pending_defcon": [
+   0,
+   -1
+  ],
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Marine Barracks Bombing": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "RemoveAllOpponentInfluenceInLebanon",
+     0
+    ],
+    [
+     "PauseForAnimationToMap",
+     0
+    ],
+    [
+     "RemoveOpponentInfluenceInMiddleEast",
+     2
+    ],
+    [
+     "PauseForAnimationToMap",
+     0
+    ]
+   ]
+  },
+  "event_text": "Remove all US Influence in Lebanon plus remove 2 additional US Influence from anywhere in the Middle East.",
+  "may_be_held": true,
+  "name": "Marine Barracks Bombing",
+  "number": 88,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Late War",
+  "type": "Event"
+ },
+ "Marshall": {
+  "can_headline": true,
+  "discard_after_play": true,
+  "effect_spec": {},
+  "event_text": "Add 2 to the die roll total for the current Crisis.",
+  "may_be_held": true,
+  "name": "Marshall",
+  "number": 136,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "turnzero",
+  "stage": null,
+  "statecraft_modifier": 2,
+  "type": "Statecraft"
+ },
+ "Marshall Plan": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "AddInfluenceInUncontrolledWesternEuropeMax1",
+     7
+    ],
+    {
+     "_seq": [
+      "PutThisCardInPlay",
+      0
+     ],
+     "condition": [
+      "IfHasNotBeenPlayedNATO",
+      0
+     ]
+    }
+   ]
+  },
+  "event_text": "Allows play of NATO.\nAdd one US Influence in each of seven non-USSR Controlled Western European countries.",
+  "may_be_held": true,
+  "name": "Marshall Plan",
+  "number": 23,
+  "ops": 4,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Middle East Scoring": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "ScoreMiddleEast",
+     0
+    ]
+   ]
+  },
+  "event_text": "Both sides score:\nPresence: 3\nDomination: 5\nControl: 7\n+1 per controlled Battleground Country in Region",
+  "may_be_held": false,
+  "name": "Middle East Scoring",
+  "number": 3,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": "Middle East",
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Scoring"
+ },
+ "Missile Envy": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "RemoveThisCardFromDiscardPile",
+     0
+    ],
+    [
+     "ResolveMissileEnvy",
+     0
+    ],
+    [
+     "DoNotDiscardThisCard",
+     0
+    ]
+   ]
+  },
+  "event_text": "Exchange this card for your opponent's highest valued Operations card in his hand. If two or more cards are tied, opponent chooses.\nIf the exchanged card contains your event, or an event applicable to both players, it occurs immediately. If it contains opponent's event, use Operations value without triggering event. Opponent must use this card for Operations during his next action round.",
+  "may_be_held": true,
+  "name": "Missile Envy",
+  "number": 49,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": [
+   -1,
+   -1
+  ],
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Mobutu Sese Seko": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "SetStabilityValueInZaire",
+     3
+    ],
+    [
+     "GainInfluenceInZaire",
+     2
+    ]
+   ]
+  },
+  "event_text": "Zaire's stability number permanently becomes 3. Add 2 US Influence in Zaire.",
+  "may_be_held": true,
+  "name": "Mobutu Sese Seko",
+  "number": 122,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "promo",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Molotov": {
+  "can_headline": true,
+  "discard_after_play": true,
+  "effect_spec": {},
+  "event_text": "Subtract 2 from the die roll total for the current Crisis.",
+  "may_be_held": true,
+  "name": "Molotov",
+  "number": 131,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "turnzero",
+  "stage": null,
+  "statecraft_modifier": -2,
+  "type": "Statecraft"
+ },
+ "Muslim Revolution": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": {
+    "_seq": [
+     [
+      "RemoveAllOpponentInfluenceForMuslimRevolution",
+      2
+     ],
+     [
+      "PauseForAnimationToMap",
+      0
+     ]
+    ],
+    "usageconditions": [
+     [
+      "IfHasNotBeenPlayedAWACSSaleToSaudis",
+      0
+     ]
+    ]
+   }
+  },
+  "event_text": "Remove all US Influence in two of the following countries: Sudan, Iran, Iraq, Egypt, Libya, Saudi Arabia, Syria, Jordan.",
+  "may_be_held": true,
+  "name": "Muslim Revolution",
+  "number": 56,
+  "ops": 4,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "NATO": {
+  "can_headline": true,
+  "effect_spec": {
+   "continuous_effects": [
+    {
+     "effect": [
+      "OpponentCannotCoupOrRealignInControlledEurope",
+      0
+     ]
+    }
+   ],
+   "event_effects": {
+    "_seq": [
+     [
+      "PutThisCardInPlay",
+      0
+     ],
+     [
+      "RemoveMarshallPlanFromPlay",
+      0
+     ],
+     [
+      "RemoveWarsawPactFormedFromPlay",
+      0
+     ]
+    ],
+    "usageconditions": [
+     [
+      "IfHasBeenPlayedMarshallPlanOrWarsawPact",
+      0
+     ]
+    ]
+   }
+  },
+  "event_text": "Play after 'Marshall Plan' or 'Warsaw Pact'.\nUSSR player may no longer make Coup or Realignment rolls in any US Controlled countries in Europe. US Controlled countries in Europe may not be attacked by play of the Brush War event.",
+  "may_be_held": true,
+  "name": "NATO",
+  "number": 21,
+  "ops": 4,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "NORAD": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "PutThisCardInPlay",
+     0
+    ]
+   ],
+   "triggered_effects": [
+    {
+     "conditions": [
+      [
+       "AtEndOfActionRound",
+       0
+      ],
+      [
+       "IfDefconDroppedTo2",
+       0
+      ],
+      [
+       "IfYouControlCanada",
+       0
+      ]
+     ],
+     "triggereffect": [
+      [
+       "TriggerAnnounceCardInPlay",
+       0
+      ],
+      [
+       "TriggerAddInfluenceToExisting",
+       1
+      ]
+     ]
+    }
+   ]
+  },
+  "event_text": "If the US controls Canada, the US may add 1 Influence to any country already containing US Influence at the conclusion of any Action Round in which the DEFCON marker moves to the '2' box. This event cancelled by 'Quagmire'.",
+  "may_be_held": true,
+  "name": "NORAD",
+  "number": 106,
+  "ops": 3,
+  "optional": true,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Nasser": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "GainInfluenceInEgypt",
+     2
+    ],
+    [
+     "RemoveHalfOpponentInfluenceInEgpyt",
+     0
+    ],
+    [
+     "PauseForAnimationToMap",
+     0
+    ]
+   ]
+  },
+  "event_text": "Add 2 USSR Influence in Egypt. Remove half (rounded up) of the US Influence in Egypt.",
+  "may_be_held": true,
+  "name": "Nasser",
+  "number": 15,
+  "ops": 1,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Nationalist China": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "AddInfluenceInAsiaMax1",
+     3
+    ]
+   ]
+  },
+  "event_text": "US places 3 Influence in Asia, no more than 1 per country.",
+  "may_be_held": true,
+  "name": "Nationalist China",
+  "number": 140,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "turnzero",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Nixon Plays The China Card": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    {
+     "_seq": [
+      "GainVictoryPoints",
+      2
+     ],
+     "condition": [
+      "IfYouHaveChinaCard",
+      0
+     ]
+    },
+    {
+     "_seq": [
+      "ClaimChinaCard",
+      1
+     ],
+     "condition": [
+      "IfYouDoNotHaveChinaCard",
+      0
+     ]
+    }
+   ]
+  },
+  "event_text": "If US has 'The China Card', gain 2 VP. Otherwise, US player receives 'The China Card' now, face down and unavailable for immediate play.",
+  "may_be_held": true,
+  "name": "Nixon Plays The China Card",
+  "number": 71,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Non-Aligned Movement": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    {
+     "_seq": [
+      "RemoveAllInfluenceForNonAlignedMovement",
+      1
+     ],
+     "condition": [
+      "IfRulesVersionIsAtLeast",
+      5
+     ]
+    },
+    [
+     "CommitPlayerDecision",
+     0
+    ],
+    [
+     "DiscardTopOfDrawPile",
+     4
+    ]
+   ]
+  },
+  "event_text": "Select India or a country in Africa, Southeast Asia, the Middle East, or South America with at least 2 US and 2 USSR Influence.\nRemove all Influence from that country, then take the next four cards from the top of the draw pile and put them in the discard pile (resuffling if necessary).",
+  "may_be_held": true,
+  "name": "Non-Aligned Movement",
+  "number": 121,
+  "ops": 1,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "promo",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "North Sea Oil": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "SetActionRoundCount",
+     8
+    ],
+    [
+     "PutThisCardInPlay",
+     0
+    ]
+   ]
+  },
+  "event_text": "OPEC event is no longer playable.\nUS may play 8 cards this turn.",
+  "may_be_held": true,
+  "name": "North Sea Oil",
+  "number": 86,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Late War",
+  "type": "Event"
+ },
+ "Nuclear Subs": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "PutThisCardInPlay",
+     1
+    ]
+   ],
+   "triggered_effects": [
+    {
+     "conditions": [
+      [
+       "AtEndOfTurn",
+       0
+      ]
+     ],
+     "triggereffect": [
+      [
+       "TriggerRemoveThisCardFromPlay",
+       1
+      ]
+     ]
+    }
+   ]
+  },
+  "event_text": "US Coup attempts in Battleground Countries do not affect the DEFCON track for the remainder of the turn (does not affect Cuban Missile Crisis).",
+  "may_be_held": true,
+  "name": "Nuclear Subs",
+  "number": 41,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Nuclear Test Ban": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "GainVictoryPointsForDEFCONMinus",
+     2
+    ],
+    [
+     "ImproveDEFCONLevel",
+     2
+    ]
+   ]
+  },
+  "event_text": "Player earns VPs equal to the current DEFCON level minus 2, then improve DEFCON two levels.",
+  "may_be_held": true,
+  "name": "Nuclear Test Ban",
+  "number": 34,
+  "ops": 4,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "OAS Founded": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "AddInfluenceInCentralAmericaOrSouthAmerica",
+     2
+    ]
+   ]
+  },
+  "event_text": "Add 2 US Influence in Central America and/or South America.",
+  "may_be_held": true,
+  "name": "OAS Founded",
+  "number": 70,
+  "ops": 1,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "OPEC": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": {
+    "_seq": [
+     [
+      "GainVPForOPEC",
+      1
+     ]
+    ],
+    "usageconditions": [
+     [
+      "IfHasNotBeenPlayedNorthSeaOil",
+      0
+     ]
+    ]
+   }
+  },
+  "event_text": "USSR gains 1VP for each of the following countries he controls:\nEgypt, Iran, Libya, Saudi Arabia, Iraq, Gulf States, and Venezuela.\nUnplayable as an event if 'North Sea Oil' is in effect.",
+  "may_be_held": true,
+  "name": "OPEC",
+  "number": 61,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Olympic Games": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "ResolveOlympicGames",
+     4
+    ]
+   ]
+  },
+  "event_text": "Player sponsors Olympics. Opponent may participate or boycott. If Opponent participates, each player rolls one die, with the sponsor adding 2 to his roll. High roll gains 2 VP. Reroll ties If Opponent boycotts, degrade DEFCON one level and the Sponsor may Conduct Operations as if they played a 4 Ops card.",
+  "may_be_held": true,
+  "name": "Olympic Games",
+  "number": 20,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": [
+   -1,
+   -1
+  ],
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "One Small Step...": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": {
+    "_seq": [
+     [
+      "AdvanceSpaceRaceTrack",
+      2
+     ]
+    ],
+    "usageconditions": [
+     [
+      "IfYouAreBehindOnSpaceRaceTrack",
+      0
+     ]
+    ]
+   }
+  },
+  "event_text": "If you are behind on the Space Race Track, play this card to move your marker two boxes forward on the Space Rack Track, gaining the VP value of the second box only.",
+  "may_be_held": true,
+  "name": "One Small Step...",
+  "number": 80,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Ortega Elected in Nicaragua": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "RemoveAllOpponentInfluenceInNicaragua",
+     0
+    ],
+    [
+     "PauseForAnimationToMap",
+     0
+    ],
+    [
+     "MakeFreeCoupAttemptAdjacentToNicaragua",
+     0
+    ],
+    [
+     "RestorePendingDefconLevel",
+     0
+    ]
+   ]
+  },
+  "event_text": "Remove all US Influence from Nicaragua. Then USSR may make one free Coup attempt (with this card's Operations value) in a country adjacent to Nicaragua.",
+  "may_be_held": true,
+  "name": "Ortega Elected in Nicaragua",
+  "number": 91,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": [
+   0,
+   -1
+  ],
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Late War",
+  "type": "Event"
+ },
+ "Our Man In Tehran": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": {
+    "_seq": [
+     [
+      "CommitPlayerDecision",
+      0
+     ],
+     [
+      "MayDiscardTopOfDrawPile",
+      5
+     ]
+    ],
+    "usageconditions": [
+     [
+      "IfYouControlMiddleEastCountry",
+      1
+     ]
+    ]
+   }
+  },
+  "event_text": "If the US controls at least one Middle East country, the US player draws the top 5 cards from the draw pile. They may reveal and then discard any or all of these drawn cards without triggering the Event. Any remaining drawn cards are returned to the draw deck, and it is reshuffled.",
+  "may_be_held": true,
+  "name": "Our Man In Tehran",
+  "number": 108,
+  "ops": 2,
+  "optional": true,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Panama Canal Returned": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "GainInfluenceInPanama",
+     1
+    ],
+    [
+     "GainInfluenceInCostaRica",
+     1
+    ],
+    [
+     "GainInfluenceInVenezuela",
+     1
+    ],
+    [
+     "PauseForAnimationToMap",
+     0
+    ]
+   ]
+  },
+  "event_text": "Add 1 US Influence in Panama, Costa Rica, and Venezuela.",
+  "may_be_held": true,
+  "name": "Panama Canal Returned",
+  "number": 64,
+  "ops": 1,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Pershing II Deployed": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "GainVictoryPoints",
+     1
+    ],
+    [
+     "RemoveOpponentInfluenceInWesternEuropeMax1",
+     3
+    ],
+    [
+     "PauseForAnimationToMap",
+     0
+    ]
+   ]
+  },
+  "event_text": "USSR gains 1 VP.\nRemove 1 US Influence from up to three countries in Western Europe.",
+  "may_be_held": true,
+  "name": "Pershing II Deployed",
+  "number": 99,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Late War",
+  "type": "Event"
+ },
+ "Portuguese Empire Crumbles": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "GainInfluenceInSEAfricanStates",
+     2
+    ],
+    [
+     "GainInfluenceInAngola",
+     2
+    ],
+    [
+     "PauseForAnimationToMap",
+     0
+    ]
+   ]
+  },
+  "event_text": "Add 2 USSR Influence in both SE African States and Angola.",
+  "may_be_held": true,
+  "name": "Portuguese Empire Crumbles",
+  "number": 52,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Puppet Governments": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "AddInfluenceInEmptyCountriesMax1",
+     3
+    ]
+   ]
+  },
+  "event_text": "US may add 1 Influence in three countries that currently contain no Influence from either power.",
+  "may_be_held": true,
+  "name": "Puppet Governments",
+  "number": 66,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Quagmire": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "PutOpponentIntoQuagmire",
+     0
+    ],
+    [
+     "RemoveNORADFromPlay",
+     0
+    ]
+   ]
+  },
+  "event_text": "On next action round, US player must discard an Operations card worth 2 or more and roll 1-4 to cancel this event. Repeat each US player Action round until successful or no appropriate cards remain. If out of appropriate cards, the US player may only play scoring cards until the next turn.",
+  "may_be_held": true,
+  "name": "Quagmire",
+  "number": 42,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Reagan Bombs Libya": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "GainVPForOpponentInfluenceInLibya",
+     2
+    ]
+   ]
+  },
+  "event_text": "US gains 1 VP for every 2 USSR Influence in Libya.",
+  "may_be_held": true,
+  "name": "Reagan Bombs Libya",
+  "number": 84,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Late War",
+  "type": "Event"
+ },
+ "Red Scare/Purge": {
+  "can_headline": true,
+  "effect_spec": {
+   "continuous_effects": [
+    {
+     "effect": [
+      "DecreaseOperationsPointsForOpponentsCards",
+      1
+     ]
+    }
+   ],
+   "event_effects": {
+    "_seq": [
+     [
+      "PutThisCardInPlay",
+      1
+     ]
+    ],
+    "usageconditions": [
+     [
+      "NotIfChinaCardIsUnclaimedAndIsUSSR",
+      0
+     ]
+    ]
+   },
+   "triggered_effects": [
+    {
+     "conditions": [
+      [
+       "AtEndOfTurn",
+       0
+      ]
+     ],
+     "triggereffect": [
+      [
+       "TriggerRemoveThisCardFromPlay",
+       1
+      ]
+     ]
+    }
+   ]
+  },
+  "event_text": "All further Operations cards played by your opponent this turn are -1 to their value (to a minimum of 1 Op).",
+  "may_be_held": true,
+  "name": "Red Scare/Purge",
+  "number": 31,
+  "ops": 4,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Romanian Abdication": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "RemoveAllOpponentInfluenceInRomania",
+     0
+    ],
+    [
+     "GainInfluenceForControlInRomania",
+     0
+    ],
+    [
+     "PauseForAnimationToMap",
+     0
+    ]
+   ]
+  },
+  "event_text": "Remove all US Influence in Romania. USSR gains sufficient Influence in Romania for Control.",
+  "may_be_held": true,
+  "name": "Romanian Abdication",
+  "number": 12,
+  "ops": 1,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Sadat Expels Soviets": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "RemoveAllOpponentInfluenceInEgpyt",
+     0
+    ],
+    [
+     "GainInfluenceInEgypt",
+     1
+    ],
+    [
+     "PauseForAnimationToMap",
+     0
+    ]
+   ]
+  },
+  "event_text": "Remove all USSR Influence in Egypt and add one US Influence.",
+  "may_be_held": true,
+  "name": "Sadat Expels Soviets",
+  "number": 72,
+  "ops": 1,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Salt Negotiations": {
+  "can_headline": true,
+  "effect_spec": {
+   "continuous_effects": [
+    {
+     "effect": [
+      "ReduceAllCoupAttempts",
+      1
+     ]
+    }
+   ],
+   "event_effects": [
+    [
+     "ImproveDEFCONLevel",
+     2
+    ],
+    [
+     "RecoverEventCardFromDiscardPile",
+     1
+    ],
+    [
+     "PutThisCardInPlay",
+     1
+    ]
+   ],
+   "triggered_effects": [
+    {
+     "conditions": [
+      [
+       "AtEndOfTurn",
+       0
+      ]
+     ],
+     "triggereffect": [
+      [
+       "TriggerRemoveThisCardFromPlay",
+       1
+      ]
+     ]
+    }
+   ]
+  },
+  "event_text": "Improve DEFCON two levels.\nFurther Coup attempts incur -1 die roll modifier for both players for the remainder of the turn.\nPlayer may sort through discard pile and reclaim one non-scoring card, after revealing it to their opponent.",
+  "may_be_held": true,
+  "name": "Salt Negotiations",
+  "number": 43,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Shuttle Diplomacy": {
+  "can_headline": true,
+  "effect_spec": {
+   "continuous_effects": [
+    {
+     "effect": [
+      "OpponentIgnoresBattlegroundInAsiaOrMiddleEast",
+      1
+     ]
+    }
+   ],
+   "event_effects": [
+    [
+     "RemoveThisCardFromDiscardPile",
+     0
+    ],
+    [
+     "PutThisCardInPlaySpecial",
+     0
+    ],
+    [
+     "DoNotDiscardThisCard",
+     0
+    ]
+   ],
+   "triggered_effects": [
+    {
+     "conditions": [
+      [
+       "WhenScoringAsiaOrMiddleEast",
+       0
+      ]
+     ],
+     "triggereffect": [
+      [
+       "TriggerRemoveThisCardFromPlayAndDiscard",
+       1
+      ]
+     ]
+    }
+   ]
+  },
+  "event_text": "Play in front of US player. During the next scoring of the Middle East or Asia (whichever comes first), subtract one Battleground country from USSR total, then put this card in the discard pile. Does not count for Final Scoring at the end of Turn 10.",
+  "may_be_held": true,
+  "name": "Shuttle Diplomacy",
+  "number": 73,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Socialist Governments": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": {
+    "_seq": [
+     [
+      "RemoveOpponentInfluenceInWesternEuropeMax2",
+      3
+     ],
+     [
+      "PauseForAnimationToMap",
+      0
+     ]
+    ],
+    "usageconditions": [
+     [
+      "IfHasNotBeenPlayedIronLady",
+      0
+     ],
+     [
+      "IfCrisisResult1945UKElectionIsNot4or5",
+      0
+     ]
+    ]
+   }
+  },
+  "event_text": "Unplayable as an event if 'The Iron Lady' is in effect.\nRemove US Influence in Western Europe by a total of 3 Influence points, removing no more than 2 per country.",
+  "may_be_held": true,
+  "name": "Socialist Governments",
+  "number": 7,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Solidarity": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": {
+    "_seq": [
+     [
+      "GainInfluenceInPoland",
+      3
+     ],
+     [
+      "PauseForAnimationToMap",
+      0
+     ],
+     [
+      "RemoveJohnPaulIIElectedPopeFromPlay",
+      0
+     ]
+    ],
+    "usageconditions": [
+     [
+      "IfHasBeenPlayedJohnPaulIIElectedPope",
+      0
+     ]
+    ]
+   }
+  },
+  "event_text": "Playable as an event only if John Paul II Elected Pope is in effect.\nAdd 3 US Influence in Poland.",
+  "may_be_held": true,
+  "name": "Solidarity",
+  "number": 101,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Late War",
+  "type": "Event"
+ },
+ "South African Unrest": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "ChooseFromEffectList",
+     {
+      "_seq": [
+       {
+        "_seq": [
+         [
+          "GainInfluenceInSouthAfrica",
+          2
+         ],
+         [
+          "PauseForAnimationToMap",
+          0
+         ]
+        ],
+        "description": "Gain 2 Influence in South Africa"
+       },
+       {
+        "_seq": [
+         [
+          "GainInfluenceInSouthAfrica",
+          1
+         ],
+         [
+          "AddInfluenceAdjacentToSouthAfrica",
+          2
+         ],
+         [
+          "PauseForAnimationToMap",
+          0
+         ]
+        ],
+        "description": "Add Influence Adjacent to South Africa"
+       }
+      ],
+      "prompt": "Choose for South Africa:"
+     }
+    ]
+   ]
+  },
+  "event_text": "USSR either adds 2 Influence in South Africa or adds 1 Influence in South Africa and 2 Influence in any countries adjacent to South Africa.",
+  "may_be_held": true,
+  "name": "South African Unrest",
+  "number": 53,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "South America Scoring": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "ScoreSouthAmerica",
+     0
+    ]
+   ]
+  },
+  "event_text": "Both sides score:\nPresence: 2\nDomination: 5\nControl: 6\n+1 per controlled Battleground Country in Region",
+  "may_be_held": false,
+  "name": "South America Scoring",
+  "number": 81,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": "South America",
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Scoring"
+ },
+ "Southeast Asia Scoring": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "ScoreSoutheastAsia",
+     0
+    ]
+   ]
+  },
+  "event_text": "Both sides score:\n1 VP each for Control of: Burma, Cambodia/Laos,\n    Vietnam, Malaysia, Indonesia, the Phillipines\n2 VP for Control of Thailand",
+  "may_be_held": false,
+  "name": "Southeast Asia Scoring",
+  "number": 38,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": "Southeast Asia",
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Scoring"
+ },
+ "Soviets Shoot Down KAL-007": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "RestorePendingDefconLevel",
+     0
+    ],
+    [
+     "DegradeDEFCONLevel",
+     1
+    ],
+    [
+     "GainVictoryPoints",
+     2
+    ],
+    {
+     "_seq": [
+      "PlaceInfluenceOrAttemptRealignmentsWithThisCard",
+      4
+     ],
+     "condition": [
+      "IfYouControlSouthKorea",
+      0
+     ]
+    }
+   ]
+  },
+  "event_text": "Degrade DEFCON one level. US gains 2 VP.\nIf South Korea is US Controlled, then the US may place Influence or attempt Realignment as if they played a 4 Ops card.",
+  "may_be_held": true,
+  "name": "Soviets Shoot Down KAL-007",
+  "number": 89,
+  "ops": 4,
+  "optional": false,
+  "pending_defcon": [
+   -1,
+   -1
+  ],
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Late War",
+  "type": "Event"
+ },
+ "Special Relationship": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    {
+     "_seq": [
+      "AddInfluenceToOneWesternEuropeCountry",
+      2
+     ],
+     "condition": [
+      "IfControlUKAndNATO",
+      0
+     ]
+    },
+    {
+     "_seq": [
+      "GainVictoryPoints",
+      2
+     ],
+     "condition": [
+      "IfControlUKAndNATO",
+      0
+     ]
+    },
+    {
+     "_seq": [
+      "AddInfluenceAdjacentToUK",
+      1
+     ],
+     "condition": [
+      "IfControlUKButNoNATO",
+      8
+     ]
+    }
+   ]
+  },
+  "event_text": "If UK is US controlled but NATO is not in effect, US adds 1 Influence to any country adjacent to the UK.\nIf UK is US controlled and NATO is in effect, US adds 2 Influence to any Western European country and gains 2 VPs.",
+  "may_be_held": true,
+  "name": "Special Relationship",
+  "number": 105,
+  "ops": 2,
+  "optional": true,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Stanislav Petrov": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": {
+    "_seq": [
+     [
+      "ChooseDEFCONLevel4or5",
+      0
+     ]
+    ],
+    "usageconditions": [
+     [
+      "IfDefconLevelIs",
+      2
+     ]
+    ]
+   }
+  },
+  "event_text": "Play only if DEFCON is 2.\nSet DEFCON to 4 or 5.",
+  "may_be_held": true,
+  "name": "Stanislav Petrov",
+  "number": 124,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "promo",
+  "stage": "Late War",
+  "type": "Event"
+ },
+ "Star Wars": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": {
+    "_seq": [
+     [
+      "CopyEventCardFromDiscardPile",
+      0
+     ]
+    ],
+    "usageconditions": [
+     [
+      "IfUSIsAheadOnSpaceRaceTrack",
+      0
+     ]
+    ]
+   }
+  },
+  "event_text": "If the US is ahead on the Space Race Track, play this card to search through the discard pile for a non-scoring card of your choice. Event occurs immediately.",
+  "may_be_held": true,
+  "name": "Star Wars",
+  "number": 85,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": [
+   -1,
+   0
+  ],
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Late War",
+  "type": "Event"
+ },
+ "Suez Crisis": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": {
+    "_seq": [
+     [
+      "RemoveOpponentInfluenceForSuezCrisis",
+      4
+     ],
+     [
+      "PauseForAnimationToMap",
+      0
+     ]
+    ],
+    "usageconditions": [
+     [
+      "IfCrisisResult1945UKElectionIsNot6",
+      0
+     ]
+    ]
+   }
+  },
+  "event_text": "Remove a total of 4 US Influence from France, the United Kingdom or Israel. Remove no more than 2 Influence per country.",
+  "may_be_held": true,
+  "name": "Suez Crisis",
+  "number": 28,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Summit": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "CommitPlayerDecision",
+     0
+    ],
+    [
+     "RestorePendingDefconLevel",
+     0
+    ],
+    [
+     "ResolveSummit",
+     2
+    ]
+   ]
+  },
+  "event_text": "Both players roll a die.  Each adds 1 for each Region they Dominate or Control. High roller gains 2 VP and may move DEFCON marker one level in either direction. Do not reroll ties.",
+  "may_be_held": true,
+  "name": "Summit",
+  "number": 45,
+  "ops": 1,
+  "optional": false,
+  "pending_defcon": [
+   -1,
+   -1
+  ],
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Tear Down This Wall": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "RemoveWillyBrandtFromPlay",
+     0
+    ],
+    [
+     "GainInfluenceInEastGermany",
+     3
+    ],
+    [
+     "PauseForAnimationToMap",
+     0
+    ],
+    [
+     "MakeFreeCoupOrRealignmentAttemptsInEurope",
+     0
+    ],
+    [
+     "RestorePendingDefconLevel",
+     0
+    ],
+    {
+     "_seq": [
+      "PutThisCardInPlay",
+      0
+     ],
+     "condition": [
+      "IfWillyBrandtIsNotInRemovedPile",
+      0
+     ]
+    }
+   ]
+  },
+  "event_text": "Cancels/prevent Willy Brandt.\nAdd 3 US Influence in East Germany.\nThen US may make a free Coup attempt or Realignment rolls in Europe using this card's Ops Value.",
+  "may_be_held": true,
+  "name": "Tear Down This Wall",
+  "number": 96,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": [
+   -1,
+   0
+  ],
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Late War",
+  "type": "Event"
+ },
+ "Terrorism": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "CommitPlayerDecision",
+     0
+    ],
+    [
+     "OpponentDiscardsRandomCard",
+     0
+    ],
+    {
+     "_seq": [
+      "OpponentDiscardsRandomCard",
+      0
+     ],
+     "condition": [
+      "IfUSSRAndHasBeenPlayedIranianHostageCrisis",
+      0
+     ]
+    }
+   ]
+  },
+  "event_text": "Opponent must randomly discard one card. If played by USSR and Iranian Hostage Crisis is in effect, the US player must randomly discard two cards.\n(Events on discards do not occur.)",
+  "may_be_held": true,
+  "name": "Terrorism",
+  "number": 92,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Late War",
+  "type": "Event"
+ },
+ "The Cambridge Five": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": {
+    "_seq": [
+     [
+      "CommitPlayerDecision",
+      0
+     ],
+     [
+      "OpponentRevealsScoringCardsInHand",
+      0
+     ],
+     [
+      "AddInfluenceInOpponentScoringCardRegion",
+      1
+     ]
+    ],
+    "usageconditions": [
+     [
+      "IfTurnNumberLessThan",
+      7
+     ]
+    ]
+   }
+  },
+  "event_text": "The US player exposes all scoring cards in their hand. The USSR player may then add 1 Influence in any single region named on one of those scoring cards (USSR choice). Cannot be played as an event in Late War.",
+  "may_be_held": true,
+  "name": "The Cambridge Five",
+  "number": 104,
+  "ops": 2,
+  "optional": true,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "The China Card": {
+  "can_headline": false,
+  "effect_spec": {
+   "global_continuous_effects": [
+    {
+     "effect": [
+      "GainOperationsPointsWhenUsingThisCardInAsia",
+      1
+     ]
+    }
+   ]
+  },
+  "event_text": "Begins the game with the USSR player.\n+1 Operations value when all points are used in Asia. Pass to opponent after play.\n+1 VP for the player holding this card at the end of Turn 10.\nCancels effect of 'Formosan Resolution' if this card is played by the US player.",
+  "may_be_held": true,
+  "name": "The China Card",
+  "number": 6,
+  "ops": 4,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "The Iron Lady": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "GainVictoryPoints",
+     1
+    ],
+    [
+     "OpponentGainsInfluenceInArgentina",
+     1
+    ],
+    [
+     "RemoveAllOpponentInfluenceInUK",
+     0
+    ],
+    [
+     "PauseForAnimationToMap",
+     0
+    ],
+    [
+     "PutThisCardInPlay",
+     0
+    ]
+   ]
+  },
+  "event_text": "US gains 1 VP.\nAdd 1 USSR Influence in Argentina. Remove all USSR Influence from UK.\nSocialist Governments event no longer playable.",
+  "may_be_held": true,
+  "name": "The Iron Lady",
+  "number": 83,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Late War",
+  "type": "Event"
+ },
+ "The Reformer": {
+  "can_headline": true,
+  "effect_spec": {
+   "continuous_effects": [
+    {
+     "effect": [
+      "YouCannotCoupInEurope",
+      0
+     ]
+    }
+   ],
+   "event_effects": [
+    {
+     "_seq": [
+      "AddInfluenceInEuropeMax2",
+      6
+     ],
+     "condition": [
+      "IfYouAreAheadOnVPTrack",
+      0
+     ]
+    },
+    {
+     "_seq": [
+      "AddInfluenceInEuropeMax2",
+      4
+     ],
+     "condition": [
+      "IfYouAreNotAheadOnVPTrack",
+      0
+     ]
+    },
+    {
+     "_seq": [
+      "PutThisCardInPlay",
+      0
+     ],
+     "condition": [
+      "IfGlasnostIsNotInRemovedPile",
+      0
+     ]
+    }
+   ]
+  },
+  "event_text": "Add 4 Influence in Europe (no more than 2 per country). If USSR is ahead of US in VP, then 6 Influence may be added instead.\nUSSR may no longer conduct Coup attempts in Europe.\nImproves effect of Glasnost event.",
+  "may_be_held": true,
+  "name": "The Reformer",
+  "number": 87,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Late War",
+  "type": "Event"
+ },
+ "The Voice Of America": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "RemoveOpponentInfluenceFromNonEuropeMax2",
+     4
+    ],
+    [
+     "PauseForAnimationToMap",
+     0
+    ]
+   ]
+  },
+  "event_text": "Remove 4 USSR Influence from non-European countries. No more than 2 may be removed from any one country.",
+  "may_be_held": true,
+  "name": "The Voice Of America",
+  "number": 74,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Truman Doctrine": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "RemoveAllOpponentInfluenceFromUncontrolledInEurope",
+     1
+    ],
+    [
+     "PauseForAnimationToMap",
+     0
+    ]
+   ]
+  },
+  "event_text": "Remove all USSR Influence markers in one uncontrolled country in Europe.",
+  "may_be_held": true,
+  "name": "Truman Doctrine",
+  "number": 19,
+  "ops": 1,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "U2 Incident": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "GainVictoryPoints",
+     1
+    ],
+    [
+     "PutThisCardInPlay",
+     1
+    ]
+   ],
+   "triggered_effects": [
+    {
+     "conditions": [
+      [
+       "WhenUNInventionIsPlayedAsEvent",
+       0
+      ]
+     ],
+     "triggereffect": [
+      [
+       "TriggerAnnounceCardInPlay",
+       0
+      ],
+      [
+       "TriggerGainVictoryPoints",
+       1
+      ],
+      [
+       "TriggerRemoveThisCardFromPlay",
+       1
+      ]
+     ]
+    },
+    {
+     "conditions": [
+      [
+       "AtEndOfTurn",
+       0
+      ]
+     ],
+     "triggereffect": [
+      [
+       "TriggerRemoveThisCardFromPlay",
+       1
+      ]
+     ]
+    }
+   ]
+  },
+  "event_text": "USSR gains 1VP.\nIf UN Intervention played later this turn as an Event, either by US or USSR, gain 1 additional VP.",
+  "may_be_held": true,
+  "name": "U2 Incident",
+  "number": 60,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "UN Intervention": {
+  "can_headline": false,
+  "effect_spec": {
+   "event_effects": {
+    "_seq": [
+     [
+      "ConductOperationsWithOpponentEventCard",
+      0
+     ]
+    ],
+    "usageconditions": [
+     [
+      "IfIsNotHeadlinePhase",
+      0
+     ],
+     [
+      "IfHaveOpponentEventInHand",
+      0
+     ]
+    ]
+   }
+  },
+  "event_text": "Play this card simultaneously with a card containing your opponent's associated Event. The Event is cancelled, but you may use its Operations value to Conduct Operations. The cancelled event returns to the discard pile. May not be played during headline phase.",
+  "may_be_held": true,
+  "name": "UN Intervention",
+  "number": 32,
+  "ops": 1,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "US/Japan Mutual Defense Pact": {
+  "can_headline": true,
+  "effect_spec": {
+   "continuous_effects": [
+    {
+     "effect": [
+      "OpponentCannotCoupOrRealignInJapan",
+      0
+     ]
+    }
+   ],
+   "event_effects": [
+    [
+     "GainInfluenceForControlInJapan",
+     0
+    ],
+    [
+     "PauseForAnimationToMap",
+     0
+    ],
+    [
+     "PutThisCardInPlay",
+     0
+    ]
+   ]
+  },
+  "event_text": "US gains sufficient Influence in Japan for Control. USSR may no longer make Coup or Realignment rolls in Japan.",
+  "may_be_held": true,
+  "name": "US/Japan Mutual Defense Pact",
+  "number": 27,
+  "ops": 4,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Ussuri River Skirmish": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    {
+     "_seq": [
+      "AddInfluenceInAsiaMax2",
+      4
+     ],
+     "condition": [
+      "IfYouHaveChinaCard",
+      0
+     ]
+    },
+    {
+     "_seq": [
+      "ClaimChinaCard",
+      0
+     ],
+     "condition": [
+      "IfYouDoNotHaveChinaCard",
+      0
+     ]
+    }
+   ]
+  },
+  "event_text": "If the USSR has 'The China Card', claim it face up and available for play. If the US already has 'The China Card', add 4 US Influence in Asia, no more than 2 per country.",
+  "may_be_held": true,
+  "name": "Ussuri River Skirmish",
+  "number": 76,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "VE Day": {
+  "can_headline": true,
+  "effect_spec": {
+   "crisis_effects": [
+    {
+     "_seq": [
+      "GainInfluenceInWestGermany",
+      1
+     ],
+     "condition": [
+      "IfCrisisResultIs1",
+      0
+     ]
+    },
+    {
+     "_seq": [
+      "GainInfluenceInAustria",
+      1
+     ],
+     "condition": [
+      "IfCrisisResultIs1",
+      0
+     ]
+    },
+    {
+     "_seq": [
+      "RemoveOpponentInfluenceInEastGermany",
+      1
+     ],
+     "condition": [
+      "IfCrisisResultIs6",
+      0
+     ]
+    },
+    {
+     "_seq": [
+      "GainInfluenceInEastGermany",
+      2
+     ],
+     "condition": [
+      "IfCrisisResultIs6",
+      0
+     ]
+    },
+    {
+     "_seq": [
+      "ReplaceEuropeScoring",
+      0
+     ],
+     "condition": [
+      "IfCrisisResultIs6",
+      0
+     ]
+    }
+   ]
+  },
+  "event_text": "1:   Soviets advance past Elbe. Apply the 2-3 result, and the USSR receives 1 Influence in West Germany and 1 in Austria during setup.\n2/3: Wehrmacht collapses; Soviets overrun Eastern Europe before Christmas. USSR receives 2 additional Eastern Europe Influence during setup.\n4/5: Soviets reach Berlin first. No effect.\n6:   A bridge just far enough. Western Allies reach Berlin first. Both players receive 2 Influence in East Germany (for USSR this is in lieu of that specifically placed in East Germany, but their general Eastern Europe Influence may be placed there normally). Replace the Europe Scoring card with the Allied Berlin version. Blockade event has no effect.",
+  "may_be_held": true,
+  "name": "VE Day",
+  "number": 141,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "turnzero",
+  "stage": null,
+  "type": "Crisis"
+ },
+ "VJ Day": {
+  "can_headline": true,
+  "effect_spec": {
+   "crisis_effects": [
+    {
+     "_seq": [
+      "MoveUSJapanMutualDefensePactToMidWar",
+      0
+     ],
+     "condition": [
+      "IfCrisisResultIs1",
+      0
+     ]
+    },
+    {
+     "_seq": [
+      "GainInfluenceInJapan",
+      1
+     ],
+     "condition": [
+      "IfCrisisResultIs1",
+      0
+     ]
+    },
+    {
+     "_seq": [
+      "GainInfluenceInSouthKorea",
+      1
+     ],
+     "condition": [
+      "IfCrisisResultIs1",
+      0
+     ]
+    },
+    {
+     "_seq": [
+      "GainInfluenceInSouthKorea",
+      1
+     ],
+     "condition": [
+      "IfCrisisResultIs1or2or3",
+      0
+     ]
+    },
+    {
+     "_seq": [
+      "RemoveKoreanWar",
+      0
+     ],
+     "condition": [
+      "IfCrisisResultIs6",
+      0
+     ]
+    }
+   ]
+  },
+  "event_text": "1:   Soviets invade Manchuria and Korea in early 1945. Apply the 2-3 result. Then, move the US/Japan Mutual Defense Pact card to the Mid War deck and add 1 USSR Influence in each of Japan and South Korea during setup.\n2/3: \"Committees\" penetrate southern Korea. Soviets receive 1 Influence in South Korea during setup.\n4/5: Soviets declare was on Japan in August 1945. No effect.\n6:   Japan surrenders after Hiroshima bomb; Stalin reins in surrogates. Remove the Korean War card from the game. On Turn 1, US ignores DEFCON restrictions and DEFCON cannot go below 2.",
+  "may_be_held": true,
+  "name": "VJ Day",
+  "number": 145,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "turnzero",
+  "stage": null,
+  "type": "Crisis"
+ },
+ "Vietnam Revolts": {
+  "can_headline": true,
+  "effect_spec": {
+   "continuous_effects": [
+    {
+     "effect": [
+      "GainOperationsPointsInSoutheastAsia",
+      1
+     ]
+    }
+   ],
+   "event_effects": [
+    [
+     "GainInfluenceInVietnam",
+     2
+    ],
+    [
+     "PauseForAnimationToMap",
+     0
+    ],
+    [
+     "PutThisCardInPlay",
+     1
+    ]
+   ],
+   "triggered_effects": [
+    {
+     "conditions": [
+      [
+       "AtEndOfTurn",
+       0
+      ]
+     ],
+     "triggereffect": [
+      [
+       "TriggerRemoveThisCardFromPlay",
+       1
+      ]
+     ]
+    }
+   ]
+  },
+  "event_text": "Add 2 USSR Influence in Vietnam. For the remainder of the turn, the Soviet player may add 1 Operations point to any card that uses all points in Southeast Asia.",
+  "may_be_held": true,
+  "name": "Vietnam Revolts",
+  "number": 9,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Wargames": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": {
+    "_seq": [
+     [
+      "ResolveWargames",
+      6
+     ]
+    ],
+    "usageconditions": [
+     [
+      "IfDefconLevelIs",
+      2
+     ]
+    ]
+   }
+  },
+  "event_text": "If DEFCON Status 2, you may immediately end the game (without Final Scoring Phase) after giving opponent 6 VPs.\nHow about a nice game of chess?",
+  "may_be_held": true,
+  "name": "Wargames",
+  "number": 100,
+  "ops": 4,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "Neutral",
+  "source": "base",
+  "stage": "Late War",
+  "type": "Event"
+ },
+ "Warsaw Pact Formed": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "ChooseFromEffectList",
+     {
+      "_seq": [
+       {
+        "_seq": [
+         [
+          "RemoveAllOpponentInfluenceFromEasternEurope",
+          4
+         ],
+         [
+          "PauseForAnimationToMap",
+          0
+         ]
+        ],
+        "description": "Remove 4 US Countries in Eastern Europe"
+       },
+       {
+        "_seq": [
+         [
+          "AddInfluenceInEasternEuropeMax2",
+          5
+         ]
+        ],
+        "description": "Add 5 USSR Influence in Eastern Europe"
+       }
+      ],
+      "prompt": "Choose for Eastern Europe:"
+     }
+    ],
+    {
+     "_seq": [
+      "PutThisCardInPlayOppOwner",
+      0
+     ],
+     "condition": [
+      "IfHasNotBeenPlayedNATO",
+      0
+     ]
+    }
+   ]
+  },
+  "event_text": "Remove all US Influence from four countries in Eastern Europe, or add 5 USSR Influence in Eastern Europe, adding no more than 2 per country. Allow play of NATO.",
+  "may_be_held": true,
+  "name": "Warsaw Pact Formed",
+  "number": 16,
+  "ops": 3,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "We Will Bury You": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "RestorePendingDefconLevel",
+     0
+    ],
+    [
+     "DegradeDEFCONLevel",
+     1
+    ],
+    [
+     "PutThisCardInPlay",
+     1
+    ]
+   ],
+   "triggered_effects": [
+    {
+     "conditions": [
+      [
+       "AtStartOfOpponentActionRound",
+       0
+      ]
+     ],
+     "triggereffect": [
+      [
+       "TriggerIncrementEffectData",
+       0
+      ]
+     ]
+    },
+    {
+     "conditions": [
+      [
+       "WhenOpponentPlaysUNInterventionAsEvent",
+       0
+      ],
+      [
+       "IfEffectDataIsNotZero",
+       0
+      ],
+      [
+       "IfEffectDataIsZero",
+       1
+      ]
+     ],
+     "triggereffect": [
+      [
+       "TriggerIncrementEffectData",
+       1
+      ]
+     ]
+    },
+    {
+     "conditions": [
+      [
+       "WhenOpponentPlaysNotUNInterventionAsEvent",
+       0
+      ],
+      [
+       "IfEffectDataIsNotZero",
+       0
+      ],
+      [
+       "IfEffectDataIsZero",
+       1
+      ]
+     ],
+     "triggereffect": [
+      [
+       "TriggerAnnounceCardInPlay",
+       0
+      ],
+      [
+       "TriggerGainVictoryPoints",
+       3
+      ],
+      [
+       "TriggerIncrementEffectData",
+       1
+      ]
+     ]
+    },
+    {
+     "conditions": [
+      [
+       "AtEndOfActionRound",
+       0
+      ],
+      [
+       "IfEffectDataIsNotZero",
+       0
+      ],
+      [
+       "IfEffectDataIsZero",
+       1
+      ]
+     ],
+     "triggereffect": [
+      [
+       "TriggerAnnounceCardInPlay",
+       0
+      ],
+      [
+       "TriggerGainVictoryPoints",
+       3
+      ],
+      [
+       "TriggerIncrementEffectData",
+       1
+      ]
+     ]
+    },
+    {
+     "conditions": [
+      [
+       "AtEndOfActionRound",
+       0
+      ],
+      [
+       "IfEffectDataIsNotZero",
+       0
+      ]
+     ],
+     "triggereffect": [
+      [
+       "TriggerRemoveThisCardFromPlay",
+       0
+      ]
+     ]
+    }
+   ]
+  },
+  "event_text": "Unless UN Invervention is played as an Event on the US player's next round, USSR gains 3 VP prior to any US VP award.\nDegrade DEFCON one level.",
+  "may_be_held": true,
+  "name": "We Will Bury You",
+  "number": 50,
+  "ops": 4,
+  "optional": false,
+  "pending_defcon": [
+   -1,
+   -1
+  ],
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Who Lost China": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": {
+    "_seq": [
+     [
+      "SetOpponentMilOpsTrack",
+      0
+     ]
+    ],
+    "usageconditions": [
+     [
+      "NotIfChinaCardIsUnclaimed",
+      0
+     ],
+     [
+      "IfYouHaveChinaCard",
+      0
+     ]
+    ]
+   }
+  },
+  "event_text": "If the USSR holds the China Card, reset US Military Operations to zero.\nIf playing with the Chinese Civil War variant, this card cannot be played if Chinese Civil War is still in effect.",
+  "may_be_held": true,
+  "name": "Who Lost China",
+  "number": 127,
+  "ops": 1,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "promo",
+  "stage": "Early War",
+  "type": "Event"
+ },
+ "Willy Brandt": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": {
+    "_seq": [
+     [
+      "GainVictoryPoints",
+      1
+     ],
+     [
+      "GainInfluenceInWestGermany",
+      1
+     ],
+     [
+      "PutThisCardInPlay",
+      0
+     ]
+    ],
+    "usageconditions": [
+     [
+      "IfHasNotBeenPlayedTearDownThisWall",
+      0
+     ]
+    ]
+   }
+  },
+  "event_text": "USSR receives gains 1 VP.\nUSSR receives 1 Influence in West Germany.\nCancels NATO for West Germany.\nThis event unplayable and/or cancelled by Tear Down This Wall.",
+  "may_be_held": true,
+  "name": "Willy Brandt",
+  "number": 55,
+  "ops": 2,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Mid War",
+  "type": "Event"
+ },
+ "Yalta and Potsdam": {
+  "can_headline": true,
+  "effect_spec": {},
+  "event_text": "1:   FDR attends Potsdam in poor health; misreads Stalin's intentions. USSR receives 1 additional Influence anywhere in Europe during setup and may take one of Vietnam Revolts or Arab-Israeli War into hand before drawing cards (it still counts against hand limit).\n2/3: FDR attends Yalta but dies before Potsdam. No effect.\n4/5: FDR too ill to attend Yalta; Truman recognizes Soviet intentions in Eastern Europe. The US may take Marshall Plan into hand before drawing cards for Turn 1 (it still counts against hand limit).\n6:   FDR dies just before the Yalta Conference; Truman takes hard line with Soviets. Apply the 4-5 result, and the US goes first in all Early War turns.",
+  "may_be_held": true,
+  "name": "Yalta and Potsdam",
+  "number": 142,
+  "ops": 0,
+  "optional": false,
+  "pending_defcon": null,
+  "remove_on_event": false,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USA",
+  "source": "turnzero",
+  "stage": null,
+  "type": "Crisis"
+ },
+ "Yuri and Samantha": {
+  "can_headline": true,
+  "effect_spec": {
+   "event_effects": [
+    [
+     "PutThisCardInPlay",
+     1
+    ]
+   ],
+   "triggered_effects": [
+    {
+     "conditions": [
+      [
+       "WhenOpponentMakesCoupAttempt",
+       0
+      ]
+     ],
+     "triggereffect": [
+      [
+       "TriggerAnnounceCardInPlay",
+       0
+      ],
+      [
+       "TriggerGainVictoryPoints",
+       1
+      ]
+     ]
+    },
+    {
+     "conditions": [
+      [
+       "AtEndOfTurn",
+       0
+      ]
+     ],
+     "triggereffect": [
+      [
+       "TriggerRemoveThisCardFromPlay",
+       1
+      ]
+     ]
+    }
+   ]
+  },
+  "event_text": "USSR receives 1 VP for each US coup attempt made for the remainder of the current turn.",
+  "may_be_held": true,
+  "name": "Yuri and Samantha",
+  "number": 109,
+  "ops": 2,
+  "optional": true,
+  "pending_defcon": null,
+  "remove_on_event": true,
+  "resolve_headline_first": false,
+  "scoring_region": null,
+  "side": "USSR",
+  "source": "base",
+  "stage": "Late War",
+  "type": "Event"
+ }
+}

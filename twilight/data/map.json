@@ -1,0 +1,1490 @@
+{
+ "Afghanistan": {
+  "adjacent": [
+   "USSR",
+   "Iran",
+   "Pakistan"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 34,
+  "name": "Afghanistan",
+  "region": "Asia",
+  "regions": [
+   "Asia"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Algeria": {
+  "adjacent": [
+   "Morocco",
+   "Saharan States",
+   "Tunisia",
+   "France"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 49,
+  "name": "Algeria",
+  "region": "Africa",
+  "regions": [
+   "Africa"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Angola": {
+  "adjacent": [
+   "Zaire",
+   "Botswana",
+   "South Africa"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 58,
+  "name": "Angola",
+  "region": "Africa",
+  "regions": [
+   "Africa"
+  ],
+  "stability": 1,
+  "superpower": false
+ },
+ "Argentina": {
+  "adjacent": [
+   "Chile",
+   "Uruguay",
+   "Paraguay"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 81,
+  "name": "Argentina",
+  "region": "South America",
+  "regions": [
+   "South America"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Australia": {
+  "adjacent": [
+   "Malaysia"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 42,
+  "name": "Australia",
+  "region": "Asia",
+  "regions": [
+   "Asia"
+  ],
+  "stability": 4,
+  "superpower": false
+ },
+ "Austria": {
+  "adjacent": [
+   "West Germany",
+   "East Germany",
+   "Hungary",
+   "Italy"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 14,
+  "name": "Austria",
+  "region": "Europe",
+  "regions": [
+   "Western Europe",
+   "Eastern Europe",
+   "Europe"
+  ],
+  "stability": 4,
+  "superpower": false
+ },
+ "Benelux": {
+  "adjacent": [
+   "UK",
+   "West Germany"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 9,
+  "name": "Benelux",
+  "region": "Western Europe",
+  "regions": [
+   "Western Europe",
+   "Europe"
+  ],
+  "stability": 3,
+  "superpower": false
+ },
+ "Bolivia": {
+  "adjacent": [
+   "Peru",
+   "Paraguay"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 84,
+  "name": "Bolivia",
+  "region": "South America",
+  "regions": [
+   "South America"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Botswana": {
+  "adjacent": [
+   "Angola",
+   "South Africa",
+   "Zimbabwe"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 60,
+  "name": "Botswana",
+  "region": "Africa",
+  "regions": [
+   "Africa"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Brazil": {
+  "adjacent": [
+   "Uruguay",
+   "Venezuela"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 85,
+  "name": "Brazil",
+  "region": "South America",
+  "regions": [
+   "South America"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Bulgaria": {
+  "adjacent": [
+   "Greece",
+   "Turkey"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 22,
+  "name": "Bulgaria",
+  "region": "Eastern Europe",
+  "regions": [
+   "Eastern Europe",
+   "Europe"
+  ],
+  "stability": 3,
+  "superpower": false
+ },
+ "Burma": {
+  "adjacent": [
+   "India",
+   "Laos/Cambodia"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 37,
+  "name": "Burma",
+  "region": "Southeast Asia",
+  "regions": [
+   "Southeast Asia",
+   "Asia"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Cameroon": {
+  "adjacent": [
+   "Nigeria",
+   "Zaire"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 56,
+  "name": "Cameroon",
+  "region": "Africa",
+  "regions": [
+   "Africa"
+  ],
+  "stability": 1,
+  "superpower": false
+ },
+ "Canada": {
+  "adjacent": [
+   "USA",
+   "UK"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 3,
+  "name": "Canada",
+  "region": "Western Europe",
+  "regions": [
+   "Western Europe",
+   "Europe"
+  ],
+  "stability": 4,
+  "superpower": false
+ },
+ "Chile": {
+  "adjacent": [
+   "Peru",
+   "Argentina"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 80,
+  "name": "Chile",
+  "region": "South America",
+  "regions": [
+   "South America"
+  ],
+  "stability": 3,
+  "superpower": false
+ },
+ "Chinese Civil War": {
+  "adjacent": [
+   "USSR"
+  ],
+  "battleground": false,
+  "chinese_civil_war": true,
+  "index": 87,
+  "name": "Chinese Civil War",
+  "region": "Asia",
+  "regions": [
+   "Asia"
+  ],
+  "stability": 3,
+  "superpower": false
+ },
+ "Colombia": {
+  "adjacent": [
+   "Panama",
+   "Ecuador",
+   "Venezuela"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 77,
+  "name": "Colombia",
+  "region": "South America",
+  "regions": [
+   "South America"
+  ],
+  "stability": 1,
+  "superpower": false
+ },
+ "Costa Rica": {
+  "adjacent": [
+   "Honduras",
+   "Nicaragua",
+   "Panama"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 71,
+  "name": "Costa Rica",
+  "region": "Central America",
+  "regions": [
+   "Central America"
+  ],
+  "stability": 3,
+  "superpower": false
+ },
+ "Cuba": {
+  "adjacent": [
+   "Nicaragua",
+   "Haiti",
+   "USA"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 74,
+  "name": "Cuba",
+  "region": "Central America",
+  "regions": [
+   "Central America"
+  ],
+  "stability": 3,
+  "superpower": false
+ },
+ "Czechoslovakia": {
+  "adjacent": [
+   "East Germany",
+   "Poland",
+   "Hungary"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 18,
+  "name": "Czechoslovakia",
+  "region": "Eastern Europe",
+  "regions": [
+   "Eastern Europe",
+   "Europe"
+  ],
+  "stability": 3,
+  "superpower": false
+ },
+ "Denmark": {
+  "adjacent": [
+   "Sweden",
+   "West Germany"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 8,
+  "name": "Denmark",
+  "region": "Western Europe",
+  "regions": [
+   "Western Europe",
+   "Europe"
+  ],
+  "stability": 3,
+  "superpower": false
+ },
+ "Dominican Republic": {
+  "adjacent": [
+   "Haiti"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 76,
+  "name": "Dominican Republic",
+  "region": "Central America",
+  "regions": [
+   "Central America"
+  ],
+  "stability": 1,
+  "superpower": false
+ },
+ "East Germany": {
+  "adjacent": [
+   "West Germany",
+   "Austria",
+   "Czechoslovakia",
+   "Poland"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 16,
+  "name": "East Germany",
+  "region": "Eastern Europe",
+  "regions": [
+   "Eastern Europe",
+   "Europe"
+  ],
+  "stability": 3,
+  "superpower": false
+ },
+ "Ecuador": {
+  "adjacent": [
+   "Colombia",
+   "Peru"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 78,
+  "name": "Ecuador",
+  "region": "South America",
+  "regions": [
+   "South America"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Egypt": {
+  "adjacent": [
+   "Libya",
+   "Israel",
+   "Sudan"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 25,
+  "name": "Egypt",
+  "region": "Middle East",
+  "regions": [
+   "Middle East"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "El Salvador": {
+  "adjacent": [
+   "Guatemala",
+   "Honduras"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 69,
+  "name": "El Salvador",
+  "region": "Central America",
+  "regions": [
+   "Central America"
+  ],
+  "stability": 1,
+  "superpower": false
+ },
+ "Ethiopia": {
+  "adjacent": [
+   "Somalia",
+   "Sudan"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 65,
+  "name": "Ethiopia",
+  "region": "Africa",
+  "regions": [
+   "Africa"
+  ],
+  "stability": 1,
+  "superpower": false
+ },
+ "Finland": {
+  "adjacent": [
+   "Sweden",
+   "USSR"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 7,
+  "name": "Finland",
+  "region": "Europe",
+  "regions": [
+   "Western Europe",
+   "Eastern Europe",
+   "Europe"
+  ],
+  "stability": 4,
+  "superpower": false
+ },
+ "France": {
+  "adjacent": [
+   "UK",
+   "West Germany",
+   "Spain/Portugal",
+   "Italy",
+   "Algeria"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 10,
+  "name": "France",
+  "region": "Western Europe",
+  "regions": [
+   "Western Europe",
+   "Europe"
+  ],
+  "stability": 3,
+  "superpower": false
+ },
+ "Greece": {
+  "adjacent": [
+   "Italy",
+   "Yugoslavia",
+   "Bulgaria",
+   "Turkey"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 13,
+  "name": "Greece",
+  "region": "Western Europe",
+  "regions": [
+   "Western Europe",
+   "Europe"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Guatemala": {
+  "adjacent": [
+   "Mexico",
+   "El Salvador",
+   "Honduras"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 68,
+  "name": "Guatemala",
+  "region": "Central America",
+  "regions": [
+   "Central America"
+  ],
+  "stability": 1,
+  "superpower": false
+ },
+ "Gulf States": {
+  "adjacent": [
+   "Iraq",
+   "Saudi Arabia"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 32,
+  "name": "Gulf States",
+  "region": "Middle East",
+  "regions": [
+   "Middle East"
+  ],
+  "stability": 3,
+  "superpower": false
+ },
+ "Haiti": {
+  "adjacent": [
+   "Cuba",
+   "Dominican Republic"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 75,
+  "name": "Haiti",
+  "region": "Central America",
+  "regions": [
+   "Central America"
+  ],
+  "stability": 1,
+  "superpower": false
+ },
+ "Honduras": {
+  "adjacent": [
+   "Guatemala",
+   "El Salvador",
+   "Costa Rica",
+   "Nicaragua"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 70,
+  "name": "Honduras",
+  "region": "Central America",
+  "regions": [
+   "Central America"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Hungary": {
+  "adjacent": [
+   "Austria",
+   "Czechoslovakia",
+   "Romania",
+   "Yugoslavia"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 19,
+  "name": "Hungary",
+  "region": "Eastern Europe",
+  "regions": [
+   "Eastern Europe",
+   "Europe"
+  ],
+  "stability": 3,
+  "superpower": false
+ },
+ "India": {
+  "adjacent": [
+   "Pakistan",
+   "Burma"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 36,
+  "name": "India",
+  "region": "Asia",
+  "regions": [
+   "Asia"
+  ],
+  "stability": 3,
+  "superpower": false
+ },
+ "Indonesia": {
+  "adjacent": [
+   "Malaysia",
+   "Philippines"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 43,
+  "name": "Indonesia",
+  "region": "Southeast Asia",
+  "regions": [
+   "Southeast Asia",
+   "Asia"
+  ],
+  "stability": 1,
+  "superpower": false
+ },
+ "Iran": {
+  "adjacent": [
+   "Iraq",
+   "Afghanistan",
+   "Pakistan"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 30,
+  "name": "Iran",
+  "region": "Middle East",
+  "regions": [
+   "Middle East"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Iraq": {
+  "adjacent": [
+   "Jordan",
+   "Saudi Arabia",
+   "Gulf States",
+   "Iran"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 29,
+  "name": "Iraq",
+  "region": "Middle East",
+  "regions": [
+   "Middle East"
+  ],
+  "stability": 3,
+  "superpower": false
+ },
+ "Israel": {
+  "adjacent": [
+   "Lebanon",
+   "Syria",
+   "Jordan",
+   "Egypt"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 26,
+  "name": "Israel",
+  "region": "Middle East",
+  "regions": [
+   "Middle East"
+  ],
+  "stability": 4,
+  "superpower": false
+ },
+ "Italy": {
+  "adjacent": [
+   "France",
+   "Spain/Portugal",
+   "Austria",
+   "Yugoslavia",
+   "Greece"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 12,
+  "name": "Italy",
+  "region": "Western Europe",
+  "regions": [
+   "Western Europe",
+   "Europe"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Ivory Coast": {
+  "adjacent": [
+   "West African States",
+   "Nigeria"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 53,
+  "name": "Ivory Coast",
+  "region": "Africa",
+  "regions": [
+   "Africa"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Japan": {
+  "adjacent": [
+   "Philippines",
+   "Taiwan",
+   "South Korea",
+   "USA"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 45,
+  "name": "Japan",
+  "region": "Asia",
+  "regions": [
+   "Asia"
+  ],
+  "stability": 4,
+  "superpower": false
+ },
+ "Jordan": {
+  "adjacent": [
+   "Iraq",
+   "Israel",
+   "Lebanon",
+   "Saudi Arabia"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 31,
+  "name": "Jordan",
+  "region": "Middle East",
+  "regions": [
+   "Middle East"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Kenya": {
+  "adjacent": [
+   "SE African States",
+   "Somalia"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 63,
+  "name": "Kenya",
+  "region": "Africa",
+  "regions": [
+   "Africa"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Laos/Cambodia": {
+  "adjacent": [
+   "Burma",
+   "Thailand",
+   "Vietnam"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 38,
+  "name": "Laos/Cambodia",
+  "region": "Southeast Asia",
+  "regions": [
+   "Southeast Asia",
+   "Asia"
+  ],
+  "stability": 1,
+  "superpower": false
+ },
+ "Lebanon": {
+  "adjacent": [
+   "Israel",
+   "Syria",
+   "Jordan"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 27,
+  "name": "Lebanon",
+  "region": "Middle East",
+  "regions": [
+   "Middle East"
+  ],
+  "stability": 1,
+  "superpower": false
+ },
+ "Libya": {
+  "adjacent": [
+   "Tunisia",
+   "Egypt"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 24,
+  "name": "Libya",
+  "region": "Middle East",
+  "regions": [
+   "Middle East"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Malaysia": {
+  "adjacent": [
+   "Thailand",
+   "Indonesia",
+   "Australia"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 41,
+  "name": "Malaysia",
+  "region": "Southeast Asia",
+  "regions": [
+   "Southeast Asia",
+   "Asia"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Mexico": {
+  "adjacent": [
+   "Guatemala",
+   "USA"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 67,
+  "name": "Mexico",
+  "region": "Central America",
+  "regions": [
+   "Central America"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Morocco": {
+  "adjacent": [
+   "Algeria",
+   "West African States",
+   "Spain/Portugal"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 50,
+  "name": "Morocco",
+  "region": "Africa",
+  "regions": [
+   "Africa"
+  ],
+  "stability": 3,
+  "superpower": false
+ },
+ "Nicaragua": {
+  "adjacent": [
+   "Costa Rica",
+   "Honduras",
+   "Cuba"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 73,
+  "name": "Nicaragua",
+  "region": "Central America",
+  "regions": [
+   "Central America"
+  ],
+  "stability": 1,
+  "superpower": false
+ },
+ "Nigeria": {
+  "adjacent": [
+   "Ivory Coast",
+   "Saharan States",
+   "Cameroon"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 55,
+  "name": "Nigeria",
+  "region": "Africa",
+  "regions": [
+   "Africa"
+  ],
+  "stability": 1,
+  "superpower": false
+ },
+ "North Korea": {
+  "adjacent": [
+   "South Korea",
+   "USSR"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 48,
+  "name": "North Korea",
+  "region": "Asia",
+  "regions": [
+   "Asia"
+  ],
+  "stability": 3,
+  "superpower": false
+ },
+ "Norway": {
+  "adjacent": [
+   "UK",
+   "Sweden"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 5,
+  "name": "Norway",
+  "region": "Western Europe",
+  "regions": [
+   "Western Europe",
+   "Europe"
+  ],
+  "stability": 4,
+  "superpower": false
+ },
+ "Pakistan": {
+  "adjacent": [
+   "Afghanistan",
+   "Iran",
+   "India"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 35,
+  "name": "Pakistan",
+  "region": "Asia",
+  "regions": [
+   "Asia"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Panama": {
+  "adjacent": [
+   "Costa Rica",
+   "Colombia"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 72,
+  "name": "Panama",
+  "region": "Central America",
+  "regions": [
+   "Central America"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Paraguay": {
+  "adjacent": [
+   "Argentina",
+   "Uruguay",
+   "Bolivia"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 83,
+  "name": "Paraguay",
+  "region": "South America",
+  "regions": [
+   "South America"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Peru": {
+  "adjacent": [
+   "Ecuador",
+   "Bolivia",
+   "Chile"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 79,
+  "name": "Peru",
+  "region": "South America",
+  "regions": [
+   "South America"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Philippines": {
+  "adjacent": [
+   "Indonesia",
+   "Japan"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 44,
+  "name": "Philippines",
+  "region": "Southeast Asia",
+  "regions": [
+   "Southeast Asia",
+   "Asia"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Poland": {
+  "adjacent": [
+   "East Germany",
+   "Czechoslovakia",
+   "USSR"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 17,
+  "name": "Poland",
+  "region": "Eastern Europe",
+  "regions": [
+   "Eastern Europe",
+   "Europe"
+  ],
+  "stability": 3,
+  "superpower": false
+ },
+ "Romania": {
+  "adjacent": [
+   "Hungary",
+   "Yugoslavia",
+   "Turkey",
+   "USSR"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 21,
+  "name": "Romania",
+  "region": "Eastern Europe",
+  "regions": [
+   "Eastern Europe",
+   "Europe"
+  ],
+  "stability": 3,
+  "superpower": false
+ },
+ "SE African States": {
+  "adjacent": [
+   "Zimbabwe",
+   "Kenya"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 62,
+  "name": "SE African States",
+  "region": "Africa",
+  "regions": [
+   "Africa"
+  ],
+  "stability": 1,
+  "superpower": false
+ },
+ "Saharan States": {
+  "adjacent": [
+   "Algeria",
+   "Nigeria"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 54,
+  "name": "Saharan States",
+  "region": "Africa",
+  "regions": [
+   "Africa"
+  ],
+  "stability": 1,
+  "superpower": false
+ },
+ "Saudi Arabia": {
+  "adjacent": [
+   "Iraq",
+   "Jordan",
+   "Gulf States"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 33,
+  "name": "Saudi Arabia",
+  "region": "Middle East",
+  "regions": [
+   "Middle East"
+  ],
+  "stability": 3,
+  "superpower": false
+ },
+ "Somalia": {
+  "adjacent": [
+   "Kenya",
+   "Ethiopia"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 64,
+  "name": "Somalia",
+  "region": "Africa",
+  "regions": [
+   "Africa"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "South Africa": {
+  "adjacent": [
+   "Angola",
+   "Botswana"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 59,
+  "name": "South Africa",
+  "region": "Africa",
+  "regions": [
+   "Africa"
+  ],
+  "stability": 3,
+  "superpower": false
+ },
+ "South Korea": {
+  "adjacent": [
+   "Japan",
+   "Taiwan",
+   "North Korea"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 47,
+  "name": "South Korea",
+  "region": "Asia",
+  "regions": [
+   "Asia"
+  ],
+  "stability": 3,
+  "superpower": false
+ },
+ "Spain/Portugal": {
+  "adjacent": [
+   "France",
+   "Italy",
+   "Morocco"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 11,
+  "name": "Spain/Portugal",
+  "region": "Western Europe",
+  "regions": [
+   "Western Europe",
+   "Europe"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Sudan": {
+  "adjacent": [
+   "Ethiopia",
+   "Egypt"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 66,
+  "name": "Sudan",
+  "region": "Africa",
+  "regions": [
+   "Africa"
+  ],
+  "stability": 1,
+  "superpower": false
+ },
+ "Sweden": {
+  "adjacent": [
+   "Norway",
+   "Finland",
+   "Denmark"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 6,
+  "name": "Sweden",
+  "region": "Western Europe",
+  "regions": [
+   "Western Europe",
+   "Europe"
+  ],
+  "stability": 4,
+  "superpower": false
+ },
+ "Syria": {
+  "adjacent": [
+   "Israel",
+   "Lebanon",
+   "Turkey"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 28,
+  "name": "Syria",
+  "region": "Middle East",
+  "regions": [
+   "Middle East"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Taiwan": {
+  "adjacent": [
+   "Japan",
+   "South Korea"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 46,
+  "name": "Taiwan",
+  "region": "Asia",
+  "regions": [
+   "Asia"
+  ],
+  "stability": 3,
+  "superpower": false
+ },
+ "Thailand": {
+  "adjacent": [
+   "Laos/Cambodia",
+   "Vietnam",
+   "Malaysia"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 39,
+  "name": "Thailand",
+  "region": "Southeast Asia",
+  "regions": [
+   "Southeast Asia",
+   "Asia"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Tunisia": {
+  "adjacent": [
+   "Algeria",
+   "Libya"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 51,
+  "name": "Tunisia",
+  "region": "Africa",
+  "regions": [
+   "Africa"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Turkey": {
+  "adjacent": [
+   "Greece",
+   "Bulgaria",
+   "Romania",
+   "Syria"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 23,
+  "name": "Turkey",
+  "region": "Western Europe",
+  "regions": [
+   "Western Europe",
+   "Europe"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "UK": {
+  "adjacent": [
+   "Canada",
+   "Norway",
+   "Benelux",
+   "France"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 4,
+  "name": "UK",
+  "region": "Western Europe",
+  "regions": [
+   "Western Europe",
+   "Europe"
+  ],
+  "stability": 5,
+  "superpower": false
+ },
+ "USA": {
+  "adjacent": [
+   "Japan",
+   "Mexico",
+   "Cuba",
+   "Canada"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 2,
+  "name": "USA",
+  "region": null,
+  "regions": [],
+  "stability": null,
+  "superpower": true
+ },
+ "USSR": {
+  "adjacent": [
+   "Finland",
+   "Poland",
+   "Romania",
+   "Afghanistan",
+   "North Korea",
+   "Chinese Civil War"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 1,
+  "name": "USSR",
+  "region": null,
+  "regions": [],
+  "stability": null,
+  "superpower": true
+ },
+ "Uruguay": {
+  "adjacent": [
+   "Argentina",
+   "Paraguay",
+   "Brazil"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 82,
+  "name": "Uruguay",
+  "region": "South America",
+  "regions": [
+   "South America"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Venezuela": {
+  "adjacent": [
+   "Colombia",
+   "Brazil"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 86,
+  "name": "Venezuela",
+  "region": "South America",
+  "regions": [
+   "South America"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "Vietnam": {
+  "adjacent": [
+   "Laos/Cambodia",
+   "Thailand"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 40,
+  "name": "Vietnam",
+  "region": "Southeast Asia",
+  "regions": [
+   "Southeast Asia",
+   "Asia"
+  ],
+  "stability": 1,
+  "superpower": false
+ },
+ "West African States": {
+  "adjacent": [
+   "Morocco",
+   "Ivory Coast"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 52,
+  "name": "West African States",
+  "region": "Africa",
+  "regions": [
+   "Africa"
+  ],
+  "stability": 2,
+  "superpower": false
+ },
+ "West Germany": {
+  "adjacent": [
+   "France",
+   "Benelux",
+   "Denmark",
+   "East Germany",
+   "Austria"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 15,
+  "name": "West Germany",
+  "region": "Western Europe",
+  "regions": [
+   "Western Europe",
+   "Europe"
+  ],
+  "stability": 4,
+  "superpower": false
+ },
+ "Yugoslavia": {
+  "adjacent": [
+   "Italy",
+   "Hungary",
+   "Greece",
+   "Romania"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 20,
+  "name": "Yugoslavia",
+  "region": "Eastern Europe",
+  "regions": [
+   "Eastern Europe",
+   "Europe"
+  ],
+  "stability": 3,
+  "superpower": false
+ },
+ "Zaire": {
+  "adjacent": [
+   "Cameroon",
+   "Angola",
+   "Zimbabwe"
+  ],
+  "battleground": true,
+  "chinese_civil_war": false,
+  "index": 57,
+  "name": "Zaire",
+  "region": "Africa",
+  "regions": [
+   "Africa"
+  ],
+  "stability": 1,
+  "superpower": false
+ },
+ "Zimbabwe": {
+  "adjacent": [
+   "Zaire",
+   "Botswana",
+   "SE African States"
+  ],
+  "battleground": false,
+  "chinese_civil_war": false,
+  "index": 61,
+  "name": "Zimbabwe",
+  "region": "Africa",
+  "regions": [
+   "Africa"
+  ],
+  "stability": 1,
+  "superpower": false
+ }
+}
