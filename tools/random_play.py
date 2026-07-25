@@ -72,7 +72,7 @@ def check_invariants(game: Game) -> list[str]:
         name
         for name, c in CARDS.items()
         if name != CHINA_CARD
-        and not c.optional
+        and (game.optional_cards or not c.optional)
         and c.stage in game._stages_added
     }
     missing = expected - located
@@ -82,8 +82,14 @@ def check_invariants(game: Game) -> list[str]:
     return problems
 
 
-def play_one(seed: int, *, verbose: bool = False, check: bool = True) -> dict:
-    game = Game(seed=seed)
+def play_one(
+    seed: int,
+    *,
+    verbose: bool = False,
+    check: bool = True,
+    optional_cards: bool = False,
+) -> dict:
+    game = Game(seed=seed, optional_cards=optional_cards)
     rng = random.Random(seed ^ 0x5EED)
     steps = 0
     decision_types: Counter[str] = Counter()
@@ -125,6 +131,11 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--log", action="store_true", help="print the log of game 1")
     parser.add_argument("--no-check", action="store_true", help="skip invariant checks")
+    parser.add_argument(
+        "--optional-cards",
+        action="store_true",
+        help="include the seven optional cards (104-110)",
+    )
     args = parser.parse_args()
 
     done, total = events.coverage()
@@ -138,7 +149,12 @@ def main() -> int:
     for i in range(args.games):
         seed = args.seed + i
         try:
-            r = play_one(seed, verbose=args.log and i == 0, check=not args.no_check)
+            r = play_one(
+                seed,
+                verbose=args.log and i == 0,
+                check=not args.no_check,
+                optional_cards=args.optional_cards,
+            )
         except Exception as exc:  # noqa: BLE001 - we want the whole picture
             failures += 1
             print(f"seed {seed}: FAILED {type(exc).__name__}: {exc}")

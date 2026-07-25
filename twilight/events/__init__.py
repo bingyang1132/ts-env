@@ -29,17 +29,25 @@ if TYPE_CHECKING:  # pragma: no cover
     from ..decisions import Decision
     from ..engine import EventContext, Game
 
+    from ..state import DeferredTrigger
+
     EventHandler = Callable[[Game, EventContext], Iterator[Decision]]
     Playability = Callable[[Game, Side], bool]
+    DeferredHandler = Callable[[Game, DeferredTrigger], Iterator[Decision]]
 else:  # pragma: no cover
     EventHandler = Callable
     Playability = Callable
+    DeferredHandler = Callable
 
 
 #: card name -> handler
 EVENTS: dict[str, "EventHandler"] = {}
 #: card name -> predicate deciding whether the event may currently fire
 PLAYABILITY: dict[str, "Playability"] = {}
+#: kind -> handler, for effects a card scheduled for a later action round. Registered
+#: separately from EVENTS because these fire between action rounds rather than when a
+#: card is played. See :meth:`twilight.state.GameState.defer`.
+DEFERRED: dict[str, "DeferredHandler"] = {}
 
 
 def register(
@@ -63,6 +71,25 @@ def register(
         return fn
 
     return decorate
+
+
+def register_deferred(kind: str) -> Callable[["DeferredHandler"], "DeferredHandler"]:
+    """Register the handler for a deferred trigger *kind*."""
+
+    def decorate(fn: "DeferredHandler") -> "DeferredHandler":
+        if kind in DEFERRED:
+            raise ValueError(f"deferred kind {kind!r} already has a handler")
+        DEFERRED[kind] = fn
+        return fn
+
+    return decorate
+
+
+def deferred_handler_for(kind: str) -> "DeferredHandler":
+    try:
+        return DEFERRED[kind]
+    except KeyError:
+        raise KeyError(f"no deferred handler registered for {kind!r}") from None
 
 
 def handler_for(name: str) -> "EventHandler | None":
@@ -104,11 +131,14 @@ from . import late_war  # noqa: E402,F401
 from . import special  # noqa: E402,F401
 
 __all__ = [
+    "DEFERRED",
     "EVENTS",
     "PLAYABILITY",
     "coverage",
+    "deferred_handler_for",
     "handler_for",
     "is_playable",
     "missing_handlers",
     "register",
+    "register_deferred",
 ]

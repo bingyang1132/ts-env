@@ -10,7 +10,7 @@
 
 ```
 python tools/extract_lua.py     # 从游戏安装目录重新生成 twilight/data/*.json
-python -m pytest tests -q       # 172 个测试
+python -m pytest tests -q       # 197 个测试
 python tools/random_play.py --games 200
 python tools/demo_views.py      # 查看同一局面下两种智能体视图
 ```
@@ -207,7 +207,7 @@ tools/
 examples/
   baselines.py    random / safe_random / greedy 智能体与对局运行器
   llm_agent.py    提示词循环、非法输出重试、key 提取
-tests/            172 个测试
+tests/            197 个测试
 docs/
   card_spec.md    自动生成：每张卡的规则文本与内部效果函数名
   known_gaps.md   哪些地方**没有**忠实实现，以及原因
@@ -235,10 +235,13 @@ docs/
 
 ### 已知缺口
 
-有少数卡牌正确地把效果放上了桌面，但引用该效果的那部分逻辑还没接进引擎。这些都记录在
-`docs/known_gaps.md`，并在源码中用 `HOOK NEEDED` / `ENGINE HOOK` 注释标出具体的调用点。
-**没有任何东西是被静默近似掉的**——`Game(strict_events=True)` 会对任何没有处理函数的卡直接
-抛异常，测试套件也断言了完整覆盖。
+还有 3 条条款没有做到完全忠实，都列在 `docs/known_gaps.md` 里，同时记录了在资料互相矛盾时
+我做出的裁定。**没有任何东西是被静默近似掉的**——`Game(strict_events=True)` 会对任何没有
+处理函数的卡直接抛异常，测试套件也断言了完整覆盖。
+
+卡面写着"在对手的下一个行动轮……"的条款走的是通用**延迟触发**机制
+（`GameState.defer` / `Game._fire_deferred`），而不是逐卡打补丁；We Will Bury You 可被取消的
+胜利点数、以及 Missile Envy 的强制出牌都用的这套机制。
 
 ## 数据来源与授权
 

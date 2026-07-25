@@ -622,6 +622,11 @@ class Game:
         state = self.state
         state.player = side
         state.phasing_player = side
+        state.ar_sequence += 1
+
+        yield from self._fire_deferred(side, "start")
+        if state.is_over:
+            return
 
         yield from self._offer_cuban_missile_crisis_cancel(side)
         if state.is_over:
@@ -629,15 +634,36 @@ class Game:
 
         if not state.playable_hand(side):
             state.note("no cards to play; action round skipped", side)
-            return
+        elif state.in_play("Quagmire" if side is Side.USA else "Bear Trap", owner=side):
+            # Quagmire and Bear Trap force discards instead of a normal action round.
+            yield from self._resolve_trap(
+                side, "Quagmire" if side is Side.USA else "Bear Trap"
+            )
+        else:
+            yield from self._take_action_round(side)
 
-        # Quagmire and Bear Trap force discards instead of a normal action round.
-        trap = "Quagmire" if side is Side.USA else "Bear Trap"
-        if state.in_play(trap, owner=side):
-            yield from self._resolve_trap(side, trap)
-            return
+        # A compulsion only lasts for the one action round it was aimed at.
+        state.must_play[int(side)] = None
 
-        yield from self._take_action_round(side)
+        if not state.is_over:
+            yield from self._fire_deferred(side, "end")
+
+    def _fire_deferred(self, side: Side, when: str) -> Iterator[Decision]:
+        """Resolve triggers a card scheduled for this point in *side*'s action round."""
+        from .events import deferred_handler_for
+
+        state = self.state
+        ready = [
+            t
+            for t in state.deferred
+            if t.player is side and t.when == when and state.ar_sequence > t.not_before
+        ]
+        for trigger in ready:
+            if state.is_over:
+                return
+            state.deferred.remove(trigger)
+            state.note(f"{trigger.card}: deferred effect resolves ({trigger.kind})", side)
+            yield from deferred_handler_for(trigger.kind)(self, trigger)
 
     def _offer_cuban_missile_crisis_cancel(self, side: Side) -> Iterator[Decision]:
         """Let the threatened player buy the crisis off before acting.
@@ -678,6 +704,14 @@ class Game:
     def _take_action_round(self, side: Side) -> Iterator[Decision]:
         state = self.state
         hand = state.playable_hand(side)
+
+        # Missile Envy compels its recipient to spend the card it handed over.
+        forced = state.must_play[int(side)]
+        if forced is not None and forced in hand:
+            state.note(f"compelled to play {forced} for operations", side)
+            yield from self.play_card(forced, side, forced_use=True)
+            return
+
         chosen = yield from self.choose_card(
             side,
             hand,
@@ -701,12 +735,17 @@ class Game:
             bits.append("removed if evented")
         return ", ".join(bits)
 
-    def play_card(self, name: str, side: Side) -> Iterator[Decision]:
+    def play_card(
+        self, name: str, side: Side, *, forced_use: bool = False
+    ) -> Iterator[Decision]:
         """Play *name* from *side*'s hand, resolving the chosen use.
 
         ``state.playing_card`` is saved and restored around the whole play, so that a
         card which causes another to be played -- Grain Sales to Soviets, Missile Envy,
         Star Wars -- reports the inner card while it resolves and the outer one after.
+
+        *forced_use* restricts the play to operations, for a card the player is
+        compelled to spend rather than free to use as they like.
         """
         state = self.state
         c = CARDS[name]
@@ -724,19 +763,25 @@ class Game:
                 state.resolve_card(name, as_event=True)
                 return
 
-            uses = yield from self._choose_use(name, side)
+            uses = yield from self._choose_use(name, side, operations_only=forced_use)
             yield from self._perform_use(name, side, uses)
         finally:
             state.playing_card = previous
 
-    def _choose_use(self, name: str, side: Side) -> Iterator[Decision]:
-        """Ask how the card is being used, returning an :class:`OpsUse`."""
+    def _choose_use(
+        self, name: str, side: Side, *, operations_only: bool = False
+    ) -> Iterator[Decision]:
+        """Ask how the card is being used, returning an :class:`OpsUse`.
+
+        *operations_only* drops the event and space race options, for a card the player
+        has been compelled to spend on operations.
+        """
         state = self.state
         c = CARDS[name]
         options: list[Action] = []
 
         own_event = c.event_belongs_to(side)
-        if own_event and self._event_is_playable(name, side):
+        if not operations_only and own_event and self._event_is_playable(name, side):
             options.append(use_action(OpsUse.EVENT, "resolve the event"))
 
         ops = self.effective_ops(name, side)
@@ -750,7 +795,7 @@ class Game:
                     use_action(OpsUse.REALIGN, f"{ops} realignment rolls{bonus}")
                 )
 
-        if self._can_space(name, side):
+        if not operations_only and self._can_space(name, side):
             box = spacerace.next_box(state.space_race[side])
             assert box is not None
             options.append(use_action(OpsUse.SPACE, f"space race: {box.name}"))

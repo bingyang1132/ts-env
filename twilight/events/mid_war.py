@@ -6,7 +6,7 @@ from .. import rules
 from ..data import CARDS, COUNTRIES
 from ..decisions import DecisionType
 from ..enums import Region, Side
-from . import register
+from . import register, register_deferred
 from .helpers import adjacent_to, free_coup, in_region, nothing, war
 
 #: Regions a Summit roll counts: one bonus each for domination or control. The
@@ -396,6 +396,10 @@ def missile_envy(game, ctx):
     state.add_effect(ctx.card, owner=opponent, expires="end_of_turn", do_not_discard=True)
     state.note(f"Missile Envy: exchanged for {given}", ctx.player)
 
+    # The opponent is compelled to spend Missile Envy itself for operations on their
+    # next action round.
+    state.must_play[int(opponent)] = ctx.card
+
     card = CARDS[given]
     try:
         if card.event_belongs_to(ctx.player) and game._event_is_playable(given, ctx.player):
@@ -416,18 +420,41 @@ def missile_envy(game, ctx):
 # --------------------------------------------------------------------------- #
 
 
+#: Deferred-trigger kind for We Will Bury You's victory points.
+WE_WILL_BURY_YOU = "we_will_bury_you_vp"
+
+
 @register("We Will Bury You")
 def we_will_bury_you(game, ctx):
-    """Degrade DEFCON one level; the USSR scores 3 VP.
+    """Degrade DEFCON one level; the USSR scores 3 VP unless the US plays UN Intervention.
 
-    Printed rules let the US cancel the VP by playing UN Intervention as an event on
-    its next action round. There is no end-of-action-round hook, so the VP is awarded
-    at once.
+    The victory points are scheduled for the end of the US player's next action round
+    rather than awarded now, so that playing UN Intervention as an event in between
+    cancels them -- which is what the card says.
     """
     game.degrade_defcon(1, ctx.player)
-    if not game.state.is_over:
-        game.state.award_vp(Side.USSR, 3)
-        game.state.note("We Will Bury You: USSR +3 VP", ctx.player)
+    if game.state.is_over:
+        return (yield from nothing())
+
+    game.state.defer(
+        ctx.card, WE_WILL_BURY_YOU, player=Side.USA, when="end", vp=3
+    )
+    game.state.note(
+        "We Will Bury You: USSR scores 3 VP at the end of the next US action round "
+        "unless UN Intervention is played as an event first",
+        ctx.player,
+    )
+    return (yield from nothing())
+
+
+@register_deferred(WE_WILL_BURY_YOU)
+def _we_will_bury_you_vp(game, trigger):
+    """Award the victory points the US failed to head off."""
+    vp = trigger.data.get("vp", 3)
+    game.state.award_vp(Side.USSR, vp)
+    game.state.note(f"We Will Bury You resolves: USSR +{vp} VP")
+    game._check_victory_points()
+    return (yield from nothing())
     return (yield from nothing())
 
 

@@ -250,6 +250,12 @@ def un_intervention(game, ctx):
         state.note("U2 Incident: UN Intervention played as an event, USSR +1 VP", ctx.player)
         state.remove_effect("U2 Incident")
 
+    # The US playing this as an event heads off We Will Bury You's victory points.
+    if ctx.player is Side.USA and state.cancel_deferred(card="We Will Bury You"):
+        state.note(
+            "UN Intervention cancels the victory points from We Will Bury You", ctx.player
+        )
+
     yield from _conduct_operations(
         game, ctx.player, ops, prompt=f"UN Intervention: spend {chosen}'s {ops} ops"
     )

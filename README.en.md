@@ -12,8 +12,8 @@ adjacency and every card's statistics are authoritative.
 
 ```
 python tools/extract_lua.py     # regenerate twilight/data/*.json from the game install
-python -m pytest tests -q       # 150+ tests
-python tools/random_play.py --games 150
+python -m pytest tests -q       # 197 tests
+python tools/random_play.py --games 200
 python tools/demo_views.py      # see both agent views of one position
 ```
 
@@ -221,7 +221,7 @@ tools/
 examples/
   baselines.py    random / safe-random / greedy agents and a tournament runner
   llm_agent.py    prompt loop, retry-on-illegal-output, key extraction
-tests/            172 tests
+tests/            197 tests
 docs/
   card_spec.md    generated: every card's rules text and internal effect names
   known_gaps.md   what is NOT faithfully implemented, and why
@@ -254,11 +254,14 @@ handled correctly here:
 
 ### Known gaps
 
-A handful of cards place their effect correctly but the clause that consults it is not
-wired into the engine yet. These are tracked in `docs/known_gaps.md`; each is marked in
-the source with a `HOOK NEEDED` / `ENGINE HOOK` comment naming the call site. Nothing is
-silently approximated — `Game(strict_events=True)` raises on any card with no handler at
-all, and the test suite asserts full coverage.
+Three clauses are still not faithful, and they are listed in `docs/known_gaps.md` along
+with the rulings taken where sources disagree. Nothing is silently approximated —
+`Game(strict_events=True)` raises on any card with no handler, and the test suite asserts
+full coverage.
+
+Cards worded "on your opponent's next action round ..." go through a general deferred
+trigger mechanism (`GameState.defer` / `Game._fire_deferred`) rather than per-card hacks;
+We Will Bury You's cancellable victory points and Missile Envy's forced play both use it.
 
 ## Data provenance and licence
 

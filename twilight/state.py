@@ -46,6 +46,30 @@ class ActiveEffect:
 
 
 @dataclass(slots=True)
+class DeferredTrigger:
+    """Something a card scheduled to happen at a later action round.
+
+    Several cards say "on your opponent's next action round ...". Resolving them needs a
+    hook that fires between action rounds rather than inside an event, which is what
+    :meth:`twilight.engine.Game._fire_deferred` provides.
+
+    ``not_before`` is a value of :attr:`GameState.ar_sequence`, the monotonic count of
+    action rounds taken by either player. Comparing against it is what makes "next"
+    mean the next one rather than the one currently in progress.
+    """
+
+    card: str
+    #: Whose action round the trigger waits for.
+    player: Side
+    #: ``"start"`` or ``"end"`` of that action round.
+    when: str
+    #: Key into the deferred-handler registry in :mod:`twilight.events`.
+    kind: str
+    not_before: int
+    data: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(slots=True)
 class LogEntry:
     turn: int
     action_round: int
@@ -120,6 +144,14 @@ class GameState:
     #: taken by Missile Envy or Grain Sales, or the five Our Man In Tehran turns over.
     #: Tracked so no card is ever unaccounted for mid-decision.
     transit: set[str] = field(default_factory=set)
+    #: Monotonic count of action rounds taken, by either player. Deferred triggers
+    #: compare against it so "next action round" excludes the current one.
+    ar_sequence: int = 0
+    #: Effects waiting for a later action round.
+    deferred: list[DeferredTrigger] = field(default_factory=list)
+    #: A card a player is compelled to play for operations on their next action round,
+    #: per side. Set by Missile Envy.
+    must_play: dict[int, str | None] = field(default_factory=lambda: {0: None, 1: None})
 
     # -- outcome ----------------------------------------------------------- #
     winner: Side | None = None
@@ -243,6 +275,62 @@ class GameState:
     def has_resolved(self, card_name: str) -> bool:
         """Whether *card_name*'s event has ever fired this game."""
         return card_name in self.events_resolved
+
+    # ------------------------------------------------------------------ #
+    # Deferred triggers
+    # ------------------------------------------------------------------ #
+
+    def defer(
+        self,
+        card: str,
+        kind: str,
+        *,
+        player: Side,
+        when: str = "end",
+        **data: Any,
+    ) -> DeferredTrigger:
+        """Schedule *kind* for *player*'s next action round.
+
+        ``not_before`` is pinned to the current action round, so a trigger created
+        during a player's own action round waits for their *following* one.
+        """
+        if when not in ("start", "end"):
+            raise ValueError(f"deferred trigger must fire at 'start' or 'end', not {when!r}")
+        trigger = DeferredTrigger(
+            card=card,
+            player=player,
+            when=when,
+            kind=kind,
+            not_before=self.ar_sequence,
+            data=dict(data),
+        )
+        self.deferred.append(trigger)
+        return trigger
+
+    def cancel_deferred(self, *, card: str | None = None, kind: str | None = None) -> int:
+        """Drop pending triggers matching *card* and/or *kind*. Returns how many went.
+
+        At least one filter is required, so an accidental bare call cannot silently
+        wipe every pending trigger.
+        """
+        if card is None and kind is None:
+            raise ValueError("cancel_deferred needs a card or a kind to match on")
+        before = len(self.deferred)
+        self.deferred = [
+            t for t in self.deferred if not self._deferred_matches(t, card, kind)
+        ]
+        return before - len(self.deferred)
+
+    def has_deferred(self, *, card: str | None = None, kind: str | None = None) -> bool:
+        return any(self._deferred_matches(t, card, kind) for t in self.deferred)
+
+    @staticmethod
+    def _deferred_matches(
+        trigger: DeferredTrigger, card: str | None, kind: str | None
+    ) -> bool:
+        return (card is None or trigger.card == card) and (
+            kind is None or trigger.kind == kind
+        )
 
     # ------------------------------------------------------------------ #
     # Cards

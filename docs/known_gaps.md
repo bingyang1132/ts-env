@@ -10,11 +10,30 @@ Each item names the card, what is missing, and where the fix would go.
 
 | Card | Missing clause | Where a fix belongs |
 |---|---|---|
-| **#50 We Will Bury You** | The US can cancel the 3 VP by playing UN Intervention as an event on its next action round. The VP is awarded immediately instead. | Needs an "opponent's next action round" hook; the engine has no per-round deferred trigger. |
-| **#49 Missile Envy** | "The opponent must use the card he receives for Operations during his next action round." The exchange itself works; the compulsion does not. | Needs a forced-play constraint on the next `_take_action_round`. |
 | **#49 Missile Envy** | "Highest valued card" uses the **printed** operations value, not `effective_ops`, so Red Scare / Containment do not change which card is surrendered. | Arguably correct as-is; flagged because implementations differ. |
 | **#40 Cuban Missile Crisis** | The cancel-by-removing-influence option is offered once, at the start of the threatened player's action round. The physical card allows it at any point during the turn. | `Game._offer_cuban_missile_crisis_cancel`; would need a general "player may invoke an ability now" decision point. |
 | **#104 The Cambridge Five** | Playable as an event even when the US holds no scoring cards, in which case it reveals nothing. The card's own usage conditions only restrict the Late War, so this matches the data. | `_cambridge_five_playable`. |
+
+## Deferred triggers
+
+Cards worded "on your opponent's next action round ..." are handled by a general
+mechanism rather than per-card hacks. `GameState.defer(card, kind, player=, when=)`
+schedules a trigger; `Game._fire_deferred` resolves it at the start or end of that
+player's next action round. `GameState.ar_sequence` is a monotonic count of action
+rounds, and `not_before` is pinned to the current one, which is what makes "next" exclude
+the round in progress. Handlers register with `@register_deferred(kind)`.
+
+Two cards use it today:
+
+- **#50 We Will Bury You** schedules its 3 VP for the end of the US player's next action
+  round; UN Intervention played as an event in between calls
+  `state.cancel_deferred(card="We Will Bury You")` and heads them off.
+- **#49 Missile Envy** sets `state.must_play[side]`, which limits that player's next
+  action round to spending the received card on operations. The compulsion is cleared
+  after that one action round whether or not it could be satisfied, so a player who no
+  longer holds the card is not stuck.
+
+Anything else needing this shape should reuse it rather than adding another special case.
 
 ## Deliberate rulings
 
