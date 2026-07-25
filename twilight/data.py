@@ -37,6 +37,9 @@ class Country:
     adjacent: tuple[str, ...]
     #: True for the USA / USSR spaces themselves, which hold no influence.
     superpower: bool = False
+    #: Normalised ``(x1, y1, x2, y2)`` rectangle on the game's own board image, used by
+    #: the visualiser. ``None`` for the superpower spaces.
+    map_rect: tuple[float, float, float, float] | None = None
 
     @property
     def region(self) -> Region:
@@ -111,6 +114,7 @@ def _build_countries() -> tuple[dict[str, Country], tuple[str, ...]]:
                 a for a in entry["adjacent"] if not raw[a]["chinese_civil_war"]
             ),
             superpower=entry["superpower"],
+            map_rect=tuple(entry["map_rect"]) if entry.get("map_rect") else None,
         )
 
     # A stable, contiguous ordering for observation vectors: playable countries first

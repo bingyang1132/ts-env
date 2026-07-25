@@ -160,6 +160,38 @@ while True:
 对象或词表下标，非法时抛出 `IllegalAction` 并在消息里带上合法集合——可以直接当作环境反馈
 喂回给模型。
 
+## 交互与可视化
+
+**在终端里亲手玩**（也是最好用的调试工具）：
+
+```bash
+python tools/play.py                             # 你执苏联，greedy 执美国
+python tools/play.py --side both                 # 双人轮流（hotseat）
+python tools/play.py --side none --pause         # 观战两个智能体，逐步暂停
+python tools/play.py --record game.json          # 记录整局，供可视化使用
+```
+
+任何提示符下可输入菜单编号、动作 key，或：`b` 重印棋盘、`l` 查看完整日志、
+`c <卡名>` 查卡（支持部分匹配）、`u` 撤销、`?` 帮助、`q` 退出。撤销通过重放动作历史实现，
+结果精确，但代价与当前进度成正比。
+
+**图形化棋盘 + 全局回放**：
+
+```bash
+python tools/viz.py --open                       # 现场跑一局并在浏览器打开
+python tools/viz.py game.json                    # 回放 --record 的记录
+python tools/viz.py --seed 7 --agents greedy safe_random
+```
+
+输出单个自包含 HTML（无外部依赖）。棋盘布局直接用**游戏自带的 `map_rect` 坐标**，所以 84 个
+国家的位置和实体棋盘基本一致；国家按控制方着色、显示双方影响力、战场国带金色描边；右侧是
+VP / DEFCON / 回合 / 军事行动 / 太空竞赛等指示轨、各地区"此刻结算"预览、以及在场卡牌。底部
+滑块可以逐步拖过整局（支持左右方向键、播放/暂停）。
+
+每一帧都是重放动作历史得到的完整快照，与 `Game.clone()` 同一机制，因此精确。帧数据做了
+增量编码（1048 帧的对局从 1.8MB 降到约 500KB），`tests/test_tools.py` 有一个独立实现的
+解码器逐帧比对，防止增量编码悄悄画出一个从未存在过的棋盘。
+
 ## 基线
 
 ```bash
@@ -204,6 +236,8 @@ tools/
   dump_card_spec.py   生成 docs/card_spec.md：每张卡的文本 + 内部效果函数名
   random_play.py  带不变量检查的随机对局压力测试
   demo_views.py   并排展示两种视图
+  play.py         终端交互对局（人类 / 观战 / 记录）
+  viz.py          导出自包含 HTML 棋盘与整局回放
 examples/
   baselines.py    random / safe_random / greedy 智能体与对局运行器
   llm_agent.py    提示词循环、非法输出重试、key 提取

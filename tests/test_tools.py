@@ -1,0 +1,204 @@
+"""The interactive CLI and the HTML visualiser.
+
+The delta encoding is the part worth testing hard: if it drifts, the visualiser shows a
+board that never existed, and nothing else would notice.
+"""
+
+from __future__ import annotations
+
+import json
+import random
+import sys
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+sys.path.insert(0, str(ROOT / "examples"))
+
+from twilight import Game  # noqa: E402
+
+import play  # noqa: E402
+import viz  # noqa: E402
+
+
+def expand(frames: list[dict]) -> list[dict]:
+    """Reference implementation of what the page does on load.
+
+    Deliberately written independently of the encoder so the two have to agree.
+    """
+    out = [dict(frames[0])]
+    inf = list(frames[0]["inf"])
+    ctrl = list(frames[0]["ctrl"])
+    carried = {key: frames[0][key] for key in viz._CARRIED_FORWARD}
+
+    for frame in frames[1:]:
+        inf = list(inf)
+        ctrl = list(ctrl)
+        for index, ussr, usa in frame["dinf"]:
+            inf[index] = [ussr, usa]
+        for index, value in frame["dctrl"]:
+            ctrl[index] = value
+        restored = dict(frame)
+        restored.pop("dinf")
+        restored.pop("dctrl")
+        restored["inf"] = inf
+        restored["ctrl"] = ctrl
+        for key in viz._CARRIED_FORWARD:
+            if key in restored:
+                carried[key] = restored[key]
+            else:
+                restored[key] = carried[key]
+        out.append(restored)
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# Delta encoding
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.parametrize("seed", [0, 5, 11])
+def test_delta_encoding_round_trips_exactly(seed):
+    """Every frame the visualiser draws must match the state it was taken from."""
+    history = viz.play_game(seed, ("safe_random", "safe_random"), optional_cards=False)
+
+    # Capture the truth without any encoding.
+    truth = []
+    game = Game(seed)
+    truth.append(viz.snapshot(game))
+    for key in history:
+        if game.decision is None:
+            break
+        game.step(key)
+        truth.append(viz.snapshot(game))
+
+    encoded = viz.record_frames(seed, history, optional_cards=False)["frames"]
+    assert len(encoded) == len(truth)
+
+    for i, (got, want) in enumerate(zip(expand(encoded), truth, strict=True)):
+        assert got["inf"] == want["inf"], f"influence wrong at frame {i}"
+        assert got["ctrl"] == want["ctrl"], f"control wrong at frame {i}"
+        assert got["regions"] == want["regions"], f"regions wrong at frame {i}"
+        assert got["effects"] == want["effects"], f"effects wrong at frame {i}"
+        assert got["vp"] == want["vp"] and got["defcon"] == want["defcon"]
+
+
+def test_delta_encoding_actually_shrinks_the_payload():
+    history = viz.play_game(3, ("safe_random", "safe_random"), optional_cards=False)
+    encoded = viz.record_frames(3, history, optional_cards=False)["frames"]
+
+    # Only the first frame carries full arrays.
+    assert "inf" in encoded[0] and "ctrl" in encoded[0]
+    assert all("inf" not in f and "dinf" in f for f in encoded[1:])
+
+    # A single action rarely touches more than a couple of countries.
+    changes = [len(f["dinf"]) for f in encoded[1:]]
+    assert max(changes) <= 84
+    assert sum(changes) / len(changes) < 8, "deltas are not actually small"
+
+
+def test_every_playable_country_has_a_board_rectangle():
+    layout = viz.country_layout()
+    assert len(layout) == 84
+    for box in layout:
+        assert 0 <= box["x"] <= viz.BOARD_W
+        assert 0 <= box["y"] <= viz.BOARD_H
+        assert box["w"] > 0 and box["h"] > 0
+
+
+def test_board_boxes_do_not_all_collapse_to_one_spot():
+    """A coordinate mix-up would stack every country on top of each other."""
+    layout = viz.country_layout()
+    xs = {box["x"] for box in layout}
+    ys = {box["y"] for box in layout}
+    assert len(xs) > 40 and len(ys) > 25
+
+
+# --------------------------------------------------------------------------- #
+# HTML output
+# --------------------------------------------------------------------------- #
+
+
+def test_visualiser_writes_self_contained_html(tmp_path: Path):
+    history = viz.play_game(7, ("safe_random", "safe_random"), optional_cards=False)
+    data = viz.record_frames(7, history, optional_cards=False)
+    data["subtitle"] = "test"
+    page = viz.build_html(data, "Test title")
+
+    assert page.startswith("<!DOCTYPE html>")
+    assert "__DATA__" not in page and "__TITLE__" not in page
+    assert "Test title" in page
+    # Nothing may be fetched at view time. The SVG namespace URI is not a request, so
+    # look for actual resource loads rather than for the string "http".
+    for pattern in (
+        "<script src=",
+        "<link ",
+        "@import",
+        "fetch(",
+        "XMLHttpRequest",
+        'src="http',
+        'href="http',
+        "url(http",
+    ):
+        assert pattern not in page, f"page is not self-contained: {pattern}"
+
+    out = tmp_path / "game.html"
+    out.write_text(page, encoding="utf-8")
+    assert out.stat().st_size > 10_000
+
+
+def test_visualiser_frame_count_matches_the_action_count():
+    history = viz.play_game(9, ("safe_random", "safe_random"), optional_cards=False)
+    data = viz.record_frames(9, history, optional_cards=False)
+    # One frame before the first action, plus one after each.
+    assert len(data["frames"]) == len(history) + 1
+    assert len(data["actions"]) == len(data["frames"])
+    assert len(data["log"]) == len(data["frames"])
+    assert data["actions"][0] == "start of game"
+
+
+# --------------------------------------------------------------------------- #
+# The CLI
+# --------------------------------------------------------------------------- #
+
+
+def test_recording_round_trips_through_the_visualiser(tmp_path: Path):
+    game = Game(seed=13)
+    rng = random.Random(13)
+    while game.decision is not None:
+        game.step(rng.choice(game.decision.options))
+
+    path = tmp_path / "rec.json"
+    play.record_game(game, path, 13)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+
+    assert payload["seed"] == 13
+    assert payload["history"] == game.history
+    # Replaying the recording must reproduce the same ending.
+    frames = viz.record_frames(
+        payload["seed"], payload["history"], optional_cards=payload["optional_cards"]
+    )["frames"]
+    assert frames[-1]["winner"] == payload["winner"]
+    assert frames[-1]["reason"] == payload["win_reason"]
+
+
+def test_rebuild_reproduces_a_prefix_of_the_game():
+    """Undo relies on this: replaying a prefix must give that exact position."""
+    game = Game(seed=21)
+    rng = random.Random(21)
+    for _ in range(60):
+        if game.decision is None:
+            break
+        game.step(rng.choice(game.decision.options))
+
+    prefix = game.history[:40]
+    rebuilt = play.rebuild(21, prefix)
+    reference = Game(21)
+    for key in prefix:
+        reference.step(key)
+
+    assert rebuilt.state.influence == reference.state.influence
+    assert rebuilt.state.vp == reference.state.vp
+    assert rebuilt.history == reference.history

@@ -75,6 +75,10 @@ def extract_map(lua_dir: Path) -> dict:
             "superpower": bool(raw.get("superpower", False)),
             "chinese_civil_war": bool(raw.get("chinese_civil_war", False)),
             "adjacent": list(raw.get("adjacent_countries", [])),
+            # Normalised (x1, y1, x2, y2) rectangle on the game's board image. Kept so
+            # the visualiser can lay out a real map instead of inventing coordinates.
+            # Absent for the two superpower spaces.
+            "map_rect": raw.get("map_location"),
         }
         if entry["name"] != key:
             raise ValueError(f"map key {key!r} disagrees with country_name {entry['name']!r}")

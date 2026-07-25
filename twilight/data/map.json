@@ -8,6 +8,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 34,
+  "map_rect": [
+   0.665,
+   0.295,
+   0.718,
+   0.344
+  ],
   "name": "Afghanistan",
   "region": "Asia",
   "regions": [
@@ -26,6 +32,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 49,
+  "map_rect": [
+   0.336,
+   0.326,
+   0.39,
+   0.376
+  ],
   "name": "Algeria",
   "region": "Africa",
   "regions": [
@@ -43,6 +55,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 58,
+  "map_rect": [
+   0.415,
+   0.704,
+   0.467,
+   0.755
+  ],
   "name": "Angola",
   "region": "Africa",
   "regions": [
@@ -60,6 +78,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 81,
+  "map_rect": [
+   0.183,
+   0.886,
+   0.236,
+   0.936
+  ],
   "name": "Argentina",
   "region": "South America",
   "regions": [
@@ -75,6 +99,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 42,
+  "map_rect": [
+   0.929,
+   0.807,
+   0.982,
+   0.856
+  ],
   "name": "Australia",
   "region": "Asia",
   "regions": [
@@ -93,6 +123,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 14,
+  "map_rect": [
+   0.405,
+   0.213,
+   0.459,
+   0.258
+  ],
   "name": "Austria",
   "region": "Europe",
   "regions": [
@@ -111,6 +147,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 9,
+  "map_rect": [
+   0.343,
+   0.151,
+   0.397,
+   0.201
+  ],
   "name": "Benelux",
   "region": "Western Europe",
   "regions": [
@@ -128,6 +170,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 84,
+  "map_rect": [
+   0.177,
+   0.697,
+   0.23,
+   0.748
+  ],
   "name": "Bolivia",
   "region": "South America",
   "regions": [
@@ -145,6 +193,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 60,
+  "map_rect": [
+   0.472,
+   0.783,
+   0.525,
+   0.832
+  ],
   "name": "Botswana",
   "region": "Africa",
   "regions": [
@@ -161,6 +215,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 85,
+  "map_rect": [
+   0.275,
+   0.625,
+   0.329,
+   0.676
+  ],
   "name": "Brazil",
   "region": "South America",
   "regions": [
@@ -177,6 +237,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 22,
+  "map_rect": [
+   0.543,
+   0.22,
+   0.596,
+   0.268
+  ],
   "name": "Bulgaria",
   "region": "Eastern Europe",
   "regions": [
@@ -194,6 +260,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 37,
+  "map_rect": [
+   0.768,
+   0.407,
+   0.821,
+   0.457
+  ],
   "name": "Burma",
   "region": "Southeast Asia",
   "regions": [
@@ -211,6 +283,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 56,
+  "map_rect": [
+   0.408,
+   0.616,
+   0.462,
+   0.666
+  ],
   "name": "Cameroon",
   "region": "Africa",
   "regions": [
@@ -227,6 +305,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 3,
+  "map_rect": [
+   0.169,
+   0.098,
+   0.222,
+   0.15
+  ],
   "name": "Canada",
   "region": "Western Europe",
   "regions": [
@@ -244,6 +328,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 80,
+  "map_rect": [
+   0.163,
+   0.813,
+   0.216,
+   0.863
+  ],
   "name": "Chile",
   "region": "South America",
   "regions": [
@@ -259,6 +349,12 @@
   "battleground": false,
   "chinese_civil_war": true,
   "index": 87,
+  "map_rect": [
+   0.805,
+   0.285,
+   0.883,
+   0.374
+  ],
   "name": "Chinese Civil War",
   "region": "Asia",
   "regions": [
@@ -276,6 +372,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 77,
+  "map_rect": [
+   0.158,
+   0.558,
+   0.211,
+   0.607
+  ],
   "name": "Colombia",
   "region": "South America",
   "regions": [
@@ -293,6 +395,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 71,
+  "map_rect": [
+   0.059,
+   0.511,
+   0.111,
+   0.559
+  ],
   "name": "Costa Rica",
   "region": "Central America",
   "regions": [
@@ -310,6 +418,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 74,
+  "map_rect": [
+   0.11,
+   0.368,
+   0.163,
+   0.417
+  ],
   "name": "Cuba",
   "region": "Central America",
   "regions": [
@@ -327,6 +441,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 18,
+  "map_rect": [
+   0.473,
+   0.166,
+   0.525,
+   0.215
+  ],
   "name": "Czechoslovakia",
   "region": "Eastern Europe",
   "regions": [
@@ -344,6 +464,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 8,
+  "map_rect": [
+   0.368,
+   0.095,
+   0.42,
+   0.146
+  ],
   "name": "Denmark",
   "region": "Western Europe",
   "regions": [
@@ -360,6 +486,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 76,
+  "map_rect": [
+   0.202,
+   0.426,
+   0.255,
+   0.477
+  ],
   "name": "Dominican Republic",
   "region": "Central America",
   "regions": [
@@ -378,6 +510,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 16,
+  "map_rect": [
+   0.427,
+   0.097,
+   0.48,
+   0.148
+  ],
   "name": "East Germany",
   "region": "Eastern Europe",
   "regions": [
@@ -395,6 +533,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 78,
+  "map_rect": [
+   0.089,
+   0.574,
+   0.141,
+   0.623
+  ],
   "name": "Ecuador",
   "region": "South America",
   "regions": [
@@ -412,6 +556,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 25,
+  "map_rect": [
+   0.49,
+   0.444,
+   0.543,
+   0.495
+  ],
   "name": "Egypt",
   "region": "Middle East",
   "regions": [
@@ -428,6 +578,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 69,
+  "map_rect": [
+   0.019,
+   0.443,
+   0.073,
+   0.492
+  ],
   "name": "El Salvador",
   "region": "Central America",
   "regions": [
@@ -444,6 +600,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 65,
+  "map_rect": [
+   0.538,
+   0.561,
+   0.592,
+   0.612
+  ],
   "name": "Ethiopia",
   "region": "Africa",
   "regions": [
@@ -460,6 +622,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 7,
+  "map_rect": [
+   0.491,
+   0.038,
+   0.544,
+   0.087
+  ],
   "name": "Finland",
   "region": "Europe",
   "regions": [
@@ -481,6 +649,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 10,
+  "map_rect": [
+   0.347,
+   0.206,
+   0.401,
+   0.255
+  ],
   "name": "France",
   "region": "Western Europe",
   "regions": [
@@ -500,6 +674,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 13,
+  "map_rect": [
+   0.466,
+   0.331,
+   0.52,
+   0.38
+  ],
   "name": "Greece",
   "region": "Western Europe",
   "regions": [
@@ -518,6 +698,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 68,
+  "map_rect": [
+   0.046,
+   0.384,
+   0.099,
+   0.433
+  ],
   "name": "Guatemala",
   "region": "Central America",
   "regions": [
@@ -534,6 +720,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 32,
+  "map_rect": [
+   0.618,
+   0.44,
+   0.671,
+   0.489
+  ],
   "name": "Gulf States",
   "region": "Middle East",
   "regions": [
@@ -550,6 +742,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 75,
+  "map_rect": [
+   0.191,
+   0.36,
+   0.244,
+   0.409
+  ],
   "name": "Haiti",
   "region": "Central America",
   "regions": [
@@ -568,6 +766,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 70,
+  "map_rect": [
+   0.078,
+   0.441,
+   0.131,
+   0.489
+  ],
   "name": "Honduras",
   "region": "Central America",
   "regions": [
@@ -586,6 +790,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 19,
+  "map_rect": [
+   0.463,
+   0.22,
+   0.516,
+   0.268
+  ],
   "name": "Hungary",
   "region": "Eastern Europe",
   "regions": [
@@ -603,6 +813,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 36,
+  "map_rect": [
+   0.723,
+   0.497,
+   0.775,
+   0.546
+  ],
   "name": "India",
   "region": "Asia",
   "regions": [
@@ -619,6 +835,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 43,
+  "map_rect": [
+   0.917,
+   0.664,
+   0.97,
+   0.713
+  ],
   "name": "Indonesia",
   "region": "Southeast Asia",
   "regions": [
@@ -637,6 +859,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 30,
+  "map_rect": [
+   0.646,
+   0.374,
+   0.699,
+   0.423
+  ],
   "name": "Iran",
   "region": "Middle East",
   "regions": [
@@ -655,6 +883,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 29,
+  "map_rect": [
+   0.584,
+   0.384,
+   0.637,
+   0.433
+  ],
   "name": "Iraq",
   "region": "Middle East",
   "regions": [
@@ -673,6 +907,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 26,
+  "map_rect": [
+   0.507,
+   0.384,
+   0.56,
+   0.433
+  ],
   "name": "Israel",
   "region": "Middle East",
   "regions": [
@@ -692,6 +932,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 12,
+  "map_rect": [
+   0.401,
+   0.266,
+   0.455,
+   0.316
+  ],
   "name": "Italy",
   "region": "Western Europe",
   "regions": [
@@ -709,6 +955,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 53,
+  "map_rect": [
+   0.319,
+   0.534,
+   0.372,
+   0.584
+  ],
   "name": "Ivory Coast",
   "region": "Africa",
   "regions": [
@@ -727,6 +979,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 45,
+  "map_rect": [
+   0.931,
+   0.345,
+   0.984,
+   0.395
+  ],
   "name": "Japan",
   "region": "Asia",
   "regions": [
@@ -745,6 +1003,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 31,
+  "map_rect": [
+   0.555,
+   0.439,
+   0.609,
+   0.488
+  ],
   "name": "Jordan",
   "region": "Middle East",
   "regions": [
@@ -761,6 +1025,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 63,
+  "map_rect": [
+   0.519,
+   0.653,
+   0.572,
+   0.704
+  ],
   "name": "Kenya",
   "region": "Africa",
   "regions": [
@@ -778,6 +1048,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 38,
+  "map_rect": [
+   0.849,
+   0.45,
+   0.902,
+   0.499
+  ],
   "name": "Laos/Cambodia",
   "region": "Southeast Asia",
   "regions": [
@@ -796,6 +1072,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 27,
+  "map_rect": [
+   0.533,
+   0.33,
+   0.586,
+   0.38
+  ],
   "name": "Lebanon",
   "region": "Middle East",
   "regions": [
@@ -812,6 +1094,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 24,
+  "map_rect": [
+   0.429,
+   0.404,
+   0.482,
+   0.455
+  ],
   "name": "Libya",
   "region": "Middle East",
   "regions": [
@@ -829,6 +1117,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 41,
+  "map_rect": [
+   0.821,
+   0.621,
+   0.875,
+   0.67
+  ],
   "name": "Malaysia",
   "region": "Southeast Asia",
   "regions": [
@@ -846,6 +1140,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 67,
+  "map_rect": [
+   0.019,
+   0.325,
+   0.073,
+   0.374
+  ],
   "name": "Mexico",
   "region": "Central America",
   "regions": [
@@ -863,6 +1163,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 50,
+  "map_rect": [
+   0.297,
+   0.385,
+   0.35,
+   0.436
+  ],
   "name": "Morocco",
   "region": "Africa",
   "regions": [
@@ -880,6 +1186,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 73,
+  "map_rect": [
+   0.138,
+   0.427,
+   0.191,
+   0.477
+  ],
   "name": "Nicaragua",
   "region": "Central America",
   "regions": [
@@ -897,6 +1209,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 55,
+  "map_rect": [
+   0.4,
+   0.536,
+   0.453,
+   0.586
+  ],
   "name": "Nigeria",
   "region": "Africa",
   "regions": [
@@ -913,6 +1231,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 48,
+  "map_rect": [
+   0.894,
+   0.219,
+   0.947,
+   0.269
+  ],
   "name": "North Korea",
   "region": "Asia",
   "regions": [
@@ -929,6 +1253,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 5,
+  "map_rect": [
+   0.368,
+   0.035,
+   0.421,
+   0.086
+  ],
   "name": "Norway",
   "region": "Western Europe",
   "regions": [
@@ -947,6 +1277,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 35,
+  "map_rect": [
+   0.683,
+   0.429,
+   0.737,
+   0.478
+  ],
   "name": "Pakistan",
   "region": "Asia",
   "regions": [
@@ -963,6 +1299,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 72,
+  "map_rect": [
+   0.138,
+   0.492,
+   0.191,
+   0.543
+  ],
   "name": "Panama",
   "region": "Central America",
   "regions": [
@@ -980,6 +1322,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 83,
+  "map_rect": [
+   0.213,
+   0.755,
+   0.266,
+   0.805
+  ],
   "name": "Paraguay",
   "region": "South America",
   "regions": [
@@ -997,6 +1345,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 79,
+  "map_rect": [
+   0.122,
+   0.641,
+   0.175,
+   0.691
+  ],
   "name": "Peru",
   "region": "South America",
   "regions": [
@@ -1013,6 +1367,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 44,
+  "map_rect": [
+   0.926,
+   0.543,
+   0.98,
+   0.593
+  ],
   "name": "Philippines",
   "region": "Southeast Asia",
   "regions": [
@@ -1031,6 +1391,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 17,
+  "map_rect": [
+   0.485,
+   0.111,
+   0.538,
+   0.158
+  ],
   "name": "Poland",
   "region": "Eastern Europe",
   "regions": [
@@ -1050,6 +1416,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 21,
+  "map_rect": [
+   0.534,
+   0.166,
+   0.585,
+   0.215
+  ],
   "name": "Romania",
   "region": "Eastern Europe",
   "regions": [
@@ -1067,6 +1439,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 62,
+  "map_rect": [
+   0.542,
+   0.72,
+   0.596,
+   0.77
+  ],
   "name": "SE African States",
   "region": "Africa",
   "regions": [
@@ -1083,6 +1461,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 54,
+  "map_rect": [
+   0.37,
+   0.463,
+   0.423,
+   0.513
+  ],
   "name": "Saharan States",
   "region": "Africa",
   "regions": [
@@ -1100,6 +1484,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 33,
+  "map_rect": [
+   0.581,
+   0.499,
+   0.635,
+   0.549
+  ],
   "name": "Saudi Arabia",
   "region": "Middle East",
   "regions": [
@@ -1116,6 +1506,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 64,
+  "map_rect": [
+   0.581,
+   0.617,
+   0.634,
+   0.668
+  ],
   "name": "Somalia",
   "region": "Africa",
   "regions": [
@@ -1132,6 +1528,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 59,
+  "map_rect": [
+   0.47,
+   0.874,
+   0.525,
+   0.923
+  ],
   "name": "South Africa",
   "region": "Africa",
   "regions": [
@@ -1149,6 +1551,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 47,
+  "map_rect": [
+   0.896,
+   0.284,
+   0.949,
+   0.333
+  ],
   "name": "South Korea",
   "region": "Asia",
   "regions": [
@@ -1166,6 +1574,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 11,
+  "map_rect": [
+   0.331,
+   0.266,
+   0.384,
+   0.316
+  ],
   "name": "Spain/Portugal",
   "region": "Western Europe",
   "regions": [
@@ -1183,6 +1597,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 66,
+  "map_rect": [
+   0.491,
+   0.504,
+   0.545,
+   0.554
+  ],
   "name": "Sudan",
   "region": "Africa",
   "regions": [
@@ -1200,6 +1620,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 6,
+  "map_rect": [
+   0.431,
+   0.042,
+   0.484,
+   0.091
+  ],
   "name": "Sweden",
   "region": "Western Europe",
   "regions": [
@@ -1218,6 +1644,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 28,
+  "map_rect": [
+   0.604,
+   0.316,
+   0.658,
+   0.366
+  ],
   "name": "Syria",
   "region": "Middle East",
   "regions": [
@@ -1234,6 +1666,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 46,
+  "map_rect": [
+   0.91,
+   0.41,
+   0.964,
+   0.46
+  ],
   "name": "Taiwan",
   "region": "Asia",
   "regions": [
@@ -1251,6 +1689,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 39,
+  "map_rect": [
+   0.788,
+   0.496,
+   0.841,
+   0.545
+  ],
   "name": "Thailand",
   "region": "Southeast Asia",
   "regions": [
@@ -1268,6 +1712,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 51,
+  "map_rect": [
+   0.402,
+   0.334,
+   0.455,
+   0.385
+  ],
   "name": "Tunisia",
   "region": "Africa",
   "regions": [
@@ -1286,6 +1736,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 23,
+  "map_rect": [
+   0.548,
+   0.277,
+   0.601,
+   0.327
+  ],
   "name": "Turkey",
   "region": "Western Europe",
   "regions": [
@@ -1305,6 +1761,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 4,
+  "map_rect": [
+   0.305,
+   0.085,
+   0.358,
+   0.137
+  ],
   "name": "UK",
   "region": "Western Europe",
   "regions": [
@@ -1324,6 +1786,7 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 2,
+  "map_rect": null,
   "name": "USA",
   "region": null,
   "regions": [],
@@ -1342,6 +1805,7 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 1,
+  "map_rect": null,
   "name": "USSR",
   "region": null,
   "regions": [],
@@ -1357,6 +1821,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 82,
+  "map_rect": [
+   0.233,
+   0.834,
+   0.287,
+   0.883
+  ],
   "name": "Uruguay",
   "region": "South America",
   "regions": [
@@ -1373,6 +1843,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 86,
+  "map_rect": [
+   0.204,
+   0.49,
+   0.258,
+   0.54
+  ],
   "name": "Venezuela",
   "region": "South America",
   "regions": [
@@ -1389,6 +1865,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 40,
+  "map_rect": [
+   0.855,
+   0.521,
+   0.907,
+   0.57
+  ],
   "name": "Vietnam",
   "region": "Southeast Asia",
   "regions": [
@@ -1406,6 +1888,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 52,
+  "map_rect": [
+   0.299,
+   0.46,
+   0.352,
+   0.51
+  ],
   "name": "West African States",
   "region": "Africa",
   "regions": [
@@ -1425,6 +1913,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 15,
+  "map_rect": [
+   0.403,
+   0.154,
+   0.457,
+   0.204
+  ],
   "name": "West Germany",
   "region": "Western Europe",
   "regions": [
@@ -1444,6 +1938,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 20,
+  "map_rect": [
+   0.461,
+   0.272,
+   0.515,
+   0.321
+  ],
   "name": "Yugoslavia",
   "region": "Eastern Europe",
   "regions": [
@@ -1462,6 +1962,12 @@
   "battleground": true,
   "chinese_civil_war": false,
   "index": 57,
+  "map_rect": [
+   0.472,
+   0.598,
+   0.525,
+   0.648
+  ],
   "name": "Zaire",
   "region": "Africa",
   "regions": [
@@ -1479,6 +1985,12 @@
   "battleground": false,
   "chinese_civil_war": false,
   "index": 61,
+  "map_rect": [
+   0.477,
+   0.717,
+   0.53,
+   0.767
+  ],
   "name": "Zimbabwe",
   "region": "Africa",
   "regions": [

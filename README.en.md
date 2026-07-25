@@ -172,6 +172,42 @@ you can constrain decoding to a grammar and assign credit at the token level.
 raises `IllegalAction` with the legal set in the message — usable directly as
 environment feedback for malformed output.
 
+## Playing and watching
+
+**In a terminal** — also the most useful debugging tool in the repo:
+
+```bash
+python tools/play.py                             # you are the USSR, greedy plays the US
+python tools/play.py --side both                 # hotseat
+python tools/play.py --side none --pause         # watch two agents, step by step
+python tools/play.py --record game.json          # record a game for the visualiser
+```
+
+At any prompt: a menu number, an action key, or `b` (board), `l` (log), `c <card>` (look
+up a card, partial match works), `u` (undo), `?`, `q`. Undo replays the action history, so
+it is exact but costs time proportional to how far in you are.
+
+**Graphical board with full replay:**
+
+```bash
+python tools/viz.py --open                       # play a game now and open it
+python tools/viz.py game.json                    # replay a recording
+python tools/viz.py --seed 7 --agents greedy safe_random
+```
+
+One self-contained HTML file, no dependencies. The layout comes from the game's own
+`map_rect` coordinates, so all 84 countries sit roughly where they do on the physical
+board; they are coloured by controller, show both influence totals, and battlegrounds get
+a gold outline. The side panel has the VP / DEFCON / turn / military-ops / space-race
+tracks, an "if scored now" preview per region, and the cards in play. A slider scrubs the
+whole game (arrow keys and play/pause work too).
+
+Every frame is a full snapshot taken by replaying the action history — the same mechanism
+as `Game.clone()`, so it is exact. Frames are delta-encoded (a 1048-step game drops from
+1.8 MB to about 500 KB), and `tests/test_tools.py` checks the encoding frame by frame with
+an independently written decoder, so a delta bug cannot quietly draw a board that never
+existed.
+
 ## Baselines
 
 ```bash
@@ -218,6 +254,8 @@ tools/
   dump_card_spec.py   docs/card_spec.md: every card's text + internal effect names
   random_play.py  soak test with invariant checking
   demo_views.py   show both views side by side
+  play.py         interactive terminal play: human, watch, record
+  viz.py          export a self-contained HTML board and game replay
 examples/
   baselines.py    random / safe-random / greedy agents and a tournament runner
   llm_agent.py    prompt loop, retry-on-illegal-output, key extraction
