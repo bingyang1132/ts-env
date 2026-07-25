@@ -131,10 +131,9 @@ class Game:
         #: skipped. Tests turn this on so gaps cannot pass silently.
         self.strict_events = strict_events
 
-        self.state = GameState(rng=random.Random(seed))
+        self.state = GameState(rng=random.Random(seed), optional_cards=optional_cards)
         self.seed = seed
         self.history: list[str] = []
-        self._stages_added: set[Stage] = set()
         #: Cards whose event was skipped for lack of an implementation.
         self.unimplemented: list[str] = []
 
@@ -501,9 +500,9 @@ class Game:
         discard pile being folded back in (rule 4.4).
         """
         for stage, start in STAGE_START_TURN.items():
-            if start != self.state.turn or stage in self._stages_added:
+            if start != self.state.turn or stage in self.state.stages_in_deck:
                 continue
-            self._stages_added.add(stage)
+            self.state.stages_in_deck.add(stage)
             self.state.shuffle_into_deck(
                 deck_for_stage(stage, optional_cards=self.optional_cards)
             )
@@ -755,18 +754,22 @@ class Game:
         elif name in state.hand(side):
             state.hand(side).remove(name)
 
+        # Restored explicitly on the normal path rather than in a `finally`. A `finally`
+        # here also runs when a discarded Game is garbage-collected -- Python throws
+        # GeneratorExit into the suspended driver -- which would mutate a GameState
+        # somebody is still holding a reference to, after they read it.
         previous, state.playing_card = state.playing_card, name
-        try:
-            if c.is_scoring:
-                state.note(f"plays {name} (scoring)", side)
-                yield from self._resolve_event(name, side)
-                state.resolve_card(name, as_event=True)
-                return
 
-            uses = yield from self._choose_use(name, side, operations_only=forced_use)
-            yield from self._perform_use(name, side, uses)
-        finally:
+        if c.is_scoring:
+            state.note(f"plays {name} (scoring)", side)
+            yield from self._resolve_event(name, side)
+            state.resolve_card(name, as_event=True)
             state.playing_card = previous
+            return
+
+        uses = yield from self._choose_use(name, side, operations_only=forced_use)
+        yield from self._perform_use(name, side, uses)
+        state.playing_card = previous
 
     def _choose_use(
         self, name: str, side: Side, *, operations_only: bool = False
@@ -1260,19 +1263,19 @@ class Game:
                 self.unimplemented.append(name)
             state.note(f"event {name} has no implementation; skipped", side)
 
-        try:
-            if handler is not None:
-                ctx = EventContext(
-                    card=name,
-                    player=side,
-                    ops=CARDS[name].ops,
-                    triggered_by_opponent=triggered_by_opponent,
-                )
-                yield from handler(self, ctx)
-        finally:
-            state.event_player = previous
-            if held:
-                state.release(name)
+        if handler is not None:
+            ctx = EventContext(
+                card=name,
+                player=side,
+                ops=CARDS[name].ops,
+                triggered_by_opponent=triggered_by_opponent,
+            )
+            yield from handler(self, ctx)
+
+        # Unwound explicitly rather than in a `finally`; see play_card for why.
+        state.event_player = previous
+        if held:
+            state.release(name)
 
         if from_headline:
             # A headline card that did not put itself into play is discarded now.

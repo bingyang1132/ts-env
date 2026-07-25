@@ -72,8 +72,8 @@ def check_invariants(game: Game) -> list[str]:
         name
         for name, c in CARDS.items()
         if name != CHINA_CARD
-        and (game.optional_cards or not c.optional)
-        and c.stage in game._stages_added
+        and (game.state.optional_cards or not c.optional)
+        and c.stage in game.state.stages_in_deck
     }
     missing = expected - located
     if missing:

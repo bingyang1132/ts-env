@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from typing import Any, Iterable
 
 from .data import CARDS, CHINA_CARD, COUNTRY_ORDER, COUNTRY_SLOT, NUM_COUNTRIES, card
-from .enums import Phase, Side, WinReason
+from .enums import Phase, Side, Stage, WinReason
 
 #: Influence needed in a country beyond the opponent's to control it equals the
 #: country's stability value.
@@ -113,6 +113,11 @@ class GameState:
     #: A face-down China Card cannot be played; it flips up at the end of the turn in
     #: which it changed hands.
     china_card_face_up: bool = True
+    #: Stages whose cards have entered the deck. Public information, and essential to
+    #: card counting: before turn 4 no Mid War card can possibly be drawn.
+    stages_in_deck: set[Stage] = field(default_factory=set)
+    #: Whether the seven optional cards (104-110) are in this game at all.
+    optional_cards: bool = False
 
     # -- effects ----------------------------------------------------------- #
     effects: dict[str, ActiveEffect] = field(default_factory=dict)

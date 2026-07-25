@@ -127,7 +127,11 @@ def encode_global(obs: Observation) -> np.ndarray:
         _sat(len(obs.hand), HAND_CAP),
         _sat(obs.opponent_hand_size, HAND_CAP),
         obs.deck_size / float(NUM_CARDS),
-        len(obs.deck_possible) / float(NUM_CARDS),
+        len(obs.unseen) / float(NUM_CARDS),
+        obs.in_deck_odds,
+        len(obs.unseen_scoring_cards()) / 7.0,
+        len(obs.discard) / float(NUM_CARDS),
+        len(obs.removed) / float(NUM_CARDS),
         1.0 if obs.china_card_owner is obs.player else 0.0,
         1.0 if obs.china_card_face_up else 0.0,
         1.0 if obs.china_card_available else 0.0,
@@ -182,7 +186,12 @@ def encode(obs: Observation) -> dict[str, np.ndarray]:
         "discard": _card_multi_hot(obs.discard),
         "removed": _card_multi_hot(obs.removed),
         "effects": _card_multi_hot(tuple(name for name, _ in obs.effects)),
-        "deck_possible": _card_multi_hot(obs.deck_possible),
+        # The card-counting channel: cards that could be in the opponent's hand or the
+        # draw pile. Scaled by the odds of being in the deck, so a network sees both the
+        # membership and how likely each is to come round.
+        "unseen": _card_multi_hot(obs.unseen) * (obs.in_deck_odds or 1.0),
+        "unseen_mask": _card_multi_hot(obs.unseen),
+        "opponent_hand": _card_multi_hot(obs.opponent_hand_revealed or ()),
         "action_mask": action_mask(obs),
     }
 
@@ -196,7 +205,8 @@ def flatten(encoded: dict[str, np.ndarray]) -> np.ndarray:
         encoded["discard"],
         encoded["removed"],
         encoded["effects"],
-        encoded["deck_possible"],
+        encoded["unseen"],
+        encoded["opponent_hand"],
     ]
     return np.concatenate(parts).astype(np.float32)
 

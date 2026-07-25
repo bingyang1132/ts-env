@@ -25,10 +25,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from twilight import Game, Side  # noqa: E402
-from twilight.data import COUNTRIES, COUNTRY_ORDER  # noqa: E402
-from twilight.enums import SCORING_REGIONS  # noqa: E402
-from twilight import rules  # noqa: E402
+from twilight import Game, Side, rules  # noqa: E402
+from twilight.data import CARDS, COUNTRIES, COUNTRY_ORDER, REGION_COUNTRIES  # noqa: E402
+from twilight.enums import SCORING_REGIONS, Region  # noqa: E402
+from twilight.observe import observe  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "examples"))
 from baselines import AGENTS  # noqa: E402
@@ -51,6 +51,17 @@ def snapshot(game: Game) -> dict:
         "milops": [s.military_ops[Side.USSR], s.military_ops[Side.USA]],
         "space": [s.space_race[Side.USSR], s.space_race[Side.USA]],
         "hands": [len(s.hands[Side.USSR]), len(s.hands[Side.USA])],
+        # Both hands in full. This is a replay of a finished game, so showing hidden
+        # information is the point -- it is the only way to see why a move was made.
+        "handCards": [
+            sorted(s.hands[Side.USSR], key=lambda n: CARDS[n].number),
+            sorted(s.hands[Side.USA], key=lambda n: CARDS[n].number),
+        ],
+        # What each side could still be counting: cards they cannot see.
+        "unseen": [
+            len(observe(s, Side.USSR).unseen),
+            len(observe(s, Side.USA).unseen),
+        ],
         "deck": len(s.deck),
         "discard": len(s.discard),
         "removed": len(s.removed),
@@ -111,7 +122,7 @@ def record_frames(seed: int | None, history: list[str], *, optional_cards: bool)
 
 
 #: Frame fields that usually repeat unchanged and are simply omitted when they do.
-_CARRIED_FORWARD = ("regions", "effects")
+_CARRIED_FORWARD = ("regions", "effects", "handCards")
 
 
 def _delta_encode(frames: list[dict]) -> None:
@@ -155,6 +166,89 @@ def play_game(seed: int, agents: tuple[str, str], *, optional_cards: bool) -> li
     return game.history
 
 
+#: Band colour per region. Austria and Finland belong to both halves of Europe and so
+#: get no band of their own -- a bounding box over just those two would span the whole
+#: continent and overlap everything.
+REGION_COLOURS = {
+    "Western Europe": "#5b83c4",
+    "Eastern Europe": "#c4635b",
+    "Middle East": "#c4a05b",
+    "Asia": "#4fa091",
+    "Southeast Asia": "#68c4a0",
+    "Africa": "#a0904f",
+    "Central America": "#c47fa0",
+    "South America": "#7f9fc4",
+}
+
+#: Austria and Finland score for both halves of Europe. Their *primary* region resolves
+#: to Western Europe, so they have to be found by checking both memberships.
+BOTH_EUROPES = tuple(
+    n
+    for n in COUNTRY_ORDER
+    if Region.WESTERN_EUROPE in COUNTRIES[n].regions
+    and Region.EASTERN_EUROPE in COUNTRIES[n].regions
+)
+
+
+def region_bands() -> list[dict]:
+    """A labelled box around each region, from its member countries' coordinates.
+
+    Gives the board the continent structure it was missing: without it every country is
+    an unlabelled rectangle and there is no way to see where the Middle East ends.
+
+    Two different memberships are reported, because they genuinely differ. The box is
+    sized from countries whose *primary* region this is -- including Austria and Finland
+    in the Eastern Europe box as well would stretch it across the whole continent. The
+    ``members`` list is the real scoring membership, which is what the chips count and
+    highlight.
+    """
+    bands = []
+    for region_name, colour in REGION_COLOURS.items():
+        region = Region(region_name)
+        box_members = [
+            COUNTRIES[n] for n in COUNTRY_ORDER if COUNTRIES[n].region is region
+        ]
+        scoring_members = list(REGION_COUNTRIES[region])
+        if not box_members:
+            continue
+
+        x1 = min(c.map_rect[0] for c in box_members) * BOARD_W
+        y1 = min(c.map_rect[1] for c in box_members) * BOARD_H
+        x2 = max(c.map_rect[2] for c in box_members) * BOARD_W
+        y2 = max(c.map_rect[3] for c in box_members) * BOARD_H
+        pad = 5
+        bands.append(
+            {
+                "name": region_name,
+                "colour": colour,
+                "x": round(x1 - pad, 1),
+                "y": round(y1 - pad, 1),
+                "w": round(x2 - x1 + 2 * pad, 1),
+                "h": round(y2 - y1 + 2 * pad, 1),
+                "members": scoring_members,
+                "battlegrounds": sum(
+                    1 for n in scoring_members if COUNTRIES[n].battleground
+                ),
+            }
+        )
+    return bands
+
+
+def card_reference() -> dict:
+    """Every card's printed details, sent once so hands can show them on hover."""
+    return {
+        name: {
+            "n": c.number,
+            "ops": c.ops,
+            "side": c.side.label if c.side is not None else "Neutral",
+            "scoring": c.is_scoring,
+            "star": c.remove_on_event,
+            "text": c.event_text,
+        }
+        for name, c in CARDS.items()
+    }
+
+
 def country_layout() -> list[dict]:
     """Board boxes, scaled from the game's normalised coordinates."""
     boxes = []
@@ -180,6 +274,9 @@ def build_html(data: dict, title: str) -> str:
     payload = json.dumps(
         {
             "countries": country_layout(),
+            "bands": region_bands(),
+            "bothEuropes": list(BOTH_EUROPES),
+            "cards": card_reference(),
             "boardW": BOARD_W,
             "boardH": BOARD_H,
             **data,
@@ -217,6 +314,34 @@ _TEMPLATE = r"""<!DOCTYPE html>
   .cname { font-size: 8.5px; fill: var(--ink); pointer-events: none; }
   .cinf  { font-size: 9px; font-weight: 700; pointer-events: none; }
   .bgmark { fill: none; stroke: #c8a24a; stroke-width: 1.6; }
+  .band { fill-opacity: 0.05; stroke-opacity: 0.35; stroke-width: 1; stroke-dasharray: 4 3; }
+  .bandlabel { font-size: 10px; font-weight: 600; letter-spacing: .04em; opacity: .75; }
+  .dimmed { opacity: 0.18; }
+  .botheu { fill: none; stroke: #b48ad6; stroke-width: 1.4; stroke-dasharray: 2 2; }
+  .regionlist { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 6px; }
+  .rchip {
+    font-size: 11px; padding: 2px 7px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--line); background: #21252c; user-select: none;
+  }
+  .rchip:hover { background: #2c3240; }
+  .hand { margin-top: 4px; }
+  .hand li {
+    list-style: none; padding: 2px 4px; border-radius: 4px; cursor: default;
+    display: flex; gap: 6px; align-items: baseline;
+  }
+  .hand li:hover { background: #262b34; }
+  .hand ul { margin: 2px 0 0; padding: 0; }
+  .hand .ops { color: var(--dim); font-variant-numeric: tabular-nums; font-size: 10.5px; }
+  .hand .nm { flex: 1; }
+  .hand .sc { color: #e8c66a; font-weight: 600; }
+  .cardtip {
+    position: fixed; max-width: 330px; z-index: 20; pointer-events: none;
+    background: #0f1114; border: 1px solid var(--line); border-radius: 6px;
+    padding: 8px 10px; font-size: 11.5px; line-height: 1.5; display: none;
+    box-shadow: 0 6px 24px rgba(0,0,0,.5);
+  }
+  .cardtip h4 { margin: 0 0 4px; font-size: 12px; }
+  .cardtip p { margin: 0; color: var(--dim); white-space: pre-wrap; }
   .controls { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
   input[type=range] { flex: 1; }
   button {
@@ -269,10 +394,28 @@ _TEMPLATE = r"""<!DOCTYPE html>
         <span><i class="sw" style="background:var(--usa)"></i>US control</span>
         <span><i class="sw" style="background:var(--bgland)"></i>uncontrolled</span>
         <span><i class="sw" style="background:transparent;border:1.5px solid #c8a24a"></i>battleground</span>
+        <span><i class="sw" style="background:transparent;border:1.5px dashed #b48ad6"></i>both halves of Europe</span>
         <span>numbers are USSR / US influence</span>
       </div>
+      <div class="regionlist" id="regionlist"></div>
+      <div style="color:var(--dim);font-size:11px;margin-top:6px">
+        click a region to isolate it. Regions nest: Southeast Asia also scores as part of
+        Asia, and Western and Eastern Europe also score as Europe — so the counts overlap
+        on purpose. Austria and Finland (dashed outline) count in both halves of Europe.
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:12px">
+      <b style="color:var(--dim);font-weight:500;font-size:11px">hands (hover a card for its text)</b>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:2px">
+        <div class="hand"><div class="ussr" style="font-weight:600" id="hu"></div><ul id="handUSSR"></ul></div>
+        <div class="hand"><div class="usa" style="font-weight:600" id="ha"></div><ul id="handUSA"></ul></div>
+      </div>
+      <div style="color:var(--dim);font-size:11px;margin-top:8px" id="counting"></div>
     </div>
   </div>
+
+  <div class="cardtip" id="cardtip"></div>
 
   <div>
     <div class="panel">
@@ -320,7 +463,7 @@ slider.max = D.frames.length - 1;
 // Frames after the first carry only what changed, to keep the file small. Expand them
 // once here so scrubbing to any frame stays a plain array lookup.
 (function expand() {
-  const carried = ['regions', 'effects'];
+  const carried = ['regions', 'effects', 'handCards'];
   let inf = D.frames[0].inf, ctrl = D.frames[0].ctrl;
   const held = {};
   for (const k of carried) held[k] = D.frames[0][k];
@@ -337,6 +480,30 @@ slider.max = D.frames.length - 1;
     }
   }
 })();
+
+// -- region bands sit behind the countries, so draw them first ----------------
+const SVGNS = 'http://www.w3.org/2000/svg';
+const bandEls = {};
+for (const b of D.bands) {
+  const g = document.createElementNS(SVGNS, 'g');
+  const r = document.createElementNS(SVGNS, 'rect');
+  r.setAttribute('x', b.x); r.setAttribute('y', b.y);
+  r.setAttribute('width', b.w); r.setAttribute('height', b.h);
+  r.setAttribute('rx', 8); r.setAttribute('class', 'band');
+  r.setAttribute('fill', b.colour); r.setAttribute('stroke', b.colour);
+  g.appendChild(r);
+
+  const label = document.createElementNS(SVGNS, 'text');
+  label.setAttribute('x', b.x + 6);
+  label.setAttribute('y', b.y + 12);
+  label.setAttribute('class', 'bandlabel');
+  label.setAttribute('fill', b.colour);
+  label.textContent = b.name.toUpperCase();
+  g.appendChild(label);
+
+  board.appendChild(g);
+  bandEls[b.name] = g;
+}
 
 // -- build the board once, then only update text and fills per frame ----------
 const boxes = [];
@@ -369,11 +536,89 @@ for (const c of D.countries) {
   inf.setAttribute('text-anchor', 'middle'); inf.setAttribute('class', 'cinf');
   g.appendChild(inf);
 
+  if (D.bothEuropes.includes(c.name)) {
+    const e = document.createElementNS(SVGNS, 'rect');
+    e.setAttribute('x', c.x - 2); e.setAttribute('y', c.y - 2);
+    e.setAttribute('width', c.w + 4); e.setAttribute('height', c.h + 4);
+    e.setAttribute('rx', 4); e.setAttribute('class', 'botheu');
+    g.appendChild(e);
+  }
+
   const tip = document.createElementNS('http://www.w3.org/2000/svg', 'title');
   g.appendChild(tip);
 
   board.appendChild(g);
-  boxes.push({rect: r, inf, tip, c});
+  boxes.push({rect: r, inf, tip, c, g});
+}
+
+// -- region chips: click one to isolate that region on the board --------------
+const byRegion = {};
+for (const b of D.bands) byRegion[b.name] = new Set(b.members);
+let isolated = null;
+
+const chips = document.getElementById('regionlist');
+for (const b of D.bands) {
+  const chip = document.createElement('span');
+  chip.className = 'rchip';
+  chip.style.borderColor = b.colour;
+  chip.innerHTML = `<i class="sw" style="background:${b.colour}"></i>` +
+                   `${b.name} <span style="color:var(--dim)">${b.members.length}c/${b.battlegrounds}bg</span>`;
+  chip.onclick = () => { isolated = (isolated === b.name) ? null : b.name; applyIsolation(); };
+  chips.appendChild(chip);
+}
+
+function applyIsolation() {
+  for (const box of boxes) {
+    const on = !isolated || byRegion[isolated].has(box.c.name);
+    box.g.classList.toggle('dimmed', !on);
+  }
+  for (const [name, g] of Object.entries(bandEls)) {
+    g.classList.toggle('dimmed', !!isolated && isolated !== name);
+  }
+  for (const chip of chips.children) {
+    chip.style.background = (isolated && chip.textContent.startsWith(isolated))
+      ? '#333a47' : '#21252c';
+  }
+}
+
+// -- card tooltip -------------------------------------------------------------
+const tipEl = document.getElementById('cardtip');
+function showCard(name, ev) {
+  const c = D.cards[name];
+  if (!c) return;
+  const tags = [c.side, `${c.ops} ops`];
+  if (c.scoring) tags.push('scoring — must be played this turn');
+  if (c.star) tags.push('removed if played as an event');
+  tipEl.innerHTML = `<h4>#${c.n} ${name}</h4><div style="color:var(--dim);font-size:11px;` +
+                    `margin-bottom:4px">${tags.join(' · ')}</div><p>${c.text}</p>`;
+  tipEl.style.display = 'block';
+  const pad = 14;
+  let x = ev.clientX + pad, y = ev.clientY + pad;
+  const r = tipEl.getBoundingClientRect();
+  if (x + r.width > innerWidth) x = ev.clientX - r.width - pad;
+  if (y + r.height > innerHeight) y = Math.max(4, ev.clientY - r.height - pad);
+  tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
+}
+function hideCard() { tipEl.style.display = 'none'; }
+
+function renderHand(el, names, playing) {
+  el.innerHTML = '';
+  if (!names.length) {
+    el.innerHTML = '<li style="color:var(--dim)">(empty)</li>';
+    return;
+  }
+  for (const name of names) {
+    const c = D.cards[name];
+    const li = document.createElement('li');
+    const ops = c.scoring ? '—' : c.ops;
+    li.innerHTML = `<span class="ops">${ops}</span>` +
+      `<span class="nm ${c.scoring ? 'sc' : ''}">${name}</span>` +
+      `<span class="ops">${c.side === 'Neutral' ? '·' : (c.side === 'USSR' ? '☭' : '★')}</span>`;
+    if (name === playing) li.style.outline = '1px solid var(--dim)';
+    li.onmousemove = ev => showCard(name, ev);
+    li.onmouseleave = hideCard;
+    el.appendChild(li);
+  }
 }
 
 const COLOURS = ['var(--ussr)', 'var(--usa)'];
@@ -443,6 +688,15 @@ function draw(i) {
   document.getElementById('regions').innerHTML = rows;
   document.getElementById('effects').textContent =
     f.effects.length ? f.effects.join(' · ') : 'nothing';
+
+  document.getElementById('hu').textContent = `USSR — ${f.handCards[0].length} cards`;
+  document.getElementById('ha').textContent = `US — ${f.handCards[1].length} cards`;
+  renderHand(document.getElementById('handUSSR'), f.handCards[0], f.playing);
+  renderHand(document.getElementById('handUSA'), f.handCards[1], f.playing);
+  document.getElementById('counting').textContent =
+    `cards each side cannot see (their opponent's hand + draw pile): ` +
+    `USSR ${f.unseen[0]}, US ${f.unseen[1]} — ` +
+    `draw pile ${f.deck}, discard ${f.discard}, removed ${f.removed}`;
 
   document.getElementById('pos').textContent = `${i} / ${D.frames.length - 1}`;
   slider.value = i;

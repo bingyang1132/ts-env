@@ -244,7 +244,7 @@ def test_every_card_is_always_accounted_for(seed):
         not_yet_in_play = {
             name
             for name, card in data.CARDS.items()
-            if card.stage not in game._stages_added
+            if card.stage not in game.state.stages_in_deck
         }
         missing = expected - located - not_yet_in_play
         assert not missing, f"cards lost from the game: {sorted(missing)}"

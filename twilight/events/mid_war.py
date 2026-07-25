@@ -401,18 +401,18 @@ def missile_envy(game, ctx):
     state.must_play[int(opponent)] = ctx.card
 
     card = CARDS[given]
-    try:
-        if card.event_belongs_to(ctx.player) and game._event_is_playable(given, ctx.player):
-            yield from game._resolve_event(given, ctx.player)
-            game._retire_card(given, ctx.player, as_event=True)
-        else:
-            ops = game.effective_ops(given, ctx.player)
-            yield from game.free_operations(
-                ctx.player, ops, prompt=f"Missile Envy: use {given} for {ops} ops"
-            )
-            game._retire_card(given, ctx.player, as_event=False)
-    finally:
-        state.release(given)
+    if card.event_belongs_to(ctx.player) and game._event_is_playable(given, ctx.player):
+        yield from game._resolve_event(given, ctx.player)
+        game._retire_card(given, ctx.player, as_event=True)
+    else:
+        ops = game.effective_ops(given, ctx.player)
+        yield from game.free_operations(
+            ctx.player, ops, prompt=f"Missile Envy: use {given} for {ops} ops"
+        )
+        game._retire_card(given, ctx.player, as_event=False)
+    # Released on the normal path only, so collecting an abandoned game cannot mutate
+    # a state somebody is still reading.
+    state.release(given)
 
 
 # --------------------------------------------------------------------------- #

@@ -9,8 +9,12 @@ What is hidden: the opponent's hand, and the order of the draw pile. What is *no
 hidden, because it is public in the real game: every influence marker, both military
 operations totals, both space race positions, the discard and removed piles, and every
 card in play. Deck composition is therefore inferable, which is deliberate -- card
-counting is a real skill in Twilight Struggle and :attr:`Observation.deck_possible`
-hands the agent that inference rather than making it re-derive it.
+counting is a real skill in Twilight Struggle, so :attr:`Observation.unseen` and the
+helpers beside it hand the agent that inference rather than making it re-derive it.
+
+The one exception is ``reveal_opponent_hand``, which exposes the opponent's actual hand.
+It exists for analysis and for training a value network on complete information, and it
+is off by default: a policy trained with it on has learned a game nobody can play.
 
 The observation also precomputes the derived quantities agents habitually get wrong:
 region control tiers, what each region would score right now, and coup thresholds.
@@ -98,7 +102,9 @@ class Observation:
     # -- cards -------------------------------------------------------------- #
     hand: tuple[str, ...]
     opponent_hand_size: int
-    #: The opponent's actual hand, only when a card in play reveals it.
+    #: The opponent's actual hand. Normally ``None``; set when a card in play reveals it
+    #: (CIA Created, The Cambridge Five, Aldrich Ames Remix) or when the observation was
+    #: taken with ``reveal_opponent_hand=True`` for analysis.
     opponent_hand_revealed: tuple[str, ...] | None
     #: The card currently being resolved, if any. Public: cards are played face up.
     playing_card: str | None
@@ -106,8 +112,13 @@ class Observation:
     china_card_face_up: bool
     china_card_available: bool
     deck_size: int
-    #: Cards that could still be drawn, inferred from what is publicly accounted for.
-    deck_possible: tuple[str, ...]
+    #: Cards whose location is unknown: the opponent's hand plus the draw pile. This is
+    #: the raw material for card counting; see :meth:`Observation.unseen_scoring_cards`
+    #: and :attr:`in_deck_odds`.
+    unseen: tuple[str, ...]
+    #: Chance a given unseen card is in the draw pile rather than the opponent's hand,
+    #: assuming nothing else is known about it.
+    in_deck_odds: float
     discard: tuple[str, ...]
     removed: tuple[str, ...]
     effects: tuple[tuple[str, str | None], ...]
@@ -145,6 +156,31 @@ class Observation:
     def legal_actions(self) -> tuple[str, ...]:
         return () if self.decision is None else self.decision.legal_keys
 
+    # -- card counting ---------------------------------------------------- #
+
+    def unseen_scoring_cards(self) -> tuple[str, ...]:
+        """Scoring cards still unaccounted for, in printed order.
+
+        The single most valuable card-counting fact in the game: a scoring card must be
+        played the turn it is drawn, so knowing whether Europe Scoring is still out there
+        changes how much a region is worth defending.
+        """
+        return tuple(n for n in self.unseen if CARDS[n].is_scoring)
+
+    def unseen_by_side(self) -> dict[str, int]:
+        """How many unseen cards carry each side's event."""
+        counts = {"USSR": 0, "USA": 0, "Neutral": 0}
+        for name in self.unseen:
+            side = CARDS[name].side
+            counts[side.label if side is not None else "Neutral"] += 1
+        return counts
+
+    def cards_seen(self) -> tuple[str, ...]:
+        """Every card whose location the observer knows, in printed order."""
+        known = set(self.hand) | set(self.discard) | set(self.removed)
+        known |= {name for name, _ in self.effects}
+        return tuple(n for n in CARD_ORDER if n in known)
+
 
 #: Cards that, while in play, let their owner see the opponent's hand.
 _HAND_REVEALING = ("CIA Created", "The Cambridge Five", "Aldrich Ames Remix")
@@ -157,16 +193,31 @@ def _opponent_hand_revealed(state: GameState, player: Side) -> tuple[str, ...] |
     return None
 
 
-def _deck_possible(state: GameState, player: Side) -> tuple[str, ...]:
-    """Cards that might still be drawn.
+def _unseen_cards(state: GameState, player: Side) -> tuple[str, ...]:
+    """Cards in this game whose location the observer does not know.
 
-    Everything not in the observer's hand, not discarded, not removed, and not in play.
-    The opponent's hand is unknown, so its cards legitimately remain in this set.
+    That is the opponent's hand plus the draw pile: everything except the observer's own
+    hand, the discard and removed piles, and the cards face up in play -- all of which
+    are public or theirs.
+
+    Two exclusions matter and are easy to get wrong. Cards from a stage that has not been
+    shuffled in yet **cannot** be drawn (no Mid War card exists before turn 4), and the
+    seven optional cards are absent entirely unless the game was set up with them. Listing
+    either as unseen would tell an agent to count cards that are not in the game.
     """
     accounted = set(state.hand(player)) | set(state.discard) | set(state.removed)
-    accounted |= set(state.effects)
+    accounted |= set(state.effects) | set(state.transit)
     accounted.add(CHINA_CARD)
-    return tuple(name for name in CARD_ORDER if name not in accounted)
+    if state.playing_card is not None:
+        accounted.add(state.playing_card)
+
+    return tuple(
+        name
+        for name in CARD_ORDER
+        if name not in accounted
+        and CARDS[name].stage in state.stages_in_deck
+        and (state.optional_cards or not CARDS[name].optional)
+    )
 
 
 def observe(
@@ -175,11 +226,16 @@ def observe(
     decision: Decision | None = None,
     *,
     log_tail: int = 12,
+    reveal_opponent_hand: bool = False,
 ) -> Observation:
     """Build *player*'s view of *state*.
 
     *decision* is the pending question, if any; it is included verbatim only when it
     belongs to *player*, so an agent never sees the menu it is not being asked.
+
+    *reveal_opponent_hand* breaks the game's hidden information on purpose. Use it for
+    analysis, replays and complete-information value networks -- never for a policy that
+    has to play for real.
     """
     reachable = rules.reachable_countries(state, player)
 
@@ -237,6 +293,10 @@ def observe(
 
     china_available = state.china_card_owner is player and state.china_card_face_up
 
+    unseen = _unseen_cards(state, player)
+    hidden_elsewhere = len(state.deck) + len(state.hand(player.opponent))
+    in_deck_odds = len(state.deck) / hidden_elsewhere if hidden_elsewhere else 0.0
+
     return Observation(
         player=player,
         turn=state.turn,
@@ -257,13 +317,18 @@ def observe(
         regions=tuple(region_views),
         hand=tuple(sorted(state.hand(player), key=lambda n: CARDS[n].number)),
         opponent_hand_size=len(state.hand(player.opponent)),
-        opponent_hand_revealed=_opponent_hand_revealed(state, player),
+        opponent_hand_revealed=(
+            tuple(sorted(state.hand(player.opponent), key=lambda n: CARDS[n].number))
+            if reveal_opponent_hand
+            else _opponent_hand_revealed(state, player)
+        ),
         playing_card=state.playing_card,
         china_card_owner=state.china_card_owner,
         china_card_face_up=state.china_card_face_up,
         china_card_available=china_available,
         deck_size=len(state.deck),
-        deck_possible=_deck_possible(state, player),
+        unseen=unseen,
+        in_deck_odds=in_deck_odds,
         discard=tuple(sorted(state.discard, key=lambda n: CARDS[n].number)),
         removed=tuple(sorted(state.removed, key=lambda n: CARDS[n].number)),
         effects=tuple(

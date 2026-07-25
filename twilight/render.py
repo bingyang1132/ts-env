@@ -116,6 +116,53 @@ def render_hand(obs: Observation) -> str:
     return "\n".join(rows) if rows else "    (empty)"
 
 
+def render_card_counting(obs: Observation, *, list_limit: int = 40) -> str:
+    """What is where, for counting cards.
+
+    The discard and removed piles are public in the real game, so they are listed in
+    full. Everything else is split into the observer's own hand and the *unseen* set --
+    the opponent's hand plus the draw pile, which cannot be told apart.
+    """
+    lines = ["CARD COUNTING"]
+    lines.append(
+        f"    draw pile {obs.deck_size} cards, opponent holds {obs.opponent_hand_size}; "
+        f"{len(obs.unseen)} cards unseen, each ~{obs.in_deck_odds:.0%} likely to be in "
+        "the draw pile rather than their hand"
+    )
+
+    scoring = obs.unseen_scoring_cards()
+    if scoring:
+        lines.append(
+            f"    scoring cards still unseen ({len(scoring)}): "
+            + ", ".join(str(CARDS[n].scoring_region) for n in scoring)
+        )
+    else:
+        lines.append("    no scoring cards unseen -- all are accounted for")
+
+    by_side = obs.unseen_by_side()
+    lines.append(
+        "    unseen events by side: "
+        f"{by_side['USSR']} USSR, {by_side['USA']} US, {by_side['Neutral']} neutral"
+    )
+
+    lines.append(f"    discarded ({len(obs.discard)}): " + _card_list(obs.discard, list_limit))
+    lines.append(
+        f"    removed from the game ({len(obs.removed)}): "
+        + _card_list(obs.removed, list_limit)
+    )
+    lines.append(f"    unseen ({len(obs.unseen)}): " + _card_list(obs.unseen, list_limit))
+    return "\n".join(lines)
+
+
+def _card_list(names: tuple[str, ...], limit: int) -> str:
+    if not names:
+        return "none"
+    shown = ", ".join(names[:limit])
+    if len(names) > limit:
+        shown += f", ... (+{len(names) - limit} more)"
+    return shown
+
+
 def render(obs: Observation, *, include_log: bool = True) -> str:
     """Full text view of the position and the pending decision."""
     parts: list[str] = []
@@ -176,10 +223,9 @@ def render(obs: Observation, *, include_log: bool = True) -> str:
     face = "face up" if obs.china_card_face_up else "face down, unusable this turn"
     parts.append("")
     parts.append(f"China Card: {china}, {face}")
-    parts.append(
-        f"Deck: {obs.deck_size} undrawn, {len(obs.deck_possible)} cards unaccounted for; "
-        f"{len(obs.discard)} discarded, {len(obs.removed)} removed"
-    )
+
+    parts.append("")
+    parts.append(render_card_counting(obs))
 
     if include_log and obs.log_tail:
         parts.append("")
@@ -214,4 +260,10 @@ def _defcon_note(obs: Observation) -> str:
     return f"DEFCON {obs.defcon} forbids coups and realignment in: {names}"
 
 
-__all__ = ["render", "render_board", "render_hand", "render_scoring_preview"]
+__all__ = [
+    "render",
+    "render_board",
+    "render_card_counting",
+    "render_hand",
+    "render_scoring_preview",
+]

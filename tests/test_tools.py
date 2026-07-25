@@ -117,6 +117,76 @@ def test_board_boxes_do_not_all_collapse_to_one_spot():
 
 
 # --------------------------------------------------------------------------- #
+# Regions on the board
+# --------------------------------------------------------------------------- #
+
+
+def test_region_bands_report_the_engines_scoring_membership():
+    """The chips must agree with the rules layer, not with the drawn box."""
+    from twilight.data import REGION_COUNTRIES
+    from twilight.enums import Region
+
+    bands = {b["name"]: b for b in viz.region_bands()}
+    for name, band in bands.items():
+        expected = set(REGION_COUNTRIES[Region(name)])
+        assert set(band["members"]) == expected, name
+
+    # Austria and Finland are in both halves, so both halves must count them.
+    assert len(bands["Eastern Europe"]["members"]) == 9
+    assert len(bands["Western Europe"]["members"]) == 14
+    # Southeast Asia scores inside Asia too.
+    assert len(bands["Asia"]["members"]) == 15
+
+
+def test_region_bands_are_plausible_boxes():
+    bands = viz.region_bands()
+    assert len(bands) == 8
+    board = viz.BOARD_W * viz.BOARD_H
+    for band in bands:
+        assert band["w"] > 0 and band["h"] > 0
+        # No band may swallow the board; the largest is Asia at about a fifth.
+        assert (band["w"] * band["h"]) / board < 0.30, band["name"]
+
+
+def test_both_europes_are_austria_and_finland():
+    """Found by dual membership: their primary region resolves to Western Europe."""
+    assert set(viz.BOTH_EUROPES) == {"Austria", "Finland"}
+
+
+def test_card_reference_covers_every_card_with_its_text():
+    from twilight.data import CARDS
+
+    reference = viz.card_reference()
+    assert set(reference) == set(CARDS)
+    nato = reference["NATO"]
+    assert nato["n"] == 21 and nato["side"] == "USA" and nato["star"] is True
+    assert reference["Europe Scoring"]["scoring"] is True
+    assert all(entry["text"] for entry in reference.values())
+
+
+# --------------------------------------------------------------------------- #
+# Hands in the replay
+# --------------------------------------------------------------------------- #
+
+
+def test_frames_carry_both_hands_and_the_unseen_counts():
+    history = viz.play_game(5, ("safe_random", "safe_random"), optional_cards=False)
+    frames = expand(viz.record_frames(5, history, optional_cards=False)["frames"])
+
+    for i, frame in enumerate(frames):
+        assert len(frame["handCards"]) == 2
+        assert len(frame["handCards"][0]) == frame["hands"][0], f"frame {i}"
+        assert len(frame["handCards"][1]) == frame["hands"][1], f"frame {i}"
+        # Each side's unseen count excludes their own hand, so it cannot exceed the rest.
+        assert 0 <= frame["unseen"][0] <= 110
+        assert 0 <= frame["unseen"][1] <= 110
+
+    # Hands should actually change over a game, or the carry-forward is broken.
+    distinct = {tuple(f["handCards"][0]) for f in frames}
+    assert len(distinct) > 5
+
+
+# --------------------------------------------------------------------------- #
 # HTML output
 # --------------------------------------------------------------------------- #
 
