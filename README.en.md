@@ -187,6 +187,42 @@ At any prompt: a menu number, an action key, or `b` (board), `l` (log), `c <card
 up a card, partial match works), `u` (undo), `?`, `q`. Undo replays the action history, so
 it is exact but costs time proportional to how far in you are.
 
+**Decision rationales — the thing that makes agent debugging possible**
+
+A trajectory of actions tells you *what* an agent did. It does not tell you *why*, and for
+a language model that reasoning exists only at the moment it replies — it is not
+recoverable afterwards. So an agent may annotate each choice, and the note is stored beside
+the move and shown in the replay **against the board it was made on**.
+
+Three conventions are accepted, and an agent that does not care needs no changes:
+
+```python
+def act(self, game, decision):
+    return action                       # as before, no note
+    return action, "holding East Germany"   # or return a tuple
+    self.rationale = "holding East Germany" # or set an attribute while choosing
+    return action
+```
+
+The channel lives deliberately outside the engine (`twilight/record.py`): the rules do not
+care why a move was made, and a rationale must never be able to affect play. A test asserts
+exactly that — the same choices with and without notes produce an identical trajectory.
+
+Annotate your own moves with `#`:
+
+```
+coup:Iran # take the battleground before they consolidate
+```
+
+That builds a commented game to read back, or to train on. The `greedy` baseline explains
+itself too (`scored 1.2, next best 0.6, 7 tied so picked at random`), which makes the
+baseline itself debuggable.
+
+```bash
+python examples/llm_agent.py --games 1 --record game.json   # keeps the model's reasons
+python tools/viz.py game.json                               # step through its thinking
+```
+
 **Graphical board with full replay:**
 
 ```bash
@@ -199,8 +235,9 @@ One self-contained HTML file, no dependencies. The layout comes from the game's 
 `map_rect` coordinates, so all 84 countries sit roughly where they do on the physical
 board; they are coloured by controller, show both influence totals, and battlegrounds get
 a gold outline. The side panel has the VP / DEFCON / turn / military-ops / space-race
-tracks, an "if scored now" preview per region, and the cards in play. A slider scrubs the
-whole game (arrow keys and play/pause work too).
+tracks, an "if scored now" preview per region, the cards in play, and **both players' full
+hands** with card text on hover. A slider scrubs the whole game (arrow keys and play/pause
+work too), and you can jump straight between annotated steps.
 
 Every frame is a full snapshot taken by replaying the action history — the same mechanism
 as `Game.clone()`, so it is exact. Frames are delta-encoded (a 1048-step game drops from
@@ -245,9 +282,10 @@ twilight/
   decisions.py    the closed action vocabulary and Decision objects
   engine.py       the game as one generator; the API card events are written against
   events/         one handler per card, keyed by name
-  observe.py      state -> what one player may know
+  observe.py      state -> what one player may know, including card counting
   encode.py       Observation -> numpy arrays for learned policies
   render.py       Observation -> text for language models
+  record.py       game records and the agent-rationale channel
   env.py          reset/step wrapper, reward modes
 tools/
   extract_lua.py  regenerate the database from the game install

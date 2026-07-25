@@ -15,6 +15,11 @@ At any prompt you can type a menu number, an action key, or one of:
     u  / undo     take back your last action (replays the game to get there)
     q  / quit
 
+Append ``# why`` to any move to annotate it -- ``coup:Iran # deny them the battleground``.
+The note is stored with the move and shown in the replay, which is how you build a
+commented game to read back or to train on. Agents annotate their own moves the same way
+(see :mod:`twilight.record`), so a recorded game shows both sides' reasoning.
+
 Undo works by replaying the action history, which is how :meth:`Game.clone` works and is
 exact -- but it costs time proportional to how far into the game you are.
 """
@@ -22,7 +27,6 @@ exact -- but it costs time proportional to how far into the game you are.
 from __future__ import annotations
 
 import argparse
-import json
 import random
 import sys
 from pathlib import Path
@@ -33,6 +37,7 @@ from twilight import Game, Side  # noqa: E402
 from twilight.data import CARDS  # noqa: E402
 from twilight.decisions import Decision  # noqa: E402
 from twilight.observe import observe  # noqa: E402
+from twilight.record import GameRecord, Step, call_agent  # noqa: E402
 from twilight.render import render  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "examples"))
@@ -41,6 +46,7 @@ from baselines import AGENTS  # noqa: E402
 HELP = """\
   <number>      choose that menu entry
   <action key>  e.g. country:Iran, use:coup, pass
+  ... # why     annotate the move, e.g. `coup:Iran # deny the battleground`
   b / board     reprint the board
   l / log       the full game log
   c <card>      look up a card by name (partial match works)
@@ -81,8 +87,13 @@ def lookup_card(query: str) -> None:
             print(f"    {line}")
 
 
-def prompt_human(game: Game, decision: Decision, *, verbose: bool) -> str:
-    """Ask the terminal for an action, handling the meta-commands."""
+def prompt_human(
+    game: Game, decision: Decision, *, verbose: bool
+) -> tuple[str, str | None]:
+    """Ask the terminal for an action, handling the meta-commands.
+
+    Returns ``(action_key, note)``; the note is whatever followed a ``#``.
+    """
     show(game, decision, full=verbose)
     while True:
         try:
@@ -92,6 +103,17 @@ def prompt_human(game: Game, decision: Decision, *, verbose: bool) -> str:
 
         if not raw:
             continue
+
+        # Everything after the first '#' is the player's own note on the move.
+        note: str | None = None
+        if "#" in raw:
+            raw, _, rest = raw.partition("#")
+            raw = raw.strip()
+            note = rest.strip() or None
+            if not raw:
+                print("  a note needs a move in front of it")
+                continue
+
         lowered = raw.lower()
 
         if lowered in ("q", "quit", "exit"):
@@ -107,7 +129,7 @@ def prompt_human(game: Game, decision: Decision, *, verbose: bool) -> str:
                 print(f"  {entry}")
             continue
         if lowered in ("u", "undo"):
-            return "__undo__"
+            return "__undo__", None
         if lowered.startswith("c ") or lowered.startswith("card "):
             lookup_card(raw.split(None, 1)[1])
             continue
@@ -116,17 +138,17 @@ def prompt_human(game: Game, decision: Decision, *, verbose: bool) -> str:
         if raw.isdigit():
             index = int(raw)
             if 0 <= index < len(decision.options):
-                return decision.options[index].key
+                return decision.options[index].key, note
             print(f"  menu index out of range 0..{len(decision.options) - 1}")
             continue
 
         # An action key, exact or unique prefix.
         if decision.find(raw) is not None:
-            return raw
+            return raw, note
         candidates = [k for k in decision.legal_keys if k.lower().startswith(lowered)]
         if len(candidates) == 1:
             print(f"  -> {candidates[0]}")
-            return candidates[0]
+            return candidates[0], note
         if candidates:
             print(f"  ambiguous, matches: {', '.join(candidates[:8])}")
         else:
@@ -187,11 +209,15 @@ def main() -> int:
         print(f"watching {args.opponent} play both sides")
     print("type ? at any prompt for help\n")
 
+    steps: list[Step] = []
     try:
         while game.decision is not None:
             decision = game.decision
+            player, dtype = decision.player.label, str(decision.type)
+            extra: dict = {}
+
             if decision.player in humans:
-                key = prompt_human(game, decision, verbose=not args.brief)
+                key, note = prompt_human(game, decision, verbose=not args.brief)
                 if key == "__undo__":
                     # Drop back to before this player's previous action.
                     history = list(game.history)
@@ -206,19 +232,27 @@ def main() -> int:
                             break
                     else:
                         game = rebuild(seed, [], **options)
+                    del steps[len(game.history):]
                     print("  ...undone")
                     continue
+                if note:
+                    print(f'  noted: "{note}"')
                 game.step(key)
             else:
-                action = agent.act(game, decision)
-                print(f"  {decision.player.label} ({args.opponent}): "
-                      f"{decision.type} -> {action.key}")
-                game.step(action)
+                reply, note, extra = call_agent(agent, game, decision)
+                key = decision.resolve(reply).key
+                reason = f"  // {note}" if note else ""
+                print(f"  {player} ({args.opponent}): {dtype} -> {key}{reason}")
+                game.step(key)
                 if args.pause and not humans:
                     try:
                         input("  [Enter] ")
                     except EOFError:
                         raise Quit from None
+
+            steps.append(
+                Step(action=key, player=player, decision_type=dtype, note=note, extra=extra)
+            )
     except Quit:
         print("\nabandoned.")
         return 130
@@ -237,27 +271,26 @@ def main() -> int:
         print(f"  {entry}")
 
     if args.record:
-        record_game(game, args.record, seed)
-        print(f"\nrecorded to {args.record} -- render it with:"
-              f"\n  python tools/viz.py {args.record}")
-    return 0
-
-
-def record_game(game: Game, path: Path, seed: int) -> None:
-    """Save enough to replay and visualise the game."""
-    path.write_text(
-        json.dumps(
-            {
-                "seed": seed,
-                "optional_cards": game.optional_cards,
-                "history": game.history,
-                "winner": game.state.winner.label if game.state.winner else None,
-                "win_reason": game.state.win_reason.value if game.state.win_reason else None,
+        record = GameRecord(
+            seed=seed,
+            optional_cards=game.optional_cards,
+            steps=steps,
+            winner=state.winner.label if state.winner is not None else "draw",
+            win_reason=state.win_reason.value if state.win_reason is not None else None,
+            final_vp=state.vp,
+            final_turn=state.turn,
+            metadata={
+                "humans": sorted(s.label for s in humans),
+                "opponent": args.opponent,
             },
-            indent=1,
-        ),
-        encoding="utf-8",
-    )
+        )
+        record.save(args.record)
+        annotated = len(record.annotated())
+        print(
+            f"\nrecorded to {args.record} ({len(record)} steps, {annotated} annotated)"
+            f" -- render it with:\n  python tools/viz.py {args.record}"
+        )
+    return 0
 
 
 if __name__ == "__main__":

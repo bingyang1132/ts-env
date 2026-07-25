@@ -49,6 +49,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from twilight import Game, Side, rules  # noqa: E402
+from twilight import record as record_module  # noqa: E402
 from twilight.data import CARDS, COUNTRIES  # noqa: E402
 from twilight.decisions import Action, ActionKind, Decision, DecisionType  # noqa: E402
 from twilight.enums import AUTO_VICTORY, OpsUse  # noqa: E402
@@ -173,12 +174,23 @@ class GreedyAgent:
 
     # -- policy ----------------------------------------------------------- #
 
-    def act(self, game: Game, decision: Decision) -> Action:
+    def act(self, game: Game, decision: Decision) -> tuple[Action, str]:
         side = decision.player
         scored = [(self._value(game, decision, side, a), a) for a in decision.options]
         best = max(s for s, _ in scored)
         # Break ties randomly so repeated games are not identical.
-        return self.rng.choice([a for s, a in scored if s == best])
+        tied = [a for s, a in scored if s == best]
+        chosen = self.rng.choice(tied)
+
+        # Explain the choice, so a replay shows the reasoning and not just the move.
+        runners_up = sorted((s for s, _ in scored if s < best), reverse=True)[:1]
+        margin = f", next best {runners_up[0]:.1f}" if runners_up else ""
+        note = f"scored {best:.1f}{margin}"
+        if best <= -50:
+            note = f"all options look losing ({best:.1f}); {note}"
+        elif len(tied) > 1:
+            note += f", {len(tied)} tied so picked at random"
+        return chosen, note
 
     def _value(self, game: Game, decision: Decision, side: Side, action: Action) -> float:
         state = game.state
@@ -289,21 +301,23 @@ AGENTS = {
 
 
 def play_game(ussr, usa, seed: int) -> dict:
-    game = Game(seed=seed)
-    agents = {Side.USSR: ussr, Side.USA: usa}
-    steps = 0
-    while game.decision is not None:
-        agent = agents[game.decision.player]
-        game.step(agent.act(game, game.decision))
-        steps += 1
-        if steps > 200_000:
-            raise RuntimeError("game failed to terminate")
+    """Play one game and summarise it.
+
+    Goes through :func:`twilight.record.play_game`, so agents that return a rationale
+    have it captured rather than dropped.
+    """
+    record = record_module.play_game(
+        {Side.USSR: ussr, Side.USA: usa},
+        seed,
+        metadata={"ussr": getattr(ussr, "name", "?"), "usa": getattr(usa, "name", "?")},
+    )
     return {
-        "winner": game.state.winner,
-        "reason": game.state.win_reason.value if game.state.win_reason else "?",
-        "vp": game.state.vp,
-        "turn": game.state.turn,
-        "steps": steps,
+        "winner": None if record.winner == "draw" else Side.from_label(record.winner),
+        "reason": record.win_reason or "?",
+        "vp": record.final_vp,
+        "turn": record.final_turn,
+        "steps": len(record),
+        "record": record,
     }
 
 

@@ -175,6 +175,39 @@ python tools/play.py --record game.json          # 记录整局，供可视化�
 `c <卡名>` 查卡（支持部分匹配）、`u` 撤销、`?` 帮助、`q` 退出。撤销通过重放动作历史实现，
 结果精确，但代价与当前进度成正比。
 
+**决策注释（诊断智能体的关键）**
+
+只看动作序列，你能知道智能体**做了什么**，但看不出**为什么**——对大模型尤其如此，它的推理只
+存在于回复的那一刻，事后无法复原。所以智能体可以给自己每一步附一句理由，理由会和动作一起存
+进录像，并在回放里显示在**当时的棋盘旁边**。
+
+智能体三种写法都支持，不想用的完全不用改：
+
+```python
+def act(self, game, decision):
+    return action                      # 原样，不带理由
+    return action, "守住东德"           # 返回二元组
+    self.rationale = "守住东德"          # 或者设属性，act 里随时写
+    return action
+```
+
+注释通道**刻意放在引擎之外**（`twilight/record.py`）：规则不关心一步棋为什么走，理由也绝不
+允许影响对局。测试里有一条断言：同样的选择、带与不带注释，必须产生**完全相同**的对局轨迹。
+
+自己手打时用 `#` 注释：
+
+```
+coup:Iran # 抢在他控制之前打掉这个战场国
+```
+
+这样可以攒出一份带讲解的对局记录，回头自己看，或者拿去做 SFT 数据。`greedy` 基线也会解释
+自己（"scored 1.2, next best 0.6, 7 tied so picked at random"），调试基线时很有用。
+
+```bash
+python examples/llm_agent.py --games 1 --record game.json   # 模型的理由一起存下来
+python tools/viz.py game.json                              # 回放里逐步读它怎么想的
+```
+
 **图形化棋盘 + 全局回放**：
 
 ```bash
@@ -185,8 +218,9 @@ python tools/viz.py --seed 7 --agents greedy safe_random
 
 输出单个自包含 HTML（无外部依赖）。棋盘布局直接用**游戏自带的 `map_rect` 坐标**，所以 84 个
 国家的位置和实体棋盘基本一致；国家按控制方着色、显示双方影响力、战场国带金色描边；右侧是
-VP / DEFCON / 回合 / 军事行动 / 太空竞赛等指示轨、各地区"此刻结算"预览、以及在场卡牌。底部
-滑块可以逐步拖过整局（支持左右方向键、播放/暂停）。
+VP / DEFCON / 回合 / 军事行动 / 太空竞赛等指示轨、各地区"此刻结算"预览、在场卡牌，以及**双方
+完整手牌**（悬停看卡面文字）。底部滑块可以逐步拖过整局（支持左右方向键、播放/暂停），并可以
+在有注释的步骤之间直接跳转。
 
 每一帧都是重放动作历史得到的完整快照，与 `Game.clone()` 同一机制，因此精确。帧数据做了
 增量编码（1048 帧的对局从 1.8MB 降到约 500KB），`tests/test_tools.py` 有一个独立实现的
@@ -227,9 +261,10 @@ twilight/
   decisions.py    封闭动作词表与 Decision 对象
   engine.py       整局游戏作为一个生成器；卡牌事件所依赖的 API
   events/         每张卡一个处理函数，按卡名注册
-  observe.py      state -> 单个玩家可以知道的信息
+  observe.py      state -> 单个玩家可以知道的信息（含记牌信息）
   encode.py       Observation -> 供学习型策略使用的 numpy 数组
   render.py       Observation -> 供大模型使用的文本
+  record.py       对局记录 + 智能体决策理由通道
   env.py          reset/step 封装与奖励模式
 tools/
   extract_lua.py  从游戏安装目录重新生成数据库

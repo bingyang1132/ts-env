@@ -18,6 +18,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 sys.path.insert(0, str(ROOT / "examples"))
 
 from twilight import Game  # noqa: E402
+from twilight.record import GameRecord, record_from_game  # noqa: E402
 
 import play  # noqa: E402
 import viz  # noqa: E402
@@ -62,19 +63,19 @@ def expand(frames: list[dict]) -> list[dict]:
 @pytest.mark.parametrize("seed", [0, 5, 11])
 def test_delta_encoding_round_trips_exactly(seed):
     """Every frame the visualiser draws must match the state it was taken from."""
-    history = viz.play_game(seed, ("safe_random", "safe_random"), optional_cards=False)
+    record = viz.play_game(seed, ("safe_random", "safe_random"), optional_cards=False)
 
     # Capture the truth without any encoding.
     truth = []
     game = Game(seed)
     truth.append(viz.snapshot(game))
-    for key in history:
+    for key in record.history:
         if game.decision is None:
             break
         game.step(key)
         truth.append(viz.snapshot(game))
 
-    encoded = viz.record_frames(seed, history, optional_cards=False)["frames"]
+    encoded = viz.record_frames(record)["frames"]
     assert len(encoded) == len(truth)
 
     for i, (got, want) in enumerate(zip(expand(encoded), truth, strict=True)):
@@ -86,8 +87,8 @@ def test_delta_encoding_round_trips_exactly(seed):
 
 
 def test_delta_encoding_actually_shrinks_the_payload():
-    history = viz.play_game(3, ("safe_random", "safe_random"), optional_cards=False)
-    encoded = viz.record_frames(3, history, optional_cards=False)["frames"]
+    record = viz.play_game(3, ("safe_random", "safe_random"), optional_cards=False)
+    encoded = viz.record_frames(record)["frames"]
 
     # Only the first frame carries full arrays.
     assert "inf" in encoded[0] and "ctrl" in encoded[0]
@@ -170,8 +171,8 @@ def test_card_reference_covers_every_card_with_its_text():
 
 
 def test_frames_carry_both_hands_and_the_unseen_counts():
-    history = viz.play_game(5, ("safe_random", "safe_random"), optional_cards=False)
-    frames = expand(viz.record_frames(5, history, optional_cards=False)["frames"])
+    record = viz.play_game(5, ("safe_random", "safe_random"), optional_cards=False)
+    frames = expand(viz.record_frames(record)["frames"])
 
     for i, frame in enumerate(frames):
         assert len(frame["handCards"]) == 2
@@ -192,8 +193,8 @@ def test_frames_carry_both_hands_and_the_unseen_counts():
 
 
 def test_visualiser_writes_self_contained_html(tmp_path: Path):
-    history = viz.play_game(7, ("safe_random", "safe_random"), optional_cards=False)
-    data = viz.record_frames(7, history, optional_cards=False)
+    record = viz.play_game(7, ("safe_random", "safe_random"), optional_cards=False)
+    data = viz.record_frames(record)
     data["subtitle"] = "test"
     page = viz.build_html(data, "Test title")
 
@@ -219,13 +220,38 @@ def test_visualiser_writes_self_contained_html(tmp_path: Path):
     assert out.stat().st_size > 10_000
 
 
+def test_visualiser_carries_rationales_through_to_the_page():
+    """The greedy baseline explains itself, so a replay of it must show reasons."""
+    record = viz.play_game(4, ("greedy", "greedy"), optional_cards=False)
+    data = viz.record_frames(record)
+
+    assert len(data["notes"]) == len(data["frames"])
+    assert data["notes"][0] is None, "the opening frame has no action behind it"
+    annotated = [n for n in data["notes"] if n]
+    assert annotated, "greedy should annotate its moves"
+    assert any("scored" in n for n in annotated)
+
+    page = viz.build_html({**data, "subtitle": "t"}, "t")
+    assert "WHY —" in page and "prev reason" in page
+
+
+def test_visualiser_handles_a_recording_with_no_rationales():
+    record = viz.play_game(9, ("safe_random", "safe_random"), optional_cards=False)
+    data = viz.record_frames(record)
+    assert all(n is None for n in data["notes"])
+    # The page must still build, and say so rather than showing an empty panel.
+    page = viz.build_html({**data, "subtitle": "t"}, "t")
+    assert "no rationales in this recording" in page
+
+
 def test_visualiser_frame_count_matches_the_action_count():
-    history = viz.play_game(9, ("safe_random", "safe_random"), optional_cards=False)
-    data = viz.record_frames(9, history, optional_cards=False)
+    record = viz.play_game(9, ("safe_random", "safe_random"), optional_cards=False)
+    data = viz.record_frames(record)
     # One frame before the first action, plus one after each.
-    assert len(data["frames"]) == len(history) + 1
+    assert len(data["frames"]) == len(record) + 1
     assert len(data["actions"]) == len(data["frames"])
     assert len(data["log"]) == len(data["frames"])
+    assert len(data["notes"]) == len(data["frames"])
     assert data["actions"][0] == "start of game"
 
 
@@ -241,17 +267,15 @@ def test_recording_round_trips_through_the_visualiser(tmp_path: Path):
         game.step(rng.choice(game.decision.options))
 
     path = tmp_path / "rec.json"
-    play.record_game(game, path, 13)
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    record_from_game(game, seed=13).save(path)
+    reloaded = GameRecord.load(path)
 
-    assert payload["seed"] == 13
-    assert payload["history"] == game.history
+    assert reloaded.seed == 13
+    assert reloaded.history == game.history
     # Replaying the recording must reproduce the same ending.
-    frames = viz.record_frames(
-        payload["seed"], payload["history"], optional_cards=payload["optional_cards"]
-    )["frames"]
-    assert frames[-1]["winner"] == payload["winner"]
-    assert frames[-1]["reason"] == payload["win_reason"]
+    frames = viz.record_frames(reloaded)["frames"]
+    assert frames[-1]["winner"] == reloaded.winner
+    assert frames[-1]["reason"] == reloaded.win_reason
 
 
 def test_rebuild_reproduces_a_prefix_of_the_game():

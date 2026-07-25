@@ -28,6 +28,7 @@ from .engine import Game
 from .enums import OpsUse, Phase, Region, Side, Stage, WinReason
 from .env import TwilightStruggleEnv
 from .observe import Observation, observe
+from .record import GameRecord, Step, play_game, record_from_game
 from .render import render
 from .state import GameState
 
@@ -39,6 +40,7 @@ __all__ = [
     "Decision",
     "DecisionType",
     "Game",
+    "GameRecord",
     "GameState",
     "NUM_ACTIONS",
     "Observation",
@@ -47,9 +49,12 @@ __all__ = [
     "Region",
     "Side",
     "Stage",
+    "Step",
     "TwilightStruggleEnv",
     "WinReason",
     "__version__",
     "observe",
+    "play_game",
+    "record_from_game",
     "render",
 ]

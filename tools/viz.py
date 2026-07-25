@@ -29,6 +29,8 @@ from twilight import Game, Side, rules  # noqa: E402
 from twilight.data import CARDS, COUNTRIES, COUNTRY_ORDER, REGION_COUNTRIES  # noqa: E402
 from twilight.enums import SCORING_REGIONS, Region  # noqa: E402
 from twilight.observe import observe  # noqa: E402
+from twilight.record import GameRecord  # noqa: E402
+from twilight.record import play_game as record_play  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "examples"))
 from baselines import AGENTS  # noqa: E402
@@ -97,28 +99,35 @@ def snapshot(game: Game) -> dict:
     }
 
 
-def record_frames(seed: int | None, history: list[str], *, optional_cards: bool) -> dict:
-    """Replay *history*, capturing a snapshot before every action."""
-    game = Game(seed, optional_cards=optional_cards)
+def record_frames(record: GameRecord) -> dict:
+    """Replay a record, capturing a snapshot before and after every action.
+
+    Each frame carries the action that produced it, the log lines it generated, and the
+    acting agent's own rationale, so the replay shows a move, its consequences, and the
+    reason it was made against the board it was made on.
+    """
+    game = Game(record.seed, optional_cards=record.optional_cards)
     frames = [snapshot(game)]
     actions: list[str] = []
     log: list[str] = []
+    notes: list[str | None] = []
 
-    for key in history:
+    for step in record.steps:
         if game.decision is None:
             break
         before = len(game.state.log)
-        actor = game.decision.player.label
-        game.step(key)
-        actions.append(f"{actor}: {key}")
+        game.step(step.action)
+        actions.append(f"{step.player}: {step.action}")
         log.append("\n".join(str(e) for e in game.state.log[before:]))
+        notes.append(step.note)
         frames.append(snapshot(game))
 
     # The first frame has no action leading into it.
     actions.insert(0, "start of game")
     log.insert(0, "")
+    notes.insert(0, None)
     _delta_encode(frames)
-    return {"frames": frames, "actions": actions, "log": log}
+    return {"frames": frames, "actions": actions, "log": log, "notes": notes}
 
 
 #: Frame fields that usually repeat unchanged and are simply omitted when they do.
@@ -155,15 +164,17 @@ def _delta_encode(frames: list[dict]) -> None:
                 carried[key] = frame[key]
 
 
-def play_game(seed: int, agents: tuple[str, str], *, optional_cards: bool) -> list[str]:
-    game = Game(seed, optional_cards=optional_cards)
-    bots = {
-        Side.USSR: AGENTS[agents[0]](seed=seed),
-        Side.USA: AGENTS[agents[1]](seed=seed ^ 0xFFFF),
-    }
-    while game.decision is not None:
-        game.step(bots[game.decision.player].act(game, game.decision))
-    return game.history
+def play_game(seed: int, agents: tuple[str, str], *, optional_cards: bool) -> GameRecord:
+    """Play a fresh game between two named baselines, keeping their rationales."""
+    return record_play(
+        {
+            Side.USSR: AGENTS[agents[0]](seed=seed),
+            Side.USA: AGENTS[agents[1]](seed=seed ^ 0xFFFF),
+        },
+        seed,
+        optional_cards=optional_cards,
+        metadata={"ussr": agents[0], "usa": agents[1]},
+    )
 
 
 #: Band colour per region. Austria and Finland belong to both halves of Europe and so
@@ -342,6 +353,17 @@ _TEMPLATE = r"""<!DOCTYPE html>
   }
   .cardtip h4 { margin: 0 0 4px; font-size: 12px; }
   .cardtip p { margin: 0; color: var(--dim); white-space: pre-wrap; }
+  .why {
+    display: none; margin: 6px 0; padding: 7px 9px; border-radius: 6px;
+    background: #1a2028; border-left: 3px solid #6f8aa5; font-size: 12px;
+    white-space: pre-wrap;
+  }
+  .why b { color: var(--dim); font-weight: 500; font-size: 10.5px;
+           display: block; margin-bottom: 2px; letter-spacing: .04em; }
+  .why.ussr-note { border-left-color: var(--ussr); }
+  .why.usa-note { border-left-color: var(--usa); }
+  #whynav { display: flex; gap: 6px; align-items: center; margin-top: 8px;
+            color: var(--dim); font-size: 11px; }
   .controls { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
   input[type=range] { flex: 1; }
   button {
@@ -389,6 +411,7 @@ _TEMPLATE = r"""<!DOCTYPE html>
         <input type="range" id="slider" min="0" value="0">
         <span id="pos" class="action"></span>
       </div>
+      <div id="whynav"></div>
       <div class="legend">
         <span><i class="sw" style="background:var(--ussr)"></i>USSR control</span>
         <span><i class="sw" style="background:var(--usa)"></i>US control</span>
@@ -438,6 +461,7 @@ _TEMPLATE = r"""<!DOCTYPE html>
     <div class="panel" style="margin-top:12px">
       <b style="color:var(--dim);font-weight:500;font-size:11px">this step</b>
       <div class="action" id="action" style="margin:4px 0 2px"></div>
+      <div id="why" class="why"></div>
       <div id="prompt" style="color:var(--dim);font-size:11.5px"></div>
       <pre id="log"></pre>
     </div>
@@ -667,6 +691,20 @@ function draw(i) {
     ` <span style="font-size:11px;color:var(--dim)">${f.chinaUp ? 'face up' : 'face down'}</span>`;
 
   document.getElementById('action').textContent = D.actions[i];
+
+  // The acting agent's own reason for this move, if it recorded one.
+  const why = document.getElementById('why');
+  const note = D.notes[i];
+  if (note) {
+    const actor = (D.actions[i] || '').split(':')[0];
+    why.className = 'why ' + (actor === 'USSR' ? 'ussr-note' : actor === 'US' ? 'usa-note' : '');
+    why.innerHTML = `<b>WHY — ${actor}</b>`;
+    why.appendChild(document.createTextNode(note));
+    why.style.display = 'block';
+  } else {
+    why.style.display = 'none';
+  }
+
   let prompt = '';
   if (f.winner) {
     prompt = `<span class="over">game over — ${f.winner} (${f.reason})</span>`;
@@ -700,6 +738,31 @@ function draw(i) {
 
   document.getElementById('pos').textContent = `${i} / ${D.frames.length - 1}`;
   slider.value = i;
+}
+
+// -- jumping between annotated steps -----------------------------------------
+const annotatedAt = D.notes.map((n, i) => n ? i : -1).filter(i => i >= 0);
+
+const whynav = document.getElementById('whynav');
+if (annotatedAt.length) {
+  const prevB = document.createElement('button');
+  prevB.textContent = '‹ prev reason';
+  const nextB = document.createElement('button');
+  nextB.textContent = 'next reason ›';
+  const count = document.createElement('span');
+  count.textContent = `${annotatedAt.length} of ${D.frames.length} steps annotated`;
+  prevB.onclick = () => {
+    const c = annotatedAt.filter(i => i < at);
+    if (c.length) go(c[c.length - 1]);
+  };
+  nextB.onclick = () => {
+    const c = annotatedAt.find(i => i > at);
+    if (c !== undefined) go(c);
+  };
+  whynav.append(prevB, nextB, count);
+} else {
+  whynav.textContent =
+    'no rationales in this recording — agents can annotate their moves, see twilight/record.py';
 }
 
 let at = 0, timer = null;
@@ -754,23 +817,23 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.recording:
-        payload = json.loads(args.recording.read_text(encoding="utf-8"))
-        seed = payload["seed"]
-        history = payload["history"]
-        optional = payload.get("optional_cards", False)
-        subtitle = f"replay of {args.recording.name} — seed {seed}"
+        record = GameRecord.load(args.recording)
+        who = record.metadata.get("ussr"), record.metadata.get("usa")
+        label = f" — {who[0]} vs {who[1]}" if all(who) else ""
+        subtitle = f"replay of {args.recording.name} — seed {record.seed}{label}"
     else:
         seed = args.seed if args.seed is not None else random.randrange(1 << 30)
-        optional = args.optional_cards
-        history = play_game(seed, tuple(args.agents), optional_cards=optional)
+        record = play_game(seed, tuple(args.agents), optional_cards=args.optional_cards)
         subtitle = f"{args.agents[0]} (USSR) vs {args.agents[1]} (US) — seed {seed}"
 
-    data = record_frames(seed, history, optional_cards=optional)
+    data = record_frames(record)
     final = data["frames"][-1]
     outcome = final["winner"] or "unfinished"
+    annotated = sum(1 for n in data["notes"] if n)
     subtitle += (
         f" — {len(data['frames'])} steps, {outcome}"
         + (f" by {final['reason']}" if final["reason"] else "")
+        + (f", {annotated} annotated" if annotated else ", no rationales recorded")
     )
     data["subtitle"] = subtitle
 
