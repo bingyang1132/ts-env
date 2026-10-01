@@ -13,24 +13,24 @@ how useful a yardstick they are:
 ``GreedyAgent``       scores actions against a hand-written positional heuristic
                       (control, battlegrounds, VP) with hard safety rules.
 
-Measured over 40 games per pairing, 2026-07:
+Measured over 100 games per pairing, 2026-09-30 (after the Nuclear Test Ban fix):
 
 ===================  ===================  =================  ==============
 USSR                 USA                  USSR win rate      mean end turn
 ===================  ===================  =================  ==============
-greedy               random               57%                2.1
-greedy               safe_random          40%                2.7
-safe_random          greedy               45%                3.6
-safe_random          safe_random          57%                6.0
+greedy               random               88%                2.7
+random               greedy                7%                2.6
+greedy               safe_random          80%                3.8
+safe_random          greedy               16%                4.5
+safe_random          safe_random          58%                6.9
+greedy               greedy               39%                4.2
 ===================  ===================  =================  ==============
 
-Note the honest result: **GreedyAgent does not reliably beat SafeRandomAgent.** Its
-positional heuristic is real but short games are dominated by DEFCON brinkmanship, and a
-scorer that has to be taught every way to lose does worse than a filter that simply
-refuses to lose. Treat ``safe_random`` as the baseline to beat, and read the two
-strategies as evidence that this environment rewards not-losing before it rewards
-position. There is also a first-player advantage worth controlling for -- always
-evaluate an agent on both sides.
+An earlier table here (40 games, 2026-07) showed ``greedy`` failing to beat
+``safe_random`` and called that a real result. It was an engine bug: Nuclear Test Ban
+degraded DEFCON instead of improving it, and ``greedy``, which likes playing its own and
+neutral events, kept losing to that card at DEFCON 2-3. There is a first-player advantage
+worth controlling for -- always evaluate an agent on both sides.
 
 Run a tournament::
 

@@ -73,6 +73,9 @@ Reply in exactly this format:
 REASON: <one short sentence on why>
 ACTION: <one action key from the list>"""
 
+#: An ``ACTION:`` line that names a menu position rather than a key.
+_ACTION_INDEX = re.compile(r"ACTION\s*:\s*\[?\s*(\d+)\s*\]?[.。]?\s*$", re.IGNORECASE | re.MULTILINE)
+
 #: The reason line, if the model followed the format.
 _REASON_LINE = re.compile(r"^\s*REASON\s*:\s*(.+?)\s*$", re.IGNORECASE | re.MULTILINE)
 
@@ -121,6 +124,14 @@ def extract_key(reply: str, legal_keys: tuple[str, ...]) -> str | None:
     for key in sorted(legal_keys, key=len, reverse=True):
         if key in reply:
             return key
+    # The menu is numbered, and models frequently answer with the number instead of
+    # the key -- ``ACTION: [3]`` or ``ACTION: 3``. Accept it: the number is the menu
+    # position (zero-based), not the vocabulary index.
+    match = _ACTION_INDEX.search(reply)
+    if match:
+        index = int(match.group(1))
+        if 0 <= index < len(legal_keys):
+            return legal_keys[index]
     return None
 
 

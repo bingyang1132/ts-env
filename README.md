@@ -10,7 +10,7 @@
 
 ```
 python tools/extract_lua.py     # 从游戏安装目录重新生成 twilight/data/*.json
-python -m pytest tests -q       # 197 个测试
+python -m pytest tests -q       # 251 个测试
 python tools/random_play.py --games 200
 python tools/demo_views.py      # 查看同一局面下两种智能体视图
 ```
@@ -130,16 +130,16 @@ while True:
 ```
 
 棋盘以 `(84, 27)` 矩阵给出——每个国家一行，顺序固定——这样网络可以在国家之间共享权重、
-对它们做注意力，而不是被塞一个扁平向量。需要 MLP 基线时用 `flatten()` 拼成 2967 维。
+对它们做注意力，而不是被塞一个扁平向量。需要 MLP 基线时用 `flatten()` 拼成 3081 维。
 
 | 组成部分 | 形状 |
 |---|---|
 | `countries` | `(84, 27)` |
-| `global` | `(149,)` |
-| `hand` / `discard` / `removed` / `effects` / `deck_possible` | 各 `(110,)` |
+| `global` | `(153,)` |
+| `hand` / `discard` / `removed` / `effects` / `unseen` / `unseen_mask` / `opponent_hand` | 各 `(110,)` |
 | `action_mask` | `(237,)` |
 
-`deck_possible` 是刻意提供的：真实游戏里弃牌堆和移除堆都是公开信息，所以牌堆构成是可以推断
+`unseen`（尚未见到的牌，按仍在牌堆中的概率加权）、`unseen_mask`（同一集合的 0/1 版本）和 `opponent_hand`（被事件揭示的对手手牌）是刻意提供的：真实游戏里弃牌堆和移除堆都是公开信息，所以牌堆构成是可以推断
 的。**数牌是这个游戏里真实存在的技巧**，观测直接把这个推断结果交给智能体，而不是让它自己
 重新推导。
 
@@ -237,18 +237,28 @@ python examples/llm_agent.py --games 3          # 用桩模型跑通整个流程
 三个参考智能体：`random`（下限）、`safe_random`（仍然随机，但拒绝两种立即输棋的动作）、
 `greedy`（位置启发式）。
 
-每种配对跑 40 局的实测结果：`greedy` 对 `random` 胜率 57%，但**并不能稳定战胜 `safe_random`**
-（40–55%）。**这是一个真实结论，不是 bug。** 短对局由 DEFCON 边缘博弈主导，一个单纯"拒绝输棋"
-的过滤器，表现优于一个必须被逐条教会所有输法的评分器。请把 `safe_random` 当作要超越的基线，
-并且**始终在双方阵营都做评测**——存在先手优势。
+每种配对各执 100 局、双边的实测结果（2026-09-30）：`greedy` 对 `random` 胜率 88% / 93%
+（执苏联 / 执美国），对 `safe_random` 80% / 84%；`safe_random` 互搏时执苏联赢 58%。
+**先手优势真实存在**（对称配对里苏联多赢 8–16 个百分点），请**始终在双方阵营都做评测**。
+Qwen3.8-27B 零样本（文本视图，不开 thinking）对 `greedy` 双边 4 局 0 胜、首轮合法率 98.7%
+——对大模型而言合法性不是问题，棋力才是。
 
-两个 `safe_random` 对局平均能打到第 6 回合并进入最终结算；只要有一方是纯 `random`，对局
+两个 `safe_random` 对局平均能打到第 7 回合并进入最终结算；只要有一方是纯 `random`，对局
 往往在第 1–2 回合就结束，因此它不是个好标尺。
+
+一条曾经写在这里、被标为"真实结论，不是 bug"的结论需要撤回：此前测得 `greedy` 并不能稳定
+战胜 `safe_random`（40–55%）。真实原因是 Nuclear Test Ban 事件把 DEFCON 方向写反了——`greedy`
+乐于打出自己和中立牌的事件，在 DEFCON 2–3 时被这张本应是"安全牌"的卡直接判负，而只按 DEFCON
+标签过滤的 `safe_random` 反而躲过。248 个测试和随机对局不变量检查都没有发现它；发现它的是一个
+会解释自己理由的大模型智能体（它说"事件会把 DEFCON 改善到 4"，引擎却判它输，矛盾一眼可见）。
+现在 `tests/test_defcon_cards.py` 对全部 110 张卡核对 DEFCON 方向与游戏自带数据一致。
 
 如果你要自己写大模型循环，有一个解析细节值得记住：**动作 key 里含空格**
 （`country:West Germany`）。用空白切分模型回复会把 key 截断，把本来正确的答案变成非法答案
 ——在修好之前，这**静默拒绝了 27% 的有效回复**。请改成对 `decision.legal_keys` 做匹配，
-参见 `examples/llm_agent.py::extract_key`。
+参见 `examples/llm_agent.py::extract_key`。另一个同类问题：菜单是编号的，模型经常回答
+`ACTION: [3]` 而不是 key——不接受编号会把 82% 的首轮回复判成非法（Qwen3.8-27B 实测），接受后
+合法率 99%。
 
 ## 目录结构
 
@@ -276,7 +286,7 @@ tools/
 examples/
   baselines.py    random / safe_random / greedy 智能体与对局运行器
   llm_agent.py    提示词循环、非法输出重试、key 提取
-tests/            197 个测试
+tests/            251 个测试
 docs/
   card_spec.md    自动生成：每张卡的规则文本与内部效果函数名
   known_gaps.md   哪些地方**没有**忠实实现，以及原因

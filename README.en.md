@@ -12,7 +12,7 @@ adjacency and every card's statistics are authoritative.
 
 ```
 python tools/extract_lua.py     # regenerate twilight/data/*.json from the game install
-python -m pytest tests -q       # 197 tests
+python -m pytest tests -q       # 251 tests
 python tools/random_play.py --games 200
 python tools/demo_views.py      # see both agent views of one position
 ```
@@ -138,16 +138,16 @@ while True:
 
 The board arrives as an `(84, 27)` matrix — one row per country, fixed order — so a
 network can share weights across countries and attend over them, rather than being
-handed a flat blob. `flatten()` concatenates everything (2967 dims) for an MLP baseline.
+handed a flat blob. `flatten()` concatenates everything (3081 dims) for an MLP baseline.
 
 | Component | Shape |
 |---|---|
 | `countries` | `(84, 27)` |
-| `global` | `(149,)` |
-| `hand` / `discard` / `removed` / `effects` / `deck_possible` | `(110,)` each |
+| `global` | `(153,)` |
+| `hand` / `discard` / `removed` / `effects` / `unseen` / `unseen_mask` / `opponent_hand` | `(110,)` each |
 | `action_mask` | `(237,)` |
 
-`deck_possible` is deliberate: discard and removed piles are public in the real game, so
+`unseen` (cards not yet seen, weighted by the odds they are still in the deck), `unseen_mask` (the same set as 0/1) and `opponent_hand` (opponent cards revealed by events) are deliberate: discard and removed piles are public in the real game, so
 deck composition is inferable. Card counting is a genuine skill, and the observation
 hands the agent that inference instead of making it re-derive it.
 
@@ -256,20 +256,33 @@ python examples/llm_agent.py --games 3          # run the loop with a stub model
 Three reference agents: `random` (the floor), `safe_random` (random but refuses the two
 instantly-losing moves), and `greedy` (a positional heuristic).
 
-Measured over 40 games per pairing: `greedy` beats `random` 57%, but **does not reliably
-beat `safe_random`** (40–55%). That is a real result, not a bug. Short games are dominated
-by DEFCON brinkmanship, and a filter that simply refuses to lose outperforms a scorer that
-has to be taught every way to lose. Use `safe_random` as the baseline to beat, and always
-evaluate on both sides — there is a first-player advantage.
+Measured over 100 games per pairing, both sides (2026-09-30): `greedy` beats `random`
+88% / 93% (as USSR / as US) and `safe_random` 80% / 84%; `safe_random` vs itself wins 58%
+as the USSR. **The first-player advantage is real** (8–16 points in symmetric pairings), so
+always evaluate on both sides. Qwen3.8-27B zero-shot (text view, thinking off) against
+`greedy`: 0 wins in 4 games on both sides, 98.7% first-try legal replies — for a language
+model legality is not the problem, play strength is.
 
-Games between `safe_random` agents last ~6 turns and reach final scoring; games involving
+Games between `safe_random` agents last ~7 turns and reach final scoring; games involving
 plain `random` end on turn 1–2, which makes it a poor yardstick.
+
+A retraction. An earlier version of this README reported that `greedy` **did not reliably
+beat `safe_random`** (40–55%) and called it a real result rather than a bug. It was a bug:
+the Nuclear Test Ban event degraded DEFCON instead of improving it. `greedy` happily plays
+its own and neutral events, so at DEFCON 2–3 this supposedly safe card lost it the game on
+the spot, while `safe_random`, which only filters on DEFCON labels, dodged it. 248 tests and
+the random-play invariant checks did not catch it; a language-model agent that explains its
+moves did ("the event improves DEFCON to 4" — and the engine declared it the loser).
+`tests/test_defcon_cards.py` now checks every card's DEFCON direction against the game's
+own data.
 
 One parsing note worth internalising if you write your own LLM loop: **action keys contain
 spaces** (`country:West Germany`). Splitting a model's reply on whitespace truncates the
 key and turns a correct answer into an illegal one — this silently rejected 27% of valid
 replies until fixed. Match against `decision.legal_keys` instead; see
-`examples/llm_agent.py::extract_key`.
+`examples/llm_agent.py::extract_key`. A second one of the same kind: the menu is numbered,
+and models often answer `ACTION: [3]` rather than with the key — refusing the number
+rejected 82% of first replies from Qwen3.8-27B; accepting it brought legality to 99%.
 
 ## Layout
 
@@ -297,7 +310,7 @@ tools/
 examples/
   baselines.py    random / safe-random / greedy agents and a tournament runner
   llm_agent.py    prompt loop, retry-on-illegal-output, key extraction
-tests/            197 tests
+tests/            251 tests
 docs/
   card_spec.md    generated: every card's rules text and internal effect names
   known_gaps.md   what is NOT faithfully implemented, and why

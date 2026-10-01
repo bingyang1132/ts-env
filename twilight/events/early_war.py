@@ -594,10 +594,15 @@ def destalinization(game, ctx):
 
 @register("Nuclear Test Ban")
 def nuclear_test_ban(game, ctx):
-    """Score DEFCON minus 2 in VP, then degrade DEFCON two levels."""
+    """Score DEFCON minus 2 in VP, then *improve* DEFCON two levels.
+
+    The card's own data (``ImproveDEFCONLevel``) and the printed text agree on the
+    direction; an earlier version degraded DEFCON instead, which turned a safe neutral
+    card into a suicide card at DEFCON 2-3 and lost an LLM agent three games in four.
+    """
     state = game.state
     state.award_vp(ctx.player, state.defcon - 2)
-    game.degrade_defcon(2, ctx.player)
+    game.improve_defcon(2)
     return (yield from nothing())
 
 
