@@ -166,7 +166,7 @@ systematically mishandle them.
 
 Use `encode_observations=False` and `render()`. The text is deterministic — canonical
 ordering, integers not floats, stable headers — so the same position tokenizes
-identically every time. Actions are short canonical strings (`coup:Iran` style keys), so
+identically every time. Actions are short canonical strings (`use:coup`, `country:Iran` style keys), so
 you can constrain decoding to a grammar and assign credit at the token level.
 `Decision.resolve()` accepts an action key, an `Action`, or a vocabulary index, and
 raises `IllegalAction` with the legal set in the message — usable directly as
@@ -211,7 +211,7 @@ exactly that — the same choices with and without notes produce an identical tr
 Annotate your own moves with `#`:
 
 ```
-coup:Iran # take the battleground before they consolidate
+country:Iran # take the battleground before they consolidate
 ```
 
 That builds a commented game to read back, or to train on. The `greedy` baseline explains

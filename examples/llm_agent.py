@@ -76,6 +76,9 @@ ACTION: <one action key from the list>"""
 #: An ``ACTION:`` line that names a menu position rather than a key.
 _ACTION_INDEX = re.compile(r"ACTION\s*:\s*\[?\s*(\d+)\s*\]?[.。]?\s*$", re.IGNORECASE | re.MULTILINE)
 
+#: The ``ACTION:`` line itself, whatever it names.
+_ACTION_LINE = re.compile(r"ACTION\s*:\s*(.+?)\s*$", re.IGNORECASE | re.MULTILINE)
+
 #: The reason line, if the model followed the format.
 _REASON_LINE = re.compile(r"^\s*REASON\s*:\s*(.+?)\s*$", re.IGNORECASE | re.MULTILINE)
 
@@ -121,6 +124,17 @@ def extract_key(reply: str, legal_keys: tuple[str, ...]) -> str | None:
     cleaned = reply.strip().strip(".,`\"'")
     if cleaned in legal_keys:
         return cleaned
+    # The ACTION line is authoritative. Scanning the whole reply first let a longer key
+    # mentioned in the REASON line hijack the choice -- the rationale channel is supposed
+    # to be unable to affect play.
+    match = _ACTION_LINE.search(reply)
+    if match:
+        line = match.group(1).strip().strip(".,`\"'")
+        if line in legal_keys:
+            return line
+        for key in sorted(legal_keys, key=len, reverse=True):
+            if key in line:
+                return key
     for key in sorted(legal_keys, key=len, reverse=True):
         if key in reply:
             return key

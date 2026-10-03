@@ -197,7 +197,7 @@ def act(self, game, decision):
 自己手打时用 `#` 注释：
 
 ```
-coup:Iran # 抢在他控制之前打掉这个战场国
+country:Iran # 抢在他控制之前打掉这个战场国
 ```
 
 这样可以攒出一份带讲解的对局记录，回头自己看，或者拿去做 SFT 数据。`greedy` 基线也会解释

@@ -18,8 +18,8 @@ from typing import Any, Iterable
 from .data import CARDS, CHINA_CARD, COUNTRY_ORDER, COUNTRY_SLOT, NUM_COUNTRIES, card
 from .enums import Phase, Side, Stage, WinReason
 
-#: Influence needed in a country beyond the opponent's to control it equals the
-#: country's stability value.
+#: DEFCON track bounds. (Control needs influence exceeding the opponent's by the
+#: country's stability; see :func:`twilight.rules.controller`.)
 MAX_DEFCON = 5
 MIN_DEFCON = 1
 
