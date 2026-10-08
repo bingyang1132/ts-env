@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 
 from twilight import Game, Side
+from twilight.baselines import GreedyAgent, RandomAgent, SafeRandomAgent
 from twilight.record import (
     GameRecord,
     MAX_NOTE,
@@ -22,9 +23,6 @@ from twilight.record import (
     play_game,
     record_from_game,
 )
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "examples"))
-from baselines import GreedyAgent, RandomAgent, SafeRandomAgent  # noqa: E402
 
 
 class Plain:
@@ -252,3 +250,26 @@ def test_metadata_is_carried_through(tmp_path: Path):
     )
     reloaded = GameRecord.load(record.save(tmp_path / "g.json"))
     assert reloaded.metadata == {"model": "test", "run": 3}
+
+
+def test_examples_baselines_reexports_the_package_module():
+    """``examples/baselines.py`` is a thin shim over ``twilight.baselines``.
+
+    Older scripts put ``examples/`` on ``sys.path`` and ``from baselines import ...``;
+    they must get the very same objects the package exports.
+    """
+    import importlib
+
+    import twilight.baselines as pkg
+
+    examples = str(Path(__file__).resolve().parents[1] / "examples")
+    sys.path.insert(0, examples)
+    try:
+        shim = importlib.import_module("baselines")
+    finally:
+        sys.path.remove(examples)
+    for name in (
+        "AGENTS", "GreedyAgent", "RandomAgent", "SafeRandomAgent", "degrades_defcon",
+        "play_game", "main", "_defcon_in_label",
+    ):
+        assert getattr(shim, name) is getattr(pkg, name), name

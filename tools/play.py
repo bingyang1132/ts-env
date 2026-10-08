@@ -38,10 +38,8 @@ from twilight.data import CARDS  # noqa: E402
 from twilight.decisions import Decision  # noqa: E402
 from twilight.observe import observe  # noqa: E402
 from twilight.record import GameRecord, Step, call_agent  # noqa: E402
+from twilight.baselines import AGENTS  # noqa: E402
 from twilight.render import render  # noqa: E402
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "examples"))
-from baselines import AGENTS  # noqa: E402
 
 HELP = """\
   <number>      choose that menu entry

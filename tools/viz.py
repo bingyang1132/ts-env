@@ -26,14 +26,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from twilight import Game, Side, rules  # noqa: E402
+from twilight.baselines import AGENTS  # noqa: E402
 from twilight.data import CARDS, COUNTRIES, COUNTRY_ORDER, REGION_COUNTRIES  # noqa: E402
 from twilight.enums import SCORING_REGIONS, Region  # noqa: E402
 from twilight.observe import observe  # noqa: E402
 from twilight.record import GameRecord  # noqa: E402
 from twilight.record import play_game as record_play  # noqa: E402
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "examples"))
-from baselines import AGENTS  # noqa: E402
 
 #: Board pixel size the normalised map coordinates are scaled into.
 BOARD_W, BOARD_H = 1180, 760
