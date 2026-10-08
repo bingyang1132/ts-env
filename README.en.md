@@ -12,7 +12,7 @@ adjacency and every card's statistics are authoritative.
 
 ```
 python tools/extract_lua.py     # regenerate twilight/data/*.json from the game install
-python -m pytest tests -q       # 277 tests
+python -m pytest tests -q       # 278 tests
 python tools/random_play.py --games 200
 python tools/demo_views.py      # see both agent views of one position
 ```
@@ -248,17 +248,27 @@ existed.
 ## Baselines
 
 ```bash
-python examples/baselines.py --games 40 --ussr greedy --usa safe_random
+python -m twilight.baselines --games 40 --ussr greedy --usa safe_random
+python examples/baselines.py --games 40 --ussr greedy --usa safe_random   # same (thin shim)
 python examples/llm_agent.py --show-prompt      # inspect what a model would see
 python examples/llm_agent.py --games 3          # run the loop with a stub model
 ```
 
 Three reference agents: `random` (the floor), `safe_random` (random but refuses the two
-instantly-losing moves), and `greedy` (a positional heuristic).
+instantly-losing moves), and `greedy` (a positional heuristic). They ship with the package:
+`from twilight.baselines import GreedyAgent, AGENTS`. `examples/baselines.py` is a thin shim
+that re-exports `twilight.baselines`, so the older `from baselines import GreedyAgent` with
+`examples/` on `sys.path` keeps working.
 
 Measured over 100 games per pairing, both sides (2026-09-30): `greedy` beats `random`
-88% / 93% (as USSR / as US) and `safe_random` 80% / 84%; `safe_random` vs itself wins 58%
-as the USSR. **The first-player advantage is real** (8–16 points in symmetric pairings), so
+88% / 93% (as USSR / as US); `safe_random` vs itself wins 58% as the USSR. `greedy` beats
+`safe_random` **81.5%** on the current engine (with the 2026-10-08 realignment fix, see
+"Changes"; 200 games, seeds 7000 to 7099 once per side; 79% as USSR / 84% as US). On the
+engine before the fix (`515622c`) the same seeds gave 75.5% (measured 2026-10-07). The
+difference is not `greedy`, which never spends operations on realignment, but `safe_random`:
+the old engine did not charge realignment rolls against the operations budget, so a random
+agent rolled far past it (13,457 realignment-target choices in these 200 games, 2,295 after
+the fix), and the free rolls made it harder to beat. **The first-player advantage is real** (8–16 points in symmetric pairings), so
 always evaluate on both sides. Qwen3.8-27B zero-shot (text view, thinking off) against
 `greedy`: 0 wins in 4 games on both sides, 98.7% first-try legal replies — for a language
 model legality is not the problem, play strength is.
@@ -299,6 +309,7 @@ twilight/
   encode.py       Observation -> numpy arrays for learned policies
   render.py       Observation -> text for language models
   record.py       game records and the agent-rationale channel
+  baselines.py    random / safe-random / greedy agents and a tournament runner (`python -m twilight.baselines`)
   env.py          reset/step wrapper, reward modes
 tools/
   extract_lua.py  regenerate the database from the game install
@@ -308,9 +319,9 @@ tools/
   play.py         interactive terminal play: human, watch, record
   viz.py          export a self-contained HTML board and game replay
 examples/
-  baselines.py    random / safe-random / greedy agents and a tournament runner
+  baselines.py    thin shim re-exporting twilight.baselines (old `from baselines import ...`)
   llm_agent.py    prompt loop, retry-on-illegal-output, key extraction
-tests/            277 tests
+tests/            278 tests
 docs/
   card_spec.md    generated: every card's rules text and internal effect names
   known_gaps.md   what is NOT faithfully implemented, and why
@@ -354,6 +365,31 @@ full coverage.
 Cards worded "on your opponent's next action round ..." go through a general deferred
 trigger mechanism (`GameState.defer` / `Game._fire_deferred`) rather than per-card hacks;
 We Will Bury You's cancellable victory points and Missile Envy's forced play both use it.
+
+## Changes
+
+**2026-10-08: realignment rolls count against the operations budget (behaviour change).**
+`Game._realign_operation` never decremented its remaining count, so one realignment
+operation offered unlimited rolls until the player passed (the prompt kept saying "4 roll(s)
+left"), and the China Card's "+1 if all in Asia" branch was unreachable. Now each roll spends
+one operations point and the operation ends after `ops` rolls (the same country may be chosen
+again, and the player may pass early); the China Card's bonus roll is granted only when every
+roll was in Asia. This covers card play, the China Card and events that grant operations
+(free_operations, Grain Sales and others); the region-limited event realignments in `events/`
+already counted down and are unchanged. New tests in `tests/test_realign_ops.py`.
+
+- **Who is affected**: any agent that did not pass promptly inside a realignment rolled
+  beyond its budget. `greedy` never chooses realignment as an operation, so its own play is unchanged,
+  but results against opponents that do realign (`safe_random`, value-greedy agents, some
+  language models) change, e.g. `greedy` vs `safe_random` above, 75.5% -> 81.5%.
+- **Older recorded games may not replay**: an action history recorded on an earlier commit
+  that contains a realignment beyond the budget (or exactly `ops` rolls followed by a `pass`)
+  reaches a different decision or an illegal action on this version. To replay such records,
+  or rebuild positions from `(seed, history)`, use the pre-fix commit **`515622c`** as a
+  legacy checkout, e.g. `git worktree add ../ts-env-legacy 515622c`.
+- **Baseline agents moved into the package**: `examples/baselines.py` moved to
+  `twilight/baselines.py`, so a pip install provides `from twilight.baselines import
+  GreedyAgent`; `examples/baselines.py` stays as a re-export shim.
 
 ## Data provenance and licence
 

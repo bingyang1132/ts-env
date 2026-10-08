@@ -10,7 +10,7 @@
 
 ```
 python tools/extract_lua.py     # 从游戏安装目录重新生成 twilight/data/*.json
-python -m pytest tests -q       # 277 个测试
+python -m pytest tests -q       # 278 个测试
 python tools/random_play.py --games 200
 python tools/demo_views.py      # 查看同一局面下两种智能体视图
 ```
@@ -229,16 +229,24 @@ VP / DEFCON / 回合 / 军事行动 / 太空竞赛等指示轨、各地区"此�
 ## 基线
 
 ```bash
-python examples/baselines.py --games 40 --ussr greedy --usa safe_random
+python -m twilight.baselines --games 40 --ussr greedy --usa safe_random
+python examples/baselines.py --games 40 --ussr greedy --usa safe_random   # 同上（薄壳）
 python examples/llm_agent.py --show-prompt      # 查看模型会看到什么
 python examples/llm_agent.py --games 3          # 用桩模型跑通整个流程
 ```
 
 三个参考智能体：`random`（下限）、`safe_random`（仍然随机，但拒绝两种立即输棋的动作）、
-`greedy`（位置启发式）。
+`greedy`（位置启发式）。它们随包安装：`from twilight.baselines import GreedyAgent, AGENTS`。
+`examples/baselines.py` 只是从 `twilight.baselines` 全部 re-export 的薄壳，旧写法（把 `examples/`
+加进 `sys.path` 后 `from baselines import GreedyAgent`）照常可用。
 
 每种配对各执 100 局、双边的实测结果（2026-09-30）：`greedy` 对 `random` 胜率 88% / 93%
-（执苏联 / 执美国），对 `safe_random` 80% / 84%；`safe_random` 互搏时执苏联赢 58%。
+（执苏联 / 执美国）；`safe_random` 互搏时执苏联赢 58%。`greedy` 对 `safe_random` 在当前引擎
+（含 2026-10-08 的重整修复，见"变更说明"）上为 **81.5%**（200 局，种子 7000–7099 双边各一局；
+执苏联 79% / 执美国 84%）。修复前的引擎（`515622c`）同一批种子只有 75.5%（2026-10-07 实测）。
+差别不在 `greedy`——它从不把 ops 用于重整——而在 `safe_random`：旧引擎的重整不扣 ops，
+随机智能体一次重整会掷骰远超预算（这 200 局里共 13,457 次选重整目标，修复后 2,295 次），
+白得的掷骰让它更难被打败。
 **先手优势真实存在**（对称配对里苏联多赢 8–16 个百分点），请**始终在双方阵营都做评测**。
 Qwen3.8-27B 零样本（文本视图，不开 thinking）对 `greedy` 双边 4 局 0 胜、首轮合法率 98.7%
 ——对大模型而言合法性不是问题，棋力才是。
@@ -275,6 +283,7 @@ twilight/
   encode.py       Observation -> 供学习型策略使用的 numpy 数组
   render.py       Observation -> 供大模型使用的文本
   record.py       对局记录 + 智能体决策理由通道
+  baselines.py    random / safe_random / greedy 智能体与对局运行器（`python -m twilight.baselines`）
   env.py          reset/step 封装与奖励模式
 tools/
   extract_lua.py  从游戏安装目录重新生成数据库
@@ -284,9 +293,9 @@ tools/
   play.py         终端交互对局（人类 / 观战 / 记录）
   viz.py          导出自包含 HTML 棋盘与整局回放
 examples/
-  baselines.py    random / safe_random / greedy 智能体与对局运行器
+  baselines.py    薄壳：从 twilight.baselines re-export，兼容旧的 `from baselines import ...`
   llm_agent.py    提示词循环、非法输出重试、key 提取
-tests/            277 个测试
+tests/            278 个测试
 docs/
   card_spec.md    自动生成：每张卡的规则文本与内部效果函数名
   known_gaps.md   哪些地方**没有**忠实实现，以及原因
@@ -321,6 +330,25 @@ docs/
 卡面写着"在对手的下一个行动轮……"的条款走的是通用**延迟触发**机制
 （`GameState.defer` / `Game._fire_deferred`），而不是逐卡打补丁；We Will Bury You 可被取消的
 胜利点数、以及 Missile Envy 的强制出牌都用的这套机制。
+
+## 变更说明
+
+**2026-10-08：重整掷骰计入 ops 预算（行为变化）。** 此前 `Game._realign_operation` 从不扣减剩余
+次数，一次重整操作可以无限掷骰，直到玩家主动 pass（提示里一直写着"4 roll(s) left"）；中国牌
+"全在亚洲 +1"的分支也因此永远走不到。现在每掷一次消耗 1 点 ops，掷满 ops 次后操作自动结束
+（可重复选同一国，也可提前 pass），中国牌只有每次都选亚洲国家时才多给第 5 次。卡牌打出、中国牌、
+以及给予 ops 的事件（free_operations、Grain Sales 等）都经过这条路径；`events/` 里限定地区的
+事件重整原本就计数正确，未改动。新增 `tests/test_realign_ops.py`。
+
+- **谁受影响**：凡是重整中没有及时 pass 的智能体都会超出预算地掷骰。`greedy` 从不选择用 ops 重整，自身走法
+  不受影响；但对手（如 `safe_random`、价值网络贪心、部分语言模型）在旧引擎下多得了掷骰，
+  涉及这类对手的对局结果会变（例如上面 `greedy` 对 `safe_random` 75.5% → 81.5%）。
+- **历史对局不可重放**：在更早 commit 上记录的动作历史，若某次重整掷骰超过预算（或恰好掷满
+  ops 次后又跟了一个 `pass`），在本版本上重放会走到不同的决策或非法动作。要重放这些记录或从
+  `(seed, history)` 重建局面，请使用修复前的 commit **`515622c`** 作为 legacy 版本，例如
+  `git worktree add ../ts-env-legacy 515622c`。
+- **基线智能体移入包内**：`examples/baselines.py` 的内容移到 `twilight/baselines.py`，pip 安装后
+  即可 `from twilight.baselines import GreedyAgent`；`examples/baselines.py` 保留为 re-export 薄壳。
 
 ## 数据来源与授权
 
