@@ -12,7 +12,7 @@ adjacency and every card's statistics are authoritative.
 
 ```
 python tools/extract_lua.py     # regenerate twilight/data/*.json from the game install
-python -m pytest tests -q       # 251 tests
+python -m pytest tests -q       # 277 tests
 python tools/random_play.py --games 200
 python tools/demo_views.py      # see both agent views of one position
 ```
@@ -310,7 +310,7 @@ tools/
 examples/
   baselines.py    random / safe-random / greedy agents and a tournament runner
   llm_agent.py    prompt loop, retry-on-illegal-output, key extraction
-tests/            251 tests
+tests/            277 tests
 docs/
   card_spec.md    generated: every card's rules text and internal effect names
   known_gaps.md   what is NOT faithfully implemented, and why
@@ -335,6 +335,9 @@ handled correctly here:
 - **Influence placement reach is a snapshot** taken at the start of the action round, so
   influence placed this round cannot be chained outward to reach further countries.
 - **A losing realignment costs the attacker** influence — the roll is symmetric.
+- **Each realignment roll spends one operations point**: a 4-op card buys at most four
+  rolls (the same country may be chosen again, and the player may pass early); the China
+  Card's Asia bonus adds a fifth only when every roll was in Asia.
 - **Free coups** ignore DEFCON geography and do not count toward required military
   operations, but still degrade DEFCON in a battleground.
 - **Final scoring** scores every region, excludes Southeast Asia (already inside Asia),

@@ -10,7 +10,7 @@
 
 ```
 python tools/extract_lua.py     # 从游戏安装目录重新生成 twilight/data/*.json
-python -m pytest tests -q       # 251 个测试
+python -m pytest tests -q       # 277 个测试
 python tools/random_play.py --games 200
 python tools/demo_views.py      # 查看同一局面下两种智能体视图
 ```
@@ -286,7 +286,7 @@ tools/
 examples/
   baselines.py    random / safe_random / greedy 智能体与对局运行器
   llm_agent.py    提示词循环、非法输出重试、key 提取
-tests/            251 个测试
+tests/            277 个测试
 docs/
   card_spec.md    自动生成：每张卡的规则文本与内部效果函数名
   known_gaps.md   哪些地方**没有**忠实实现，以及原因
@@ -308,6 +308,7 @@ docs/
 - **influence 放置的可达范围是快照**，在行动轮开始时确定，所以本轮放下的 influence 不能
   向外接力去够到更远的国家。
 - **重整失败会让进攻方自己损失** influence——骰子对抗是对称的。
+- **每次重整掷骰消耗 1 点 ops**：4 点牌最多掷 4 次（可重复选同一国，也可随时 pass）；中国牌只有在每次都选亚洲国家时才多给第 5 次。
 - **免费政变**不受 DEFCON 地理限制、也不计入军事行动要求，但在战场国仍然会降低 DEFCON。
 - **最终结算**结算所有地区，排除东南亚（已包含在亚洲内），并且控制欧洲依然直接获胜。
 - 美国初始布置是 25 点 influence，**包含加拿大 2 点**——这一点很容易漏。
