@@ -1192,6 +1192,10 @@ class Game:
             if name is None:
                 return
             rules.resolve_realignment(state, side, name)
+            # Each realignment roll spends one operations point (the same country may
+            # be chosen again); the China Card's Asia bonus depends on every target.
+            remaining -= 1
+            chosen.append(name)
 
     # -- space race -------------------------------------------------------- #
 
