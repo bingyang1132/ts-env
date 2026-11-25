@@ -2,13 +2,8 @@
 
 Conventions are the ones documented in :mod:`twilight.events.early_war`.
 
-Two clauses in this range need engine support that does not exist yet and are
-therefore recorded in the effect payload but not enforced:
-
-* North Sea Oil's extra action round -- ``action_rounds_this_turn`` is read once per
-  turn and is shared by both players, so there is no per-side hook to raise;
-* Chernobyl's placement ban -- :meth:`twilight.engine.Game.spend_operations_influence`
-  does not consult the effect.
+North Sea Oil's eighth action round is read by ``Game._action_rounds_for`` every round,
+and Chernobyl's placement ban by :func:`twilight.rules.banned_placement_regions`.
 """
 
 from __future__ import annotations
@@ -16,7 +11,7 @@ from __future__ import annotations
 from .. import rules
 from ..data import CARDS
 from ..decisions import Decision, DecisionType, region_action
-from ..enums import OpsUse, Region, Side, WinReason
+from ..enums import OpsUse, Phase, Region, Side, WinReason
 from . import is_playable, register
 from .helpers import adjacent_to, free_coup, in_region, nothing, war
 
@@ -45,10 +40,15 @@ def _choose_region(game, side, prompt, regions=_NAMEABLE_REGIONS):
 
 
 def _free_realignments(game, side, rolls, *, allowed, prompt):
-    """Realignment rolls granted by an event, restricted to *allowed* countries."""
+    """Free realignment rolls granted by an event in a named region.
+
+    They ignore DEFCON geography, like a free coup (FAQ #96).
+    """
     pool = list(allowed)
     for remaining in range(rolls, 0, -1):
-        targets = [n for n in pool if rules.can_realign(game.state, side, n)]
+        targets = [
+            n for n in pool if rules.can_realign(game.state, side, n, ignore_defcon=True)
+        ]
         if not targets:
             return
         name = yield from game.choose_country(
@@ -179,8 +179,8 @@ def star_wars(game, ctx):
 def north_sea_oil(game, ctx):
     """OPEC is no longer playable, and the US takes an eighth action round this turn."""
     state = game.state
-    # The extra action round is recorded for the turn it was played; the engine has no
-    # per-side action-round hook, so only the OPEC clause is actually enforced.
+    # The turn it was played is recorded; Game._action_rounds_for gives the US eight
+    # action rounds on that turn, whether this resolved as a headline or mid-turn.
     state.add_effect(ctx.card, owner=Side.USA, extra_action_round_turn=state.turn)
     return (yield from nothing())
 
@@ -194,7 +194,17 @@ def north_sea_oil(game, ctx):
 def the_reformer(game, ctx):
     """4 USSR influence in Europe, 6 while ahead on VP; no more USSR coups in Europe."""
     state = game.state
-    points = 6 if state.vp_for(ctx.player) > 0 else 4
+    # "If the USSR is ahead of the US in VP, 6 Influence may be added to Europe
+    # instead": 4 or 6, the USSR's choice when ahead, then placed in full (user ruling
+    # 2026-11-25).
+    points = 4
+    if state.vp_for(Side.USSR) > 0:
+        pick = yield from game.choose_option(
+            Side.USSR,
+            "The Reformer: the USSR leads on VP; add how much influence in Europe?",
+            ["add 6 influence", "add 4 influence"],
+        )
+        points = 6 if pick == 0 else 4
     yield from game.add_influence(
         Side.USSR,
         points,
@@ -415,9 +425,9 @@ def tear_down_this_wall(game, ctx):
     ops = game.effective_ops(ctx.card, Side.USA)
     europe = in_region(Region.EUROPE)
     choices: list[tuple[str, str]] = []
-    if any(rules.can_coup(state, Side.USA, n) for n in europe):
+    if any(rules.can_coup(state, Side.USA, n, ignore_defcon=True) for n in europe):
         choices.append(("coup", f"free coup attempt in Europe with {ops} ops"))
-    if any(rules.can_realign(state, Side.USA, n) for n in europe):
+    if any(rules.can_realign(state, Side.USA, n, ignore_defcon=True) for n in europe):
         choices.append(("realign", f"{ops} realignment rolls in Europe"))
     choices.append(("none", "no coup or realignment"))
 
@@ -506,8 +516,10 @@ def pershing_ii_deployed(game, ctx):
         chooser=ctx.player,
         prompt=(
             "Pershing II Deployed: remove 1 US influence from each of up to three "
-            "Western European countries"
+            "Western European countries (pass to stop)"
         ),
+        # "up to three" (card text): the USSR may stop early.
+        allow_pass=True,
     )
 
 
@@ -532,7 +544,25 @@ def wargames(game, ctx):
         state.note("Wargames: not at DEFCON 2, no effect", ctx.player)
         return (yield from nothing())
 
+    # "you *may* immediately end the game ... after giving opponent 6 VPs". At DEFCON 2
+    # the event occurs whatever is chosen (the card leaves the game); FAQ #100 lets the
+    # player decline, or give the 6 VP and still not end (user ruling 2026-11-25).
+    choice = yield from game.choose_option(
+        ctx.player,
+        f"Wargames (VP {state.vp_for(ctx.player):+d} to you):",
+        [
+            "do not give the 6 VP and do not end the game",
+            "give the opponent 6 VP and end the game (no final scoring)",
+            "give the opponent 6 VP but do not end the game",
+        ],
+    )
+    if choice == 0:
+        state.note("Wargames: the player declines", ctx.player)
+        return
     state.award_vp(ctx.player.opponent, 6)
+    if choice == 2 or state.is_over:
+        state.note(f"Wargames: {ctx.player.opponent.label} +6 VP, play goes on", ctx.player)
+        return
 
     if state.vp > 0:
         winner: Side | None = Side.USSR
@@ -542,7 +572,6 @@ def wargames(game, ctx):
         winner = None
     state.note(f"Wargames: {ctx.player.opponent.label} +6 VP, the game ends", ctx.player)
     state.finish(winner, WinReason.WARGAMES)
-    return (yield from nothing())
 
 
 # --------------------------------------------------------------------------- #

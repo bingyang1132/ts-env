@@ -41,14 +41,19 @@ _LATIN_AMERICA = tuple(in_region(Region.CENTRAL_AMERICA)) + tuple(
 )
 
 
-def _free_realignments(game, side, ops, *, allowed, prompt):
-    """Realignment rolls granted by an event, restricted to *allowed*.
+def _free_realignments(game, side, ops, *, allowed, prompt, one_region_of=()):
+    """Free realignment rolls granted by an event in a named region.
 
     The engine's own realignment loop covers the whole board, so the region-limited
-    cards need their own.
+    cards need their own. Like a free coup, they ignore DEFCON geography (FAQ).
+    With *one_region_of*, the first target's region (one of those listed) confines
+    the rest.
     """
+    allowed = list(allowed)
     for remaining in range(ops, 0, -1):
-        targets = [n for n in allowed if rules.can_realign(game.state, side, n)]
+        targets = [
+            n for n in allowed if rules.can_realign(game.state, side, n, ignore_defcon=True)
+        ]
         name = yield from game.choose_country(
             side,
             targets,
@@ -60,6 +65,11 @@ def _free_realignments(game, side, ops, *, allowed, prompt):
         if name is None:
             return
         rules.resolve_realignment(game.state, side, name)
+        for region in one_region_of:
+            if region in COUNTRIES[name].regions:
+                allowed = [n for n in allowed if region in COUNTRIES[n].regions]
+                one_region_of = ()
+                break
 
 
 def _controlled_battlegrounds(state, side) -> int:
@@ -74,10 +84,14 @@ def _controlled_battlegrounds(state, side) -> int:
 @register("Brush War")
 def brush_war(game, ctx):
     """Attack a stability 1-2 country: victory on 3-6 for 1 VP and 3 military ops."""
+    state = game.state
     pool = [
         n
         for n in COUNTRIES
-        if not COUNTRIES[n].superpower and COUNTRIES[n].stability <= 2
+        if not COUNTRIES[n].superpower
+        and COUNTRIES[n].stability <= 2
+        # NATO: US-controlled countries in Europe may not be attacked by Brush War.
+        and not (ctx.player is Side.USSR and rules.nato_protects(state, n))
     ]
     target = yield from game.choose_country(
         ctx.player, pool, "Brush War: choose a country with stability 1 or 2 to attack"
@@ -128,9 +142,10 @@ def arms_race(game, ctx):
 def cuban_missile_crisis(game, ctx):
     """DEFCON drops to 2; any further coup by the opponent this turn loses them the game.
 
-    The opponent may cancel it by removing 2 influence from Cuba (USSR) or from West
-    Germany or Turkey (US). Both halves need engine hooks that do not exist yet, so the
-    effect is only recorded here.
+    The opponent may cancel it by removing 2 influence from Cuba (USSR) or 2 from one of
+    West Germany or Turkey (US): ``Game._offer_cuban_missile_crisis_cancel``, offered at
+    the start of their round and before any coup they could take. The loss is checked
+    in ``Game.coup``.
     """
     state = game.state
     game.degrade_defcon(state.defcon - 2, ctx.player)
@@ -306,10 +321,12 @@ def junta(game, ctx):
     ops = game.effective_ops(ctx.card, ctx.player)
     labels: list[str] = []
     kinds: list[str | None] = []
-    if any(rules.can_coup(state, ctx.player, n) for n in _LATIN_AMERICA):
+    if any(rules.can_coup(state, ctx.player, n, ignore_defcon=True) for n in _LATIN_AMERICA):
         labels.append(f"free coup attempt with {ops} ops")
         kinds.append("coup")
-    if any(rules.can_realign(state, ctx.player, n) for n in _LATIN_AMERICA):
+    if any(
+        rules.can_realign(state, ctx.player, n, ignore_defcon=True) for n in _LATIN_AMERICA
+    ):
         labels.append(f"{ops} free realignment rolls")
         kinds.append("realign")
     labels.append("neither")
@@ -327,12 +344,15 @@ def junta(game, ctx):
             prompt="Junta: free coup attempt in Central or South America",
         )
     elif kinds[choice] == "realign":
+        # The rolls all go to one of the two regions (FAQ #47): the first target fixes
+        # which.
         yield from _free_realignments(
             game,
             ctx.player,
             ops,
             allowed=_LATIN_AMERICA,
             prompt="Junta: free realignment in Central or South America",
+            one_region_of=(Region.CENTRAL_AMERICA, Region.SOUTH_AMERICA),
         )
 
 
@@ -380,9 +400,10 @@ def missile_envy(game, ctx):
         state.note("Missile Envy: the opponent holds no operations card", ctx.player)
         return (yield from nothing())
 
-    # Printed operations value decides which card is highest; the opponent breaks ties.
-    best = max(CARDS[n].ops for n in pool)
-    tied = [n for n in pool if CARDS[n].ops == best]
+    # "Highest valued" is the holder's modified operations value (user ruling
+    # 2026-11-25); the opponent breaks ties.
+    best = max(game.effective_ops(n, opponent) for n in pool)
+    tied = [n for n in pool if game.effective_ops(n, opponent) == best]
     given = yield from game.choose_card(
         opponent, tied, f"Missile Envy: hand over one of your {best} ops cards"
     )
@@ -391,9 +412,10 @@ def missile_envy(game, ctx):
     # Held outside every pile until it is used and retired below.
     state.hold(given)
 
-    # Missile Envy itself changes hands rather than being discarded.
+    # Missile Envy itself changes hands rather than being discarded; Game._retire_card
+    # leaves it alone because it is now in a hand. Once the opponent spends it, it goes
+    # to the discard pile like any other card.
     state.hand(opponent).append(ctx.card)
-    state.add_effect(ctx.card, owner=opponent, expires="end_of_turn", do_not_discard=True)
     state.note(f"Missile Envy: exchanged for {given}", ctx.player)
 
     # The opponent is compelled to spend Missile Envy itself for operations on their
@@ -405,10 +427,17 @@ def missile_envy(game, ctx):
         yield from game._resolve_event(given, ctx.player)
         game._retire_card(given, ctx.player, as_event=True)
     else:
+        # "use Operations value without triggering event": a normal operations play
+        # with that card (verdict O4), Flower Power included.
+        game._check_flower_power(given, ctx.player)
         ops = game.effective_ops(given, ctx.player)
-        yield from game.free_operations(
-            ctx.player, ops, prompt=f"Missile Envy: use {given} for {ops} ops"
-        )
+        if not state.is_over:
+            yield from game.operations(
+                ctx.player,
+                ops,
+                prompt=f"Missile Envy: use {given} for {ops} ops",
+                bonus_regions=game._ops_bonus_regions(given, ctx.player),
+            )
         game._retire_card(given, ctx.player, as_event=False)
     # Released on the normal path only, so collecting an abandoned game cannot mutate
     # a state somebody is still reading.
@@ -428,9 +457,11 @@ WE_WILL_BURY_YOU = "we_will_bury_you_vp"
 def we_will_bury_you(game, ctx):
     """Degrade DEFCON one level; the USSR scores 3 VP unless the US plays UN Intervention.
 
-    The victory points are scheduled for the end of the US player's next action round
-    rather than awarded now, so that playing UN Intervention as an event in between
-    cancels them -- which is what the card says.
+    The victory points are scheduled for the US player's next action round rather
+    than awarded now: they are scored the moment that round commits to anything but a
+    UN Intervention event, before any US VP (``Game._settle_we_will_bury_you`` and
+    ``Game._settle_we_will_bury_you_before``), and a UN Intervention event cancels
+    them. The end of that round is the last resort.
     """
     game.degrade_defcon(1, ctx.player)
     if game.state.is_over:
@@ -440,8 +471,8 @@ def we_will_bury_you(game, ctx):
         ctx.card, WE_WILL_BURY_YOU, player=Side.USA, when="end", vp=3
     )
     game.state.note(
-        "We Will Bury You: USSR scores 3 VP at the end of the next US action round "
-        "unless UN Intervention is played as an event first",
+        "We Will Bury You: USSR scores 3 VP in the next US action round unless the US "
+        "plays UN Intervention as an event in it",
         ctx.player,
     )
     return (yield from nothing())

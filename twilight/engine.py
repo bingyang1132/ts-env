@@ -106,6 +106,13 @@ class EventContext:
 
 EventHandler = Callable[["Game", EventContext], Iterator[Decision]]
 
+#: Cards whose event can still end in a US UN Intervention event in the same action
+#: round (UN Intervention itself; Missile Envy, Star Wars and Grain Sales can fetch it,
+#: FAQ #50), so they leave We Will Bury You's victory points undecided.
+WE_WILL_BURY_YOU_CHAIN = frozenset(
+    {"UN Intervention", "Missile Envy", "Star Wars", "Grain Sales to Soviets"}
+)
+
 
 class Game:
     """A single game of Twilight Struggle.
@@ -145,10 +152,22 @@ class Game:
     # ------------------------------------------------------------------ #
 
     def _advance(self, action: Action | None) -> Decision | None:
+        """Run the driver to its next decision, or to the end of the game.
+
+        The game can end deep inside a card -- a VP award, a DEFCON drop or a Cuban
+        Missile Crisis coup halfway through an event or an operations play -- and the
+        generator stack would otherwise go on asking for the rest of that card. Once the
+        state is over, no further decision is issued: the driver is closed and ``None``
+        returned.
+        """
         try:
-            return self._driver.send(action)
+            decision = self._driver.send(action)
         except StopIteration:
             return None
+        if self.state.is_over:
+            self._driver.close()
+            return None
+        return decision
 
     def step(self, choice: Action | str | int) -> Decision | None:
         """Apply one atomic action and return the next decision, or ``None`` if over."""
@@ -339,8 +358,12 @@ class Game:
         max_per_country: int | None = None,
         chooser: Side,
         prompt: str = "",
+        allow_pass: bool = False,
     ) -> Iterator[Decision]:
-        """Remove up to *points* of *target*'s influence, chosen by *chooser*."""
+        """Remove up to *points* of *target*'s influence, chosen by *chooser*.
+
+        *allow_pass* lets the chooser stop early, for events worded "up to".
+        """
         pool = list(allowed) if allowed is not None else list(COUNTRY_ORDER)
         removed: dict[str, int] = {}
 
@@ -359,6 +382,7 @@ class Game:
                 prompt or f"Remove {remaining} more {target.label} influence",
                 dtype=DecisionType.REMOVE_INFLUENCE,
                 labels=self._influence_labels(candidates),
+                allow_pass=allow_pass,
                 remaining=remaining,
                 for_side=target.label,
             )
@@ -462,36 +486,50 @@ class Game:
         if state.is_over:
             return
 
-        # The Space Station holder takes an extra action round, and so does the US on
-        # the turn North Sea Oil is played. Both are per-side, not per-turn.
-        rounds = {
-            side: spacerace.action_rounds_for(
-                state.space_race, side, state.action_rounds_this_turn
-            )
-            for side in Side
-        }
-        if state.effect_data("North Sea Oil", "extra_action_round_turn") == state.turn:
-            rounds[Side.USA] += 1
-        for round_number in range(1, max(rounds.values()) + 1):
+        # The Space Station holder may play 8 action rounds, and so may the US on the
+        # turn North Sea Oil is played. Both are per-side, and both can arrive in the
+        # middle of the turn -- North Sea Oil played in an action round, the Space Station
+        # reached or lost by a space race roll -- so the count is re-read every round.
+        round_number = 0
+        while True:
+            round_number += 1
+            rounds = {side: self._action_rounds_for(side) for side in Side}
+            if round_number > max(rounds.values()):
+                break
             state.action_round = round_number
             state.phase = Phase.ACTION_ROUND
             for side in (Side.USSR, Side.USA):
                 if state.is_over:
                     return
-                if round_number > rounds[side]:
+                if round_number > self._action_rounds_for(side):
                     continue
-                defcon_before = state.defcon
+                state.defcon_moved_to_two = False
                 yield from self._action_round(side)
                 if state.is_over:
                     return
-                # NORAD triggers on DEFCON *arriving* at 2, once per round.
+                # NORAD: "at the conclusion of any Action Round in which the DEFCON
+                # marker moves to the '2' box" -- at any point in the round, even if it
+                # has moved off again since.
                 from .events.special import norad_end_of_action_round
 
-                yield from norad_end_of_action_round(
-                    self, defcon_before > 2 and state.defcon == 2
-                )
+                yield from norad_end_of_action_round(self, state.defcon_moved_to_two)
 
         yield from self._turn_end()
+
+    def _action_rounds_for(self, side: Side) -> int:
+        """Action rounds *side* may take this turn, as things stand right now."""
+        state = self.state
+        rounds = spacerace.action_rounds_for(
+            state.space_race, side, state.action_rounds_this_turn
+        )
+        if (
+            side is Side.USA
+            and state.effect_data("North Sea Oil", "extra_action_round_turn") == state.turn
+        ):
+            # "US may play 8 cards this turn": eight in all, not one more than the
+            # Space Station already allows.
+            rounds = max(rounds, spacerace.SPACE_STATION_ROUNDS)
+        return rounds
 
     def _add_stage_cards(self) -> None:
         """Shuffle in any stage whose cards enter the deck on this turn.
@@ -541,14 +579,19 @@ class Game:
         state.phase = Phase.HEADLINE
         state.action_round = 0
         state.headline = {0: None, 1: None}
+        state.headline_public = set()
+        state.reach_snapshot = None
 
         # Man in Earth Orbit: its holder chooses last, after the opponent has revealed.
         order = list(Side)
         ability = spacerace.OPPONENT_HEADLINE_FIRST
+        reveal_first: Side | None = None
         if spacerace.has_ability(state.space_race, Side.USA, ability):
             order = [Side.USSR, Side.USA]
+            reveal_first = Side.USSR
         elif spacerace.has_ability(state.space_race, Side.USSR, ability):
             order = [Side.USA, Side.USSR]
+            reveal_first = Side.USA
 
         for side in order:
             candidates = [
@@ -568,7 +611,14 @@ class Game:
             if chosen is not None:
                 state.headline[int(side)] = chosen
                 state.hand(side).remove(chosen)
+                if side is reveal_first:
+                    # Rule 6.4.4: selected *and revealed* before the holder chooses.
+                    state.headline_public.add(int(side))
+                    state.note(
+                        f"headline revealed first (Man in Earth Orbit): {chosen}", side
+                    )
 
+        state.headline_public = {int(side) for side in Side}
         picks = {side: state.headline[int(side)] for side in Side}
         shown = ", ".join(f"{s.label}: {picks[s] or '-'}" for s in Side)
         state.note(f"headlines revealed -- {shown}")
@@ -584,6 +634,7 @@ class Game:
         cancelled: set[Side] = set()
         if picks[Side.USA] == "Defectors" and picks[Side.USSR] is not None:
             cancelled.add(Side.USSR)
+        state.headline_cancelled = set()
 
         for side in sorted(Side, key=sort_key):
             name = picks[side]
@@ -591,7 +642,9 @@ class Game:
                 continue
             state.headline[int(side)] = None
 
-            if side in cancelled:
+            # Defectors played mid-headline (Grain Sales drawing it) cancels a USSR
+            # headline that has not resolved yet (user ruling 2026-11-25).
+            if side in cancelled or int(side) in state.headline_cancelled:
                 state.note(f"{side.label} headline {name} cancelled by Defectors", side)
                 self._retire_card(name, side, as_event=False)
                 continue
@@ -604,6 +657,11 @@ class Game:
                 state.note(f"headline {name} cannot take effect; discarded", side)
                 self._retire_card(name, side, as_event=False)
                 continue
+
+            # Flower Power scores a war card the US headlines, as for any US play.
+            self._check_flower_power(name, side)
+            if state.is_over:
+                break
 
             note = f"headline resolves: {name}"
             if actor is not side:
@@ -622,6 +680,11 @@ class Game:
         state.player = side
         state.phasing_player = side
         state.ar_sequence += 1
+        # Rule 6.1.1: operations influence goes next to markers that were in place at
+        # the start of the phasing player's action round, whatever an event does first.
+        state.reach_snapshot = {
+            int(s): rules.reachable_countries(state, s) for s in Side
+        }
 
         yield from self._fire_deferred(side, "start")
         if state.is_over:
@@ -631,21 +694,76 @@ class Game:
         if state.is_over:
             return
 
-        if not state.playable_hand(side):
+        trap = "Quagmire" if side is Side.USA else "Bear Trap"
+        if state.in_play(trap, owner=side):
+            # Quagmire and Bear Trap replace the action round with a discard and roll.
+            yield from self._settle_we_will_bury_you(side, None)
+            if not state.is_over:
+                yield from self._resolve_trap(side, trap)
+        elif not state.playable_hand(side):
+            yield from self._settle_we_will_bury_you(side, None)
             state.note("no cards to play; action round skipped", side)
-        elif state.in_play("Quagmire" if side is Side.USA else "Bear Trap", owner=side):
-            # Quagmire and Bear Trap force discards instead of a normal action round.
-            yield from self._resolve_trap(
-                side, "Quagmire" if side is Side.USA else "Bear Trap"
-            )
         else:
             yield from self._take_action_round(side)
 
-        # A compulsion only lasts for the one action round it was aimed at.
-        state.must_play[int(side)] = None
+        # Missile Envy's compulsion lasts until the card is spent (it can be put off by
+        # a scoring card that must be played, even into the next turn: FAQ).
+        forced = state.must_play[int(side)]
+        if forced is not None and forced not in state.hand(side):
+            state.must_play[int(side)] = None
 
         if not state.is_over:
             yield from self._fire_deferred(side, "end")
+
+    def _settle_we_will_bury_you(self, side: Side, chosen: str | None) -> Iterator[Decision]:
+        """We Will Bury You scores "the moment the US does not play UN Intervention"
+        (FAQ #50), before any US VP in that round.
+
+        Called once the US has chosen what to do with its action round. A card that can
+        still turn into a UN Intervention event -- UN Intervention itself, or Missile
+        Envy / Star Wars / Grain Sales, which can fetch it (FAQ #50) -- leaves the
+        decision open; :meth:`_settle_we_will_bury_you_before` then settles it the
+        moment the chain commits to anything else, and the end of the round is the last
+        resort.
+        """
+        if chosen in WE_WILL_BURY_YOU_CHAIN:
+            return
+        yield from self._pay_we_will_bury_you(side)
+
+    def _settle_we_will_bury_you_before(
+        self, card: str | None, *, as_event: bool
+    ) -> Iterator[Decision]:
+        """Settle a pending We Will Bury You as the US round commits to *card*.
+
+        Hooked into every resolution inside an action round -- an event
+        (:meth:`_resolve_event`), a card's use (:meth:`_perform_use`) and an
+        operations play (:meth:`operations`). In the US player's round, anything but a
+        UN Intervention event, or the event of a card that can still fetch one, means
+        the US has not played UN Intervention: the 3 VP are scored there and then,
+        before whatever that resolution awards.
+        """
+        state = self.state
+        if state.phase is not Phase.ACTION_ROUND or state.phasing_player is not Side.USA:
+            return
+        if as_event and card in WE_WILL_BURY_YOU_CHAIN:
+            return
+        yield from self._pay_we_will_bury_you(Side.USA)
+
+    def _pay_we_will_bury_you(self, side: Side) -> Iterator[Decision]:
+        from .events import deferred_handler_for
+        from .events.mid_war import WE_WILL_BURY_YOU
+
+        state = self.state
+        ready = [
+            t for t in state.deferred
+            if t.kind == WE_WILL_BURY_YOU and t.player is side
+            and state.ar_sequence > t.not_before
+        ]
+        for trigger in ready:
+            if state.is_over:
+                return
+            state.deferred.remove(trigger)
+            yield from deferred_handler_for(trigger.kind)(self, trigger)
 
     def _fire_deferred(self, side: Side, when: str) -> Iterator[Decision]:
         """Resolve triggers a card scheduled for this point in *side*'s action round."""
@@ -665,11 +783,14 @@ class Game:
             yield from deferred_handler_for(trigger.kind)(self, trigger)
 
     def _offer_cuban_missile_crisis_cancel(self, side: Side) -> Iterator[Decision]:
-        """Let the threatened player buy the crisis off before acting.
+        """Let the threatened player buy the crisis off.
 
-        The USSR removes 2 influence from Cuba; the US removes 2 from West Germany or
-        Turkey. Offered at the start of their action round, which is the only moment the
-        choice can matter -- after this they either coup and lose, or they do not.
+        "May be cancelled at any time if the USSR player removes two Influence from
+        Cuba or the US player removes 2 Influence from either West Germany or Turkey"
+        -- two from one country, not one from each (FAQ #40). Offered at the start of
+        the threatened player's action round and again whenever they are about to be
+        given a coup they might take, in either player's round (FAQ #40: "at any
+        time"). Those are the only moments the choice can matter.
         """
         state = self.state
         effect = state.effects.get("Cuban Missile Crisis")
@@ -677,10 +798,11 @@ class Game:
             return
 
         sources = ["Cuba"] if side is Side.USSR else ["West Germany", "Turkey"]
-        if sum(state.inf(side, n) for n in sources) < 2:
+        payable = [n for n in sources if state.inf(side, n) >= 2]
+        if not payable:
             return
 
-        where = " or ".join(sources)
+        where = " or ".join(payable)
         cancel = yield from self.confirm(
             side,
             f"Cuban Missile Crisis is in effect: couping would lose you the game. "
@@ -690,35 +812,80 @@ class Game:
         if not cancel:
             return
 
-        yield from self.remove_influence(
+        name = yield from self.choose_country(
             side,
-            2,
-            allowed=sources,
-            chooser=side,
-            prompt=f"Remove 2 influence from {where} to cancel the Cuban Missile Crisis",
+            payable,
+            "Remove 2 influence from which country to cancel the Cuban Missile Crisis?",
+            dtype=DecisionType.REMOVE_INFLUENCE,
+            labels=self._influence_labels(payable),
         )
+        state.remove_inf(side, name, 2)
+        state.note(f"{side.label} influence removed: {name} -2", side)
         state.remove_effect("Cuban Missile Crisis")
         state.note("Cuban Missile Crisis cancelled", side)
+
+    def offer_crisis_cancel_before_coup(self, side: Side) -> Iterator[Decision]:
+        """Before *side* is offered a coup, give them the chance to cancel the crisis."""
+        yield from self._offer_cuban_missile_crisis_cancel(side)
+
+    def _rounds_left(self, side: Side) -> int:
+        """Action rounds *side* has left this turn, the current one included."""
+        return max(1, self._action_rounds_for(side) - self.state.action_round + 1)
 
     def _take_action_round(self, side: Side) -> Iterator[Decision]:
         state = self.state
         hand = state.playable_hand(side)
+        scoring = [n for n in state.hand(side) if CARDS[n].is_scoring]
+        # Scoring cards may never be held (rule 4.5D / 10.1.5): once the rounds left
+        # cannot spare one, a scoring card has to be playable now.
+        scoring_due = bool(scoring) and len(scoring) >= self._rounds_left(side)
 
-        # Missile Envy compels its recipient to spend the card it handed over.
+        options = list(hand)
+        if scoring_due and CHINA_CARD in options:
+            # Rule 9.5: the China Card may not be played if it prevents the play of a
+            # scoring card.
+            options.remove(CHINA_CARD)
+
+        # Missile Envy compels its recipient to spend the card it handed over -- unless
+        # a scoring card must be played instead, which puts the compulsion off (FAQ).
         forced = state.must_play[int(side)]
-        if forced is not None and forced in hand:
+        if forced is not None and forced in options:
+            if not scoring_due:
+                yield from self._settle_we_will_bury_you(side, forced)
+                state.note(f"compelled to play {forced} for operations", side)
+                yield from self.play_card(forced, side, forced_use=True)
+                return
+            # "would still have to play the scoring card and hold Missile Envy".
+            options = list(scoring)
+
+        # Rule 9.8: play of the China Card can never be compelled by a shortage of
+        # cards, so with nothing else left the player may pass. An extra round from the
+        # Space Station or North Sea Oil ("may play 8") may be forgone too (user ruling
+        # 2026-11-25).
+        only_china = options == [CHINA_CARD]
+        extra_round = state.action_round > state.action_rounds_this_turn
+        may_pass = only_china or extra_round
+        chosen = yield from self.choose_card(
+            side,
+            options,
+            "Choose a card to play"
+            + (" (or pass: the China Card is never compelled)" if only_china else "")
+            + (" (or pass: this extra action round is optional)" if extra_round else ""),
+            dtype=DecisionType.PLAY_CARD,
+            allow_pass=may_pass,
+            labels={n: self._card_label(n, side) for n in options},
+        )
+        if chosen is None:
+            state.note("passes the action round", side)
+            yield from self._settle_we_will_bury_you(side, None)
+            return
+        yield from self._settle_we_will_bury_you(side, chosen)
+        if state.is_over:
+            return
+        if chosen == forced:
             state.note(f"compelled to play {forced} for operations", side)
             yield from self.play_card(forced, side, forced_use=True)
             return
-
-        chosen = yield from self.choose_card(
-            side,
-            hand,
-            "Choose a card to play",
-            dtype=DecisionType.PLAY_CARD,
-            labels={n: self._card_label(n, side) for n in hand},
-        )
-        assert chosen is not None
         yield from self.play_card(chosen, side)
 
     def _card_label(self, name: str, side: Side) -> str:
@@ -789,6 +956,8 @@ class Game:
 
         ops = self.effective_ops(name, side)
         bonus = " (+1 more if every point goes to Asia)" if name == CHINA_CARD else ""
+        if Region.SOUTHEAST_ASIA in self._ops_bonus_regions(name, side):
+            bonus += " (+1 more if every point goes to Southeast Asia: Vietnam Revolts)"
         if ops > 0:
             options.append(use_action(OpsUse.INFLUENCE, f"place {ops} influence{bonus}"))
             if any(rules.can_coup(state, side, n) for n in COUNTRY_ORDER):
@@ -827,6 +996,10 @@ class Game:
     def _perform_use(self, name: str, side: Side, use: OpsUse) -> Iterator[Decision]:
         state = self.state
         c = CARDS[name]
+
+        yield from self._settle_we_will_bury_you_before(name, as_event=use is OpsUse.EVENT)
+        if state.is_over:
+            return
         ops = self.effective_ops(name, side)
 
         # Flower Power scores against war cards however they are used, except when
@@ -876,8 +1049,7 @@ class Game:
             ops,
             use,
             card_name=name,
-            # The China Card is worth one more when every point is spent in Asia.
-            bonus_region=Region.ASIA if name == CHINA_CARD else None,
+            bonus_regions=self._ops_bonus_regions(name, side),
         )
 
         if opponent_event and not event_first:
@@ -892,6 +1064,11 @@ class Game:
         if side is not Side.USA or name not in WAR_CARDS:
             return
         if not self.state.in_play("Flower Power"):
+            return
+        # "unless made unplayable by a subsequent card" (FAQ #59): Arab-Israeli War
+        # after Camp David Accords does not pay out.
+        owner = CARDS[name].side
+        if not self._event_is_playable(name, owner if owner is not None else side):
             return
         self.state.award_vp(Side.USSR, 2)
         self.state.note(f"Flower Power: {name} played by the US, USSR +2 VP", side)
@@ -910,8 +1087,8 @@ class Game:
             return
         if state.in_play(name):
             return  # the event put it into play; it is not discarded
-        if state.effect_data(name, "do_not_discard"):
-            return
+        if state._is_accounted(name):
+            return  # the event moved it somewhere already (Missile Envy changes hands)
         state.resolve_card(name, as_event=as_event)
 
     # -- operations ------------------------------------------------------- #
@@ -935,6 +1112,30 @@ class Game:
 
         return max(1, min(4, ops))
 
+    def _ops_bonus_regions(self, name: str, side: Side) -> tuple[Region, ...]:
+        """Regions in which spending every point of *name* earns one more point.
+
+        The China Card is worth one more when every point goes to Asia; Vietnam Revolts
+        gives the USSR one more for a card spent entirely in Southeast Asia for the rest
+        of the turn. They stack (rule 7.4 example: the China Card all in Southeast Asia
+        under Vietnam Revolts is worth 6).
+        """
+        regions: list[Region] = []
+        if name == CHINA_CARD:
+            regions.append(Region.ASIA)
+        if side is Side.USSR and self.state.in_play("Vietnam Revolts", owner=Side.USSR):
+            regions.append(Region.SOUTHEAST_ASIA)
+        return tuple(regions)
+
+    @staticmethod
+    def _bonus_list(
+        bonus_region: Region | None, bonus_regions: Sequence[Region]
+    ) -> list[Region]:
+        out = list(bonus_regions)
+        if bonus_region is not None and bonus_region not in out:
+            out.append(bonus_region)
+        return out
+
     def conduct_operations(
         self,
         side: Side,
@@ -944,21 +1145,24 @@ class Game:
         card_name: str | None = None,
         free: bool = False,
         bonus_region: Region | None = None,
+        bonus_regions: Sequence[Region] = (),
     ) -> Iterator[Decision]:
         """Spend *ops* operations points as influence, a coup, or realignments.
 
-        *bonus_region* implements the China Card's "+1 Operations value when all points
-        are used in Asia". It cannot be folded into :meth:`effective_ops`, which runs
-        before the player has chosen any target, so the bonus is granted at the point
+        *bonus_regions* (or the single *bonus_region*) implement "+1 Operations value
+        when all points are used in" a region: the China Card (Asia) and Vietnam Revolts
+        (Southeast Asia). The bonus cannot be folded into :meth:`effective_ops`, which
+        runs before the player has chosen any target, so it is granted at the point
         where it becomes knowable and the extra point is confined to the same region.
         """
         del card_name  # kept for future card-specific ops modifiers
+        regions = self._bonus_list(bonus_region, bonus_regions)
         if use is OpsUse.INFLUENCE:
-            yield from self.spend_operations_influence(side, ops, bonus_region=bonus_region)
+            yield from self.spend_operations_influence(side, ops, bonus_regions=regions)
         elif use is OpsUse.COUP:
-            yield from self._coup_operation(side, ops, free=free, bonus_region=bonus_region)
+            yield from self._coup_operation(side, ops, free=free, bonus_regions=regions)
         elif use is OpsUse.REALIGN:
-            yield from self._realign_operation(side, ops, bonus_region=bonus_region)
+            yield from self._realign_operation(side, ops, bonus_regions=regions)
         else:
             raise ValueError(f"{use} is not an operations use")
 
@@ -967,23 +1171,56 @@ class Game:
         names = list(names)
         return bool(names) and all(region in COUNTRIES[n].regions for n in names)
 
-    def free_operations(
+    def event_ops(self, ops: int, side: Side) -> int:
+        """An event's "as if they played an N Ops card" value for *side*, modified.
+
+        The player's own modifiers apply (rule 7.4.2 Example 3: CIA Created under
+        Containment is worth 2): Containment / Brezhnev Doctrine add one to a maximum
+        of 4, Red Scare/Purge takes one off to a minimum of 1.
+        """
+        state = self.state
+        value = ops
+        if state.in_play("Containment", owner=side):
+            value += 1
+        if state.in_play("Brezhnev Doctrine", owner=side):
+            value += 1
+        value = min(max(value, ops), 4) if value > ops else value
+        if state.in_play("Red Scare/Purge", owner=side.opponent):
+            value -= 1
+        return max(1, value)
+
+    def operations(
         self,
         side: Side,
         ops: int,
         *,
         uses: Sequence[OpsUse] = (OpsUse.INFLUENCE, OpsUse.COUP, OpsUse.REALIGN),
         prompt: str = "",
+        bonus_regions: Sequence[Region] = (),
     ) -> Iterator[Decision]:
-        """Let *side* conduct operations as if they had played an *ops*-value card.
+        """Let *side* conduct a normal operations play worth *ops* (already modified).
 
-        Used by the many events worded "conduct operations as if they played an N Op
-        card". A coup taken this way is free: it does not count toward the required
-        military operations.
+        Used for every "conduct operations" that is not a free coup: events worded "as
+        if they played an N Ops card", Grain Sales and UN Intervention spending a real
+        card, and a card taken by Missile Envy. It is exactly an operations play made
+        outside one's own action round (user ruling 2026-11-25): DEFCON geography
+        applies, a coup counts toward military operations and degrades DEFCON in a
+        battleground, and DEFCON 1 loses for the phasing player.
         """
         state = self.state
+        yield from self._settle_we_will_bury_you_before(None, as_event=False)
+        if state.is_over:
+            return
+        if OpsUse.COUP in uses:
+            # The threatened player may cancel the Cuban Missile Crisis before choosing
+            # ("at any time", FAQ #40).
+            yield from self._offer_cuban_missile_crisis_cancel(side)
+            if state.is_over:
+                return
         available: list[Action] = []
-        if OpsUse.INFLUENCE in uses and rules.placeable_countries(state, side):
+        if OpsUse.INFLUENCE in uses and rules.placeable_countries(
+            state, side, reachable=self.reachable_for(side)
+        ):
             available.append(use_action(OpsUse.INFLUENCE, f"place {ops} influence"))
         if OpsUse.COUP in uses and any(rules.can_coup(state, side, n) for n in COUNTRY_ORDER):
             available.append(use_action(OpsUse.COUP, f"coup with {ops} ops"))
@@ -993,7 +1230,7 @@ class Game:
             available.append(use_action(OpsUse.REALIGN, f"{ops} realignment rolls"))
 
         if not available:
-            state.note(f"{ops} free operations point(s) wasted: nothing legal", side)
+            state.note(f"{ops} operations point(s) wasted: nothing legal", side)
             return
 
         if len(available) == 1:
@@ -1005,15 +1242,43 @@ class Game:
                     side,
                     prompt or f"Conduct operations as if playing a {ops} Op card",
                     tuple(available),
-                    {"ops": ops, "free": True},
+                    {"ops": ops},
                 )
             )
             use = OpsUse(action.value)
 
-        yield from self.conduct_operations(side, ops, use, free=True)
+        yield from self.conduct_operations(side, ops, use, bonus_regions=bonus_regions)
+
+    def free_operations(
+        self,
+        side: Side,
+        ops: int,
+        *,
+        uses: Sequence[OpsUse] = (OpsUse.INFLUENCE, OpsUse.COUP, OpsUse.REALIGN),
+        prompt: str = "",
+    ) -> Iterator[Decision]:
+        """Events worded "conduct operations as if they played an *ops* Op card".
+
+        A normal operations play (see :meth:`operations`) at the event's value as
+        modified for *side*. Vietnam Revolts' +1 applies to the USSR if every point goes
+        to Southeast Asia (user ruling 2026-11-25). The name is historical: these
+        operations are not "free" in the sense of rule 8.2.5.
+        """
+        value = self.event_ops(ops, side)
+        bonus: tuple[Region, ...] = ()
+        if side is Side.USSR and self.state.in_play("Vietnam Revolts", owner=Side.USSR):
+            bonus = (Region.SOUTHEAST_ASIA,)
+        yield from self.operations(
+            side, value, uses=uses, prompt=prompt, bonus_regions=bonus
+        )
 
     def spend_operations_influence(
-        self, side: Side, ops: int, *, bonus_region: Region | None = None
+        self,
+        side: Side,
+        ops: int,
+        *,
+        bonus_region: Region | None = None,
+        bonus_regions: Sequence[Region] = (),
     ) -> Iterator[Decision]:
         """Place influence with operations points.
 
@@ -1022,41 +1287,37 @@ class Game:
         Legal targets are frozen at the start of the placement, so newly placed
         influence cannot be chained outward to reach further countries.
 
-        If *bonus_region* is set and every point went into that region, one extra point
-        is granted, which must also go there.
+        For each of *bonus_regions* (or *bonus_region*) that every point went into, one
+        extra point is granted, which must also go there.
         """
         state = self.state
         budget = ops
         placed: dict[str, int] = {}
-        reachable = rules.reachable_countries(state, side)
-        bonus_granted = False
+        reachable = self.reachable_for(side)
+        pending = self._bonus_list(bonus_region, bonus_regions)
+        granted: list[Region] = []
 
         while True:
             if budget <= 0:
-                if (
-                    bonus_region is not None
-                    and not bonus_granted
-                    and self._all_in(placed, bonus_region)
-                ):
-                    bonus_granted = True
-                    budget = 1
-                    state.note(
-                        f"all operations points used in {bonus_region}: +1 bonus point",
-                        side,
-                    )
-                else:
+                earned = next((r for r in pending if self._all_in(placed, r)), None)
+                if earned is None:
                     break
+                pending.remove(earned)
+                granted.append(earned)
+                budget = 1
+                state.note(f"all operations points used in {earned}: +1 bonus point", side)
 
             candidates = rules.placeable_countries(
                 state, side, budget=budget, reachable=reachable
             )
-            if bonus_granted:
-                # The bonus point has to stay in the region that earned it.
+            if granted:
+                # A bonus point has to stay in the region that earned it.
                 candidates = [
-                    n for n in candidates if bonus_region in COUNTRIES[n].regions
+                    n for n in candidates
+                    if all(r in COUNTRIES[n].regions for r in granted)
                 ]
             if not candidates:
-                if not bonus_granted:
+                if not granted:
                     state.note(
                         f"{budget} operations point(s) wasted: nowhere legal to place", side
                     )
@@ -1094,10 +1355,16 @@ class Game:
         """
         from .events.special import yuri_and_samantha_on_coup
 
+        # Cuban Missile Crisis: the moment the constrained player initiates a coup they
+        # lose, whoever is phasing (FAQ #40/#62; the card overrides rule 8.1.3).
+        self._check_cuban_missile_crisis(side)
         yuri_and_samantha_on_coup(self, side)
         result = rules.resolve_coup(self.state, side, name, ops, free=free)
-        self._check_cuban_missile_crisis(side)
-        self._check_defcon_loss(side)
+        # DEFCON 1 loses for the phasing player, not necessarily the coup maker: a
+        # free coup from an opponent's event played for operations is the phasing
+        # player's responsibility (rule 8.1.3, FAQ #62 Lone Gunman).
+        blame = self.state.phasing_player if self.state.phasing_player is not None else side
+        self._check_defcon_loss(blame)
         return result
 
     def _check_cuban_missile_crisis(self, actor: Side) -> None:
@@ -1112,6 +1379,14 @@ class Game:
         )
         self.state.finish(effect.owner, WinReason.CUBAN_MISSILE_CRISIS)
 
+    def reachable_for(self, side: Side) -> frozenset[str]:
+        """Where *side* may place operations influence now (rule 6.1.1 snapshot)."""
+        state = self.state
+        snap = state.reach_snapshot.get(int(side)) if state.reach_snapshot else None
+        if snap is not None and state.phase is Phase.ACTION_ROUND:
+            return snap
+        return rules.reachable_countries(state, side)
+
     def _coup_operation(
         self,
         side: Side,
@@ -1119,6 +1394,7 @@ class Game:
         *,
         free: bool = False,
         bonus_region: Region | None = None,
+        bonus_regions: Sequence[Region] = (),
     ) -> Iterator[Decision]:
         state = self.state
         targets = [n for n in COUNTRY_ORDER if rules.can_coup(state, side, n)]
@@ -1133,9 +1409,10 @@ class Game:
         if name is None:
             return
         # A coup spends every point on one country, so the bonus is decided by the target.
-        if bonus_region is not None and bonus_region in COUNTRIES[name].regions:
-            ops += 1
-            state.note(f"all operations points used in {bonus_region}: coup at {ops} ops", side)
+        for region in self._bonus_list(bonus_region, bonus_regions):
+            if region in COUNTRIES[name].regions:
+                ops += 1
+                state.note(f"all operations points used in {region}: coup at {ops} ops", side)
         self.coup(side, name, ops, free=free)
 
     def coup_label(self, name: str, ops: int) -> str:
@@ -1149,31 +1426,34 @@ class Game:
         )
 
     def _realign_operation(
-        self, side: Side, ops: int, *, bonus_region: Region | None = None
+        self,
+        side: Side,
+        ops: int,
+        *,
+        bonus_region: Region | None = None,
+        bonus_regions: Sequence[Region] = (),
     ) -> Iterator[Decision]:
         state = self.state
         chosen: list[str] = []
         remaining = ops
-        bonus_granted = False
+        pending = self._bonus_list(bonus_region, bonus_regions)
+        granted: list[Region] = []
 
         while True:
             if remaining <= 0:
-                if (
-                    bonus_region is not None
-                    and not bonus_granted
-                    and self._all_in(chosen, bonus_region)
-                ):
-                    bonus_granted = True
-                    remaining = 1
-                    state.note(
-                        f"all realignments made in {bonus_region}: +1 bonus roll", side
-                    )
-                else:
+                earned = next((r for r in pending if self._all_in(chosen, r)), None)
+                if earned is None:
                     return
+                pending.remove(earned)
+                granted.append(earned)
+                remaining = 1
+                state.note(f"all realignments made in {earned}: +1 bonus roll", side)
 
             targets = [n for n in COUNTRY_ORDER if rules.can_realign(state, side, n)]
-            if bonus_granted:
-                targets = [n for n in targets if bonus_region in COUNTRIES[n].regions]
+            if granted:
+                targets = [
+                    n for n in targets if all(r in COUNTRIES[n].regions for r in granted)
+                ]
             if not targets:
                 return
             name = yield from self.choose_country(
@@ -1250,6 +1530,10 @@ class Game:
         from .events import handler_for
 
         state = self.state
+        if not from_headline:
+            yield from self._settle_we_will_bury_you_before(name, as_event=True)
+            if state.is_over:
+                return
         state.events_resolved.add(name)
         previous, state.event_player = state.event_player, side
         # An event reached directly rather than through play_card -- Five-Year Plan's
@@ -1290,26 +1574,65 @@ class Game:
     # -- traps -------------------------------------------------------------- #
 
     def _resolve_trap(self, side: Side, trap: str) -> Iterator[Decision]:
-        """Quagmire / Bear Trap: discard a 2+ ops card, or all scoring-free options."""
-        state = self.state
-        hand = [n for n in state.hand(side) if CARDS[n].ops >= 2]
+        """Quagmire / Bear Trap: discard a 2+ ops card and roll 1-4 to escape.
 
-        if not hand:
-            playable = [n for n in state.hand(side) if not CARDS[n].is_scoring]
-            if not playable:
-                state.note(f"{trap}: no discardable card; action round lost", side)
+        Following the card and FAQ #42/#44:
+
+        * a qualifying card is any held card (never the China Card) whose *modified*
+          ops value is 2 or more (rule 7.4.2 Example 2); its event does not occur;
+        * a Missile Envy the player is compelled to spend must be the next discard;
+        * with no qualifying card the trap stays: the player may only play scoring
+          cards, otherwise the round passes;
+        * scoring cards take precedence: with as many scoring cards as rounds left, a
+          scoring card is played instead of the discard. Otherwise a player holding a
+          qualifying card must discard (user ruling 2026-11-25).
+        """
+        state = self.state
+        hand = state.hand(side)
+        scoring = [n for n in hand if CARDS[n].is_scoring]
+        qualifying = [
+            n for n in hand
+            if not CARDS[n].is_scoring and self.effective_ops(n, side) >= 2
+        ]
+        forced = state.must_play[int(side)]
+        if forced is not None and forced in qualifying:
+            qualifying = [forced]
+
+        if not qualifying:
+            if not scoring:
+                state.note(
+                    f"{trap}: no card worth 2 or more operations; the round passes", side
+                )
                 return
-            state.note(f"{trap}: no 2+ ops card, may play normally", side)
-            state.remove_effect(trap)
-            yield from self._take_action_round(side)
+            chosen = yield from self.choose_card(
+                side,
+                scoring,
+                f"{trap}: no card worth 2 or more operations; play a scoring card",
+                dtype=DecisionType.PLAY_CARD,
+                labels={n: self._card_label(n, side) for n in scoring},
+            )
+            yield from self.play_card(chosen, side)
+            return
+
+        if scoring and len(scoring) >= self._rounds_left(side):
+            # As many scoring cards as rounds left: one must be played now, discard or
+            # not (scoring cards may never be held; user ruling 2026-11-25).
+            chosen = yield from self.choose_card(
+                side,
+                scoring,
+                f"{trap}: a scoring card must be played this round",
+                dtype=DecisionType.PLAY_CARD,
+                labels={n: self._card_label(n, side) for n in scoring},
+            )
+            yield from self.play_card(chosen, side)
             return
 
         chosen = yield from self.choose_card(
             side,
-            hand,
+            qualifying,
             f"{trap}: discard a card with 2 or more operations points",
             dtype=DecisionType.DISCARD_CARD,
-            labels={n: self._card_label(n, side) for n in hand},
+            labels={n: self._card_label(n, side) for n in qualifying},
         )
         assert chosen is not None
         state.hand(side).remove(chosen)
@@ -1327,7 +1650,13 @@ class Game:
         state = self.state
         state.phase = Phase.TURN_END
 
-        # Holding a scoring card at the end of a turn loses the game.
+        # Phase E: military operations. A VP win here ends the game before the held
+        # cards are ever revealed (rule 4.5, FAQ 8.5).
+        self._military_operations_check()
+        if state.is_over:
+            return
+
+        # Phase F: holding a scoring card at the end of a turn loses the game.
         holders = [
             side
             for side in Side
@@ -1339,9 +1668,9 @@ class Game:
             state.finish(winner, WinReason.HELD_SCORING_CARD)
             return
 
-        self._military_operations_check()
-        if state.is_over:
-            return
+        # Space race box 6: its holder may discard one held card (rule 6.4.4). After
+        # Phase F, so it can never be a scoring card (FAQ 6.4).
+        yield from self._discard_held_card()
 
         # Effects that last only for the turn expire now.
         for name, effect in list(state.effects.items()):
@@ -1352,7 +1681,9 @@ class Game:
                 effect.expires = "end_of_turn"
 
         if state.turn == FINAL_TURN:
-            # The China Card is worth a point to whoever holds it at the very end.
+            # The China Card is worth a point to whoever holds it at the very end. It is
+            # part of final scoring, where 20 VP is not an automatic win (rule 10.3.2).
+            state.final_scoring = True
             state.award_vp(state.china_card_owner, 1)
             state.note(f"{state.china_card_owner.label} holds the China Card: +1 VP")
 
@@ -1362,8 +1693,32 @@ class Game:
         state.note(f"turn {state.turn} ends; DEFCON now {state.defcon}")
 
         self._check_victory_points()
-        return
-        yield  # pragma: no cover - uniform generator interface
+
+    def _discard_held_card(self) -> Iterator[Decision]:
+        """Eagle/Bear Has Landed: the box 6 holder may discard one held card."""
+        state = self.state
+        if state.turn == FINAL_TURN:
+            return  # nothing is held over past the last turn
+        for side in Side:
+            if not spacerace.has_ability(
+                state.space_race, side, spacerace.DISCARD_HELD_CARD
+            ):
+                continue
+            hand = list(state.hand(side))
+            if not hand:
+                continue
+            chosen = yield from self.choose_card(
+                side,
+                hand,
+                "Eagle/Bear Has Landed: discard one held card, or pass to keep it",
+                dtype=DecisionType.DISCARD_CARD,
+                allow_pass=True,
+                labels={n: self._card_label(n, side) for n in hand},
+            )
+            if chosen is not None:
+                state.hand(side).remove(chosen)
+                state.discard_card(chosen)
+                state.note(f"Eagle/Bear Has Landed: discards held card {chosen}", side)
 
     def _military_operations_check(self) -> None:
         """Award VP for falling short of the required military operations.
@@ -1392,7 +1747,7 @@ class Game:
 
     def _check_victory_points(self) -> None:
         state = self.state
-        if state.is_over:
+        if state.is_over or state.final_scoring:
             return
         if state.vp >= VP_LIMIT:
             state.finish(Side.USSR, WinReason.VICTORY_POINTS)
@@ -1413,9 +1768,9 @@ class Game:
         before victory is decided.
         """
         state = self.state
+        state.final_scoring = True
         state.note("--- final scoring ---")
 
-        europe_winner: Side | None = None
         for region in (
             Region.EUROPE,
             Region.ASIA,
@@ -1426,11 +1781,12 @@ class Game:
         ):
             _, _, auto = rules.score_region(state, region)
             if auto is not None:
-                europe_winner = auto
+                # Europe is scored first, and controlling it still wins outright; 20 VP
+                # reached here does not (rule 10.3.2), so the rest is a plain tally.
+                state.finish(auto, WinReason.EUROPE_CONTROL)
+                return
 
-        if europe_winner is not None:
-            state.finish(europe_winner, WinReason.EUROPE_CONTROL)
-        elif state.vp > 0:
+        if state.vp > 0:
             state.finish(Side.USSR, WinReason.FINAL_SCORING)
         elif state.vp < 0:
             state.finish(Side.USA, WinReason.FINAL_SCORING)
@@ -1441,14 +1797,25 @@ class Game:
     # Convenience
     # ------------------------------------------------------------------ #
 
-    def score_region(self, region: Region) -> None:
+    def score_region(self, region: Region) -> Iterator[Decision]:
         """Resolve a scoring card, handling the Europe automatic victory.
 
-        Shuttle Diplomacy is spent by the first Asia or Middle East scoring it affects,
-        so it comes off the table here rather than expiring on a timer.
+        Shuttle Diplomacy is spent by the next Asia or Middle East scoring card, whether
+        or not the USSR controlled a battleground there, and goes to the discard pile.
+        The US chooses which USSR-controlled battleground it subtracts (asked only when
+        there is more than one).
         """
         state = self.state
-        _, _, auto = rules.score_region(state, region)
+        candidates = rules.shuttle_diplomacy_candidates(state, region)
+        excluded = yield from self.choose_country(
+            Side.USA,
+            candidates,
+            f"Shuttle Diplomacy: choose the USSR battleground that does not count in "
+            f"{region} scoring",
+        )
+        if excluded is not None:
+            state.note(f"Shuttle Diplomacy: {excluded} does not count for the USSR", Side.USA)
+        _, _, auto = rules.score_region(state, region, shuttle=True, shuttle_choice=excluded)
 
         if region in rules.SHUTTLE_DIPLOMACY_REGIONS and state.in_play("Shuttle Diplomacy"):
             state.remove_effect("Shuttle Diplomacy")
@@ -1469,4 +1836,12 @@ def headline_label(name: str) -> str:
     return f"{c.ops}op" + (f", {c.side.label} event" if c.side else ", neutral")
 
 
-__all__ = ["ACTION_ROUNDS", "EventContext", "EventHandler", "FINAL_TURN", "Game", "HAND_SIZE"]
+__all__ = [
+    "ACTION_ROUNDS",
+    "EventContext",
+    "EventHandler",
+    "FINAL_TURN",
+    "Game",
+    "HAND_SIZE",
+    "WE_WILL_BURY_YOU_CHAIN",
+]

@@ -5,9 +5,13 @@ the box 6/7/8 names and abilities and pays 4/2 for Lunar Orbit -- so do not mix 
 editions.
 
 Each box needs a minimum operations value to attempt and succeeds on a die roll at or
-below its threshold. Four boxes pay victory points; the other four instead grant a
-lasting ability, which belongs to the *first* player to arrive and is cancelled the
-moment the opponent reaches the same box (rule 6.4.4).
+below its threshold. Five boxes pay victory points (1, 3, 5, 7, 8); boxes 2, 4, 6 and 8
+grant a lasting ability, which belongs to the *first* player to arrive and is cancelled
+the moment the opponent reaches the same box (rule 6.4.4).
+
+Source of the box values: the track graphic printed with rule 6.4.1 in GMT's 20th
+Anniversary Hall of Fame Edition rulebook (p. 12), which carries the Deluxe box names
+and abilities; checked box by box on 2026-11-25 (``tests/cards/test_mech_space.py``).
 """
 
 from __future__ import annotations
@@ -82,9 +86,18 @@ def attempts_allowed(space_race: list[int], side: Side) -> int:
     return 2 if has_ability(space_race, side, TWO_ATTEMPTS) else 1
 
 
+#: Action rounds per turn for the Space Station holder (rule 6.4.4: "eight (8)").
+SPACE_STATION_ROUNDS = 8
+
+
 def action_rounds_for(space_race: list[int], side: Side, base: int) -> int:
-    """Action rounds *side* may take this turn, allowing for the Space Station."""
-    return base + 1 if has_ability(space_race, side, EIGHT_ACTION_ROUNDS) else base
+    """Action rounds *side* may take this turn, allowing for the Space Station.
+
+    Eight in all, whatever the stage: the same as one extra in the Mid and Late War.
+    """
+    if has_ability(space_race, side, EIGHT_ACTION_ROUNDS):
+        return max(base, SPACE_STATION_ROUNDS)
+    return base
 
 
 def victory_points(space_race: list[int], side: Side, box_number: int) -> int:
@@ -103,6 +116,7 @@ __all__ = [
     "EIGHT_ACTION_ROUNDS",
     "MAX_BOX",
     "OPPONENT_HEADLINE_FIRST",
+    "SPACE_STATION_ROUNDS",
     "SPACE_TRACK",
     "SpaceBox",
     "TWO_ATTEMPTS",

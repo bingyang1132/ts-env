@@ -12,7 +12,7 @@ adjacency and every card's statistics are authoritative.
 
 ```
 python tools/extract_lua.py     # regenerate twilight/data/*.json from the game install
-python -m pytest tests -q       # 278 tests
+python -m pytest tests -q       # 799 tests
 python tools/random_play.py --games 200
 python tools/demo_views.py      # see both agent views of one position
 ```
@@ -321,7 +321,7 @@ tools/
 examples/
   baselines.py    thin shim re-exporting twilight.baselines (old `from baselines import ...`)
   llm_agent.py    prompt loop, retry-on-illegal-output, key extraction
-tests/            278 tests
+tests/            799 tests (tests/cards: card-by-card suite)
 docs/
   card_spec.md    generated: every card's rules text and internal effect names
   known_gaps.md   what is NOT faithfully implemented, and why
@@ -349,16 +349,20 @@ handled correctly here:
 - **Each realignment roll spends one operations point**: a 4-op card buys at most four
   rolls (the same country may be chosen again, and the player may pass early); the China
   Card's Asia bonus adds a fifth only when every roll was in Asia.
-- **Free coups** ignore DEFCON geography and do not count toward required military
-  operations, but still degrade DEFCON in a battleground.
+- **Free coups** in a named region (Junta, Ortega, Tear Down This Wall, Che) ignore
+  DEFCON geography and do not count toward required military operations, but still
+  degrade DEFCON in a battleground. "As if they played an N Ops card" events are normal
+  operations: they do count, and DEFCON geography applies.
 - **Final scoring** scores every region, excludes Southeast Asia (already inside Asia),
   and Europe control still wins outright.
 - US setup is 25 influence **including Canada 2**, which is easy to miss.
 
 ### Known gaps
 
-Three clauses are still not faithful, and they are listed in `docs/known_gaps.md` along
-with the rulings taken where sources disagree. Nothing is silently approximated —
+`docs/known_gaps.md` lists the remaining simplifications, the rulings taken where the
+sources are silent (several by the user, 2026-11-25), and what is not yet covered (the
+space race box values are checked against the track graphic in GMT's 20th Anniversary
+rulebook). Nothing is silently approximated —
 `Game(strict_events=True)` raises on any card with no handler, and the test suite asserts
 full coverage.
 
@@ -367,6 +371,55 @@ trigger mechanism (`GameState.defer` / `Game._fire_deferred`) rather than per-ca
 We Will Bury You's cancellable victory points and Missile Envy's forced play both use it.
 
 ## Changes
+
+**2026-11-25: rules audit (behaviour change; `rules-fix`).** An audit of the engine against
+the Deluxe rulebook, FAQ v5 and the card texts, plus rulings from the user where the written
+sources are missing, fixed the items below. `tests/test_engine_rules_fix.py` (one or more
+tests per item) and the card-by-card suite `tests/cards/` (455 tests) pin them down; see
+`docs/known_gaps.md` for the rulings and what remains.
+
+- **Game end**: 20 VP ends the game the instant it is reached, from any source (the space
+  race and Yuri and Samantha used to be missed); no decision is issued once the game is
+  over; turn end checks military operations before held scoring cards; 20 VP at the end of
+  turn 10 (China Card point, final scoring) is not an automatic win and final scoring is
+  not clipped at 20.
+- **DEFCON 1** from a coup loses for the phasing player (was: the coup maker), Cuban
+  Missile Crisis aside.
+- **Operations**: events worded "as if they played an N Ops card" are normal operations
+  plays (ops modifiers, DEFCON geography, military operations); free coups in a named
+  region ignore DEFCON geography (Tear Down This Wall in Europe); realignment needs
+  opponent influence in the target; Vietnam Revolts' +1 in Southeast Asia is implemented;
+  placement reach is the start-of-round snapshot even when an event resolves first.
+- **Space race**: box 6 (discard a held card) is implemented; Man in Earth Orbit reveals
+  the opponent's headline; Space Station / North Sea Oil give eight rounds (never nine),
+  take effect mid-turn, and the extra round may be forgone.
+- **Cards**: Warsaw Pact gives no protection; Shuttle Diplomacy only affects the Asia /
+  Middle East scoring card, removes the battleground (chosen by the US) entirely and is
+  ignored by final scoring and Summit; Formosan Resolution counts only for scoring; Quagmire / Bear Trap
+  use modified ops, persist with no qualifying card and let scoring cards be played;
+  NATO shields against Brush War and protects West Germany again after Tear Down This
+  Wall; war cards count an adjacent superpower; De-Stalinization may stop early and
+  relocate into USSR-controlled countries; Five-Year Plan only fires a playable US event;
+  East European Unrest hits three countries; Cuban Missile Crisis needs 2 from one
+  country and can be cancelled before any coup; Missile Envy uses modified ops, is a
+  normal play, is discarded when spent, and its compulsion gives way to scoring cards;
+  We Will Bury You scores before any US VP; Flower Power scores headlined war cards but
+  not banned ones; China Card is never compelled (9.8) nor played over a due scoring card
+  (9.5); Junta's realignments stay in one region; Che is a free coup; Nuclear Subs spares
+  only operations coups; Wargames offers its "may"; The Reformer is 4 or 6; NORAD fires if
+  DEFCON touched 2 during the round; Grain Sales can fetch Defectors to cancel an
+  unresolved USSR headline.
+
+- **Vocabulary**: unchanged (3,081-dimensional flat encoding unchanged). New uses of
+  existing keys: `pass` on PLAY_CARD (China Card alone, optional extra round) and on
+  REMOVE_INFLUENCE (De-Stalinization), DISCARD_CARD at turn end (box 6), CHOOSE_OPTION
+  for Wargames and The Reformer, CHOOSE_COUNTRY for the US inside an Asia / Middle East
+  scoring card (Shuttle Diplomacy's battleground, when there is more than one). The observation gains `own_headline` /
+  `opponent_headline` (text view: a HEADLINES section), and some feature values change
+  meaning slightly (`can_realign`, `can_place`, the `unseen` channel, region previews
+  under Shuttle Diplomacy / Formosan Resolution).
+- **Histories are not replayable**: action histories recorded on `6791b34` or earlier
+  diverge on this engine. Keep a worktree of `6791b34` to rebuild positions from them.
 
 **2026-10-08: realignment rolls count against the operations budget (behaviour change).**
 `Game._realign_operation` never decremented its remaining count, so one realignment

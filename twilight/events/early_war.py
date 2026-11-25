@@ -18,15 +18,16 @@ from __future__ import annotations
 
 from .. import rules
 from ..data import CARDS, COUNTRY_ORDER
+from ..decisions import DecisionType
 from ..enums import Phase, Region, Side
 from . import register
 from .helpers import (
-    adjacent_to,
     ensure_control,
     in_region,
     nothing,
     uncontrolled,
     war,
+    war_penalty,
     with_influence,
 )
 
@@ -63,11 +64,15 @@ def five_year_plan(game, ctx):
     discarded = CARDS[name]
     state.note(f"Five-Year Plan discards {name} at random", ctx.player)
 
-    if discarded.side is Side.USA:
+    if discarded.side is Side.USA and game._event_is_playable(name, Side.USA):
         # A US event fires immediately, resolved by the US player.
         yield from game._resolve_event(name, Side.USA)
         game._retire_card(name, Side.USA, as_event=True)
     else:
+        # USSR / neutral events, scoring cards, and a US event whose prerequisite or
+        # condition is not met (rule 5.2): discarded with no event, never removed.
+        if discarded.side is Side.USA:
+            state.note(f"Five-Year Plan: {name} cannot take effect now", ctx.player)
         state.discard_card(name)
 
 
@@ -196,7 +201,7 @@ def arab_israeli_war(game, ctx):
     """A pan-Arab coalition attacks Israel. Israel itself counts against the USSR."""
     state = game.state
     # Unusually, US control of Israel is itself a penalty, on top of adjacency.
-    penalty = sum(1 for n in adjacent_to("Israel") if rules.controls(state, Side.USA, n))
+    penalty = war_penalty(state, Side.USA, "Israel")
     if rules.controls(state, Side.USA, "Israel"):
         penalty += 1
 
@@ -299,8 +304,8 @@ def warsaw_pact_formed(game, ctx):
             prompt="Warsaw Pact Formed: add USSR influence in Eastern Europe (max 2 each)",
         )
 
-    # Either way the card stays in play, enabling NATO.
-    state.add_effect(ctx.card, owner=Side.USSR)
+    # Nothing stays in play: NATO's prerequisite reads state.has_resolved, and the card
+    # (asterisked) leaves the game.
 
 
 # --------------------------------------------------------------------------- #
@@ -423,7 +428,7 @@ def marshall_plan(game, ctx):
         max_per_country=1,
         prompt="Marshall Plan: 1 US influence in seven different Western European countries",
     )
-    game.state.add_effect(ctx.card, owner=Side.USA)
+    # Enables NATO through state.has_resolved; nothing stays in play.
 
 
 # --------------------------------------------------------------------------- #
@@ -513,18 +518,28 @@ def east_european_unrest(game, ctx):
 
     One point each in the Early and Mid War, two each in the Late War.
     """
-    per_country = 2 if game.state.turn >= 8 else 1
-    yield from game.remove_influence(
-        Side.USSR,
-        3 * per_country,
-        allowed=in_region(Region.EASTERN_EUROPE),
-        max_per_country=per_country,
-        chooser=ctx.player,
-        prompt=(
-            f"East European Unrest: remove {per_country} USSR influence from each of "
-            "three Eastern European countries"
-        ),
-    )
+    state = game.state
+    per_country = 2 if state.turn >= 8 else 1
+    # Three different countries, each losing per_country (or all it has, if less).
+    hit: list[str] = []
+    for left in (3, 2, 1):
+        pool = [
+            n for n in in_region(Region.EASTERN_EUROPE)
+            if state.inf(Side.USSR, n) > 0 and n not in hit
+        ]
+        name = yield from game.choose_country(
+            ctx.player,
+            pool,
+            f"East European Unrest: remove {per_country} USSR influence from a country "
+            f"in Eastern Europe ({left} countr{'ies' if left > 1 else 'y'} left)",
+            dtype=DecisionType.REMOVE_INFLUENCE,
+            labels=game._influence_labels(pool),
+        )
+        if name is None:
+            break
+        removed = state.remove_inf(Side.USSR, name, per_country)
+        hit.append(name)
+        state.note(f"USSR influence removed: {name} -{removed}", ctx.player)
 
 
 # --------------------------------------------------------------------------- #
@@ -564,7 +579,7 @@ def red_scare_purge(game, ctx):
 
 @register("De-Stalinization")
 def destalinization(game, ctx):
-    """Relocate up to 4 USSR influence to countries nobody controls, max 2 per country."""
+    """Relocate up to 4 USSR influence to non-US-controlled countries, max 2 per country."""
     state = game.state
     sources = with_influence(state, Side.USSR)
     taken = yield from game.remove_influence(
@@ -572,7 +587,8 @@ def destalinization(game, ctx):
         4,
         allowed=sources,
         chooser=ctx.player,
-        prompt="De-Stalinization: remove USSR influence to relocate (up to 4)",
+        prompt="De-Stalinization: remove USSR influence to relocate (up to 4; pass to stop)",
+        allow_pass=True,
     )
     moved = sum(taken.values())
     if not moved:
@@ -581,9 +597,12 @@ def destalinization(game, ctx):
     yield from game.add_influence(
         Side.USSR,
         moved,
-        allowed=uncontrolled(state, COUNTRY_ORDER),
+        allowed=[n for n in COUNTRY_ORDER if not rules.controls(state, Side.USA, n)],
         max_per_country=2,
-        prompt=f"De-Stalinization: place {moved} influence in uncontrolled countries (max 2 each)",
+        prompt=(
+            f"De-Stalinization: place {moved} influence in non-US-controlled countries "
+            "(max 2 each)"
+        ),
     )
 
 
@@ -632,6 +651,12 @@ def defectors(game, ctx):
     """
     state = game.state
     if state.phase is Phase.HEADLINE:
+        # Headlined by the US, the headline phase itself cancels the USSR pick. Played
+        # in the middle of the phase (Grain Sales to Soviets drawing it), it cancels a
+        # USSR headline that has not resolved yet (user ruling 2026-11-25).
+        if ctx.player is Side.USA and state.headline.get(int(Side.USSR)) is not None:
+            state.headline_cancelled.add(int(Side.USSR))
+            state.note("Defectors cancels the unresolved USSR headline", ctx.player)
         return (yield from nothing())
     if ctx.triggered_by_opponent:
         # The USSR played it for operations: the US scores 1 VP.

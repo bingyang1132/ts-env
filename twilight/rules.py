@@ -66,7 +66,9 @@ def is_controlled_by_superpower(state: GameState, side: Side, name: str) -> bool
     return controls(state, side, name)
 
 
-def counts_as_battleground(state: GameState, name: str, region: Region | None = None) -> bool:
+def counts_as_battleground(
+    state: GameState, name: str, region: Region | None = None, *, scoring: bool = True
+) -> bool:
     """Whether *name* counts as a battleground right now.
 
     Formosan Resolution makes Taiwan a battleground for Asia scoring while the US
@@ -75,7 +77,8 @@ def counts_as_battleground(state: GameState, name: str, region: Region | None = 
     if COUNTRIES[name].battleground:
         return True
     if (
-        name == "Taiwan"
+        scoring
+        and name == "Taiwan"
         and region in (Region.ASIA, Region.SOUTHEAST_ASIA)
         and state.in_play("Formosan Resolution")
         and controls(state, Side.USA, "Taiwan")
@@ -130,49 +133,101 @@ class RegionStatus:
         return "presence"
 
 
-#: Regions in which Shuttle Diplomacy discounts one of the opponent's battlegrounds.
+#: Regions whose scoring card Shuttle Diplomacy affects.
 SHUTTLE_DIPLOMACY_REGIONS = (Region.ASIA, Region.MIDDLE_EAST)
 
 
-def shuttle_diplomacy_penalty(state: GameState, side: Side, region: Region) -> int:
-    """Battlegrounds *side* does not get credit for because of Shuttle Diplomacy.
+def shuttle_diplomacy_candidates(state: GameState, region: Region) -> list[str]:
+    """The USSR battlegrounds Shuttle Diplomacy could remove from this scoring.
 
-    The card discounts one battleground for its owner's opponent when Asia or the
-    Middle East is scored. Battleground count only -- the total country count is
-    untouched -- so it affects both the tier test and the per-battleground bonus.
+    Empty unless the card is in play and *region* is Asia or the Middle East (never
+    Southeast Asia, final scoring, Summit or Kitchen Debates).
     """
-    effect = state.effects.get("Shuttle Diplomacy")
-    if effect is None or effect.owner is None or effect.owner is side:
-        return 0
-    return 1 if region in SHUTTLE_DIPLOMACY_REGIONS else 0
+    if region not in SHUTTLE_DIPLOMACY_REGIONS or not state.in_play("Shuttle Diplomacy"):
+        return []
+    return [
+        n for n in REGION_COUNTRIES[region]
+        if controls(state, Side.USSR, n) and counts_as_battleground(state, n, region)
+    ]
 
 
-def region_status(state: GameState, region: Region) -> RegionStatus:
+def shuttle_diplomacy_excluded(state: GameState, region: Region) -> str | None:
+    """The USSR battleground Shuttle Diplomacy would remove, for previews.
+
+    "During the next scoring of the Middle East or Asia, subtract one Battleground
+    country from USSR total." The country leaves the count entirely -- one fewer
+    country, one fewer battleground, and no superpower-adjacency point for it (FAQ #73)
+    -- it does not become a non-battleground. The US picks which when the scoring card
+    resolves (:meth:`twilight.engine.Game.score_region`); the choice only matters for
+    the adjacency point, so a preview assumes the US takes a country adjacent to it
+    when there is one.
+    """
+    bgs = shuttle_diplomacy_candidates(state, region)
+    if not bgs:
+        return None
+    adjacent = ADJACENT_TO_SUPERPOWER[Side.USA]
+    return next((n for n in bgs if n in adjacent), bgs[0])
+
+
+def region_status(
+    state: GameState,
+    region: Region,
+    *,
+    scoring: bool = False,
+    shuttle: bool = False,
+    shuttle_choice: str | None = None,
+) -> RegionStatus:
+    """Both players' standing in *region*.
+
+    *scoring* counts Formosan Resolution's Taiwan as a battleground ("for scoring
+    purposes only": scoring cards and final scoring). *shuttle* also applies Shuttle
+    Diplomacy, which only a scoring card does; *shuttle_choice* is the battleground the
+    US picked (default: the preview pick of :func:`shuttle_diplomacy_excluded`). Summit
+    sees the board as it is.
+    """
+    scoring = scoring or shuttle
     names = REGION_COUNTRIES[region]
+    excluded = None
+    if shuttle:
+        excluded = shuttle_choice or shuttle_diplomacy_excluded(state, region)
     per_side: list[RegionSide] = []
 
     for side in Side:
-        controlled = [n for n in names if controls(state, side, n)]
-        bgs = [n for n in controlled if counts_as_battleground(state, n, region)]
+        controlled = [n for n in names if controls(state, side, n) and n != excluded]
+        bgs = [
+            n for n in controlled
+            if counts_as_battleground(state, n, region, scoring=scoring)
+        ]
         adjacent = ADJACENT_TO_SUPERPOWER[side.opponent]
-        counted_bgs = max(0, len(bgs) - shuttle_diplomacy_penalty(state, side, region))
         per_side.append(
             RegionSide(
                 countries=len(controlled),
-                battlegrounds=counted_bgs,
-                non_battlegrounds=len(controlled) - counted_bgs,
+                battlegrounds=len(bgs),
+                non_battlegrounds=len(controlled) - len(bgs),
                 adjacent_to_enemy_superpower=sum(1 for n in controlled if n in adjacent),
             )
         )
 
     total_bgs = sum(
-        1 for n in REGION_COUNTRIES[region] if counts_as_battleground(state, n, region)
+        1 for n in REGION_COUNTRIES[region]
+        if counts_as_battleground(state, n, region, scoring=scoring)
     )
     return RegionStatus(region=region, total_battlegrounds=total_bgs, sides=tuple(per_side))
 
 
-def region_vp(state: GameState, region: Region, side: Side) -> int:
-    """VP *side* would score for *region* right now, before the opponent's total."""
+def region_vp(
+    state: GameState,
+    region: Region,
+    side: Side,
+    *,
+    shuttle: bool = False,
+    shuttle_choice: str | None = None,
+) -> int:
+    """VP *side* would score for *region* right now, before the opponent's total.
+
+    *shuttle*: as the scoring card would, applying Shuttle Diplomacy (to
+    *shuttle_choice*, if the US has picked one).
+    """
     if region not in SCORING_VALUES:
         raise ValueError(
             f"{region} has no scoring card; it is only scored as part of its parent region"
@@ -184,7 +239,9 @@ def region_vp(state: GameState, region: Region, side: Side) -> int:
             if controls(state, side, n)
         )
 
-    status = region_status(state, region)
+    status = region_status(
+        state, region, scoring=True, shuttle=shuttle, shuttle_choice=shuttle_choice
+    )
     presence, domination, control = SCORING_VALUES[region]
     tier = status.tier(side)
     base = {"control": control, "domination": domination, "presence": presence, "none": 0}[tier]
@@ -198,14 +255,25 @@ def region_vp(state: GameState, region: Region, side: Side) -> int:
     return base + bonus
 
 
-def score_region(state: GameState, region: Region) -> tuple[int, int, Side | None]:
-    """Resolve a scoring card for *region*.
+def score_region(
+    state: GameState,
+    region: Region,
+    *,
+    shuttle: bool = False,
+    shuttle_choice: str | None = None,
+) -> tuple[int, int, Side | None]:
+    """Score *region*: a scoring card (``shuttle=True``) or final scoring.
+
+    *shuttle_choice* is the USSR battleground the US removed with Shuttle Diplomacy.
 
     Returns ``(ussr_vp, usa_vp, auto_winner)``. The VP difference is applied to the
     track; *auto_winner* is set only when a player controls Europe, which ends the
     game immediately.
     """
-    totals = {side: region_vp(state, region, side) for side in Side}
+    totals = {
+        side: region_vp(state, region, side, shuttle=shuttle, shuttle_choice=shuttle_choice)
+        for side in Side
+    }
 
     for side in Side:
         if totals[side] == AUTO_VICTORY:
@@ -218,12 +286,15 @@ def score_region(state: GameState, region: Region) -> tuple[int, int, Side | Non
     elif net < 0:
         state.award_vp(Side.USA, -net)
 
-    status_note = ", ".join(
-        f"{side.label} {region_status(state, region).tier(side)} ({totals[side]})"
-        for side in Side
-    ) if region is not Region.SOUTHEAST_ASIA else ", ".join(
-        f"{side.label} {totals[side]}" for side in Side
-    )
+    if region is Region.SOUTHEAST_ASIA:
+        status_note = ", ".join(f"{side.label} {totals[side]}" for side in Side)
+    else:
+        status = region_status(
+            state, region, scoring=True, shuttle=shuttle, shuttle_choice=shuttle_choice
+        )
+        status_note = ", ".join(
+            f"{side.label} {status.tier(side)} ({totals[side]})" for side in Side
+        )
     state.note(f"scored {region}: {status_note} -> net {net:+d} VP to USSR")
     return (totals[Side.USSR], totals[Side.USA], None)
 
@@ -339,18 +410,29 @@ def defcon_allows_operation(state: GameState, name: str) -> bool:
     return not any(region in blocked for region in COUNTRIES[name].regions)
 
 
-def can_coup(state: GameState, side: Side, name: str) -> bool:
+def can_coup(
+    state: GameState, side: Side, name: str, *, ignore_defcon: bool = False
+) -> bool:
+    """Whether *side* may make a coup attempt in *name*.
+
+    *ignore_defcon* is for an event's free coup in a named region, which ignores the
+    DEFCON geographic restrictions (rule 6.3.5); every other restriction still holds.
+    """
     if state.inf(side.opponent, name) == 0:
         return False
-    if not defcon_allows_operation(state, name):
+    if not ignore_defcon and not defcon_allows_operation(state, name):
         return False
     return _extra_operation_restrictions_allow(state, side, name, coup=True)
 
 
-def can_realign(state: GameState, side: Side, name: str) -> bool:
-    if state.inf(Side.USSR, name) == 0 and state.inf(Side.USA, name) == 0:
+def can_realign(
+    state: GameState, side: Side, name: str, *, ignore_defcon: bool = False
+) -> bool:
+    # The target must hold some opponent influence (FAQ 6.2.1: "at least one enemy
+    # influence must be present"); the realigning side needs none of its own.
+    if state.inf(side.opponent, name) == 0:
         return False
-    if not defcon_allows_operation(state, name):
+    if not ignore_defcon and not defcon_allows_operation(state, name):
         return False
     return _extra_operation_restrictions_allow(state, side, name, coup=False)
 
@@ -366,15 +448,10 @@ def _extra_operation_restrictions_allow(
         if Region.EUROPE in regions:
             return False
 
-    # NATO / Warsaw Pact: the opponent may not coup or realign in Europe countries
-    # that the card's owner controls.
-    for card_name in ("NATO", "Warsaw Pact Formed"):
-        effect = state.effects.get(card_name)
-        if effect is None or effect.owner is None or effect.owner is side:
-            continue
-        if Region.EUROPE in regions and controls(state, effect.owner, name):
-            if _nato_protects(state, card_name, name):
-                return False
+    # NATO: the USSR may not coup or realign in US-controlled European countries.
+    # (Warsaw Pact Formed has no such clause; it only allows NATO to be played.)
+    if side is Side.USSR and nato_protects(state, name):
+        return False
 
     # US/Japan Mutual Defense Pact: the USSR may never coup or realign in Japan.
     if name == "Japan" and side is Side.USSR and state.in_play("US/Japan Mutual Defense Pact"):
@@ -383,13 +460,23 @@ def _extra_operation_restrictions_allow(
     return True
 
 
-def _nato_protects(state: GameState, card_name: str, name: str) -> bool:
-    """NATO does not protect France or West Germany if the cancelling cards are out."""
-    if card_name != "NATO":
-        return True
+def nato_protects(state: GameState, name: str) -> bool:
+    """Whether NATO currently shields *name* from the USSR.
+
+    NATO covers US-controlled countries in Europe, except France once De Gaulle Leads
+    France has been played and West Germany while Willy Brandt is in effect.
+    """
+    if not state.in_play("NATO"):
+        return False
+    if Region.EUROPE not in COUNTRIES[name].regions:
+        return False
+    if not controls(state, Side.USA, name):
+        return False
     if name == "France" and state.has_resolved("De Gaulle Leads France"):
         return False
-    if name == "West Germany" and state.has_resolved("Willy Brandt"):
+    # Willy Brandt cancels NATO for West Germany only while it is in effect: Tear Down
+    # This Wall cancels it and restores the protection.
+    if name == "West Germany" and state.in_play("Willy Brandt"):
         return False
     return True
 
@@ -470,8 +557,12 @@ def resolve_coup(
     if not free:
         state.military_ops[side] = min(5, state.military_ops[side] + ops)
 
-    # Nuclear Subs exempts US coups in battlegrounds from degrading DEFCON.
-    suppressed = side is Side.USA and state.in_play("Nuclear Subs", owner=Side.USA)
+    # Nuclear Subs exempts US coups made with operations points in battlegrounds from
+    # degrading DEFCON -- including an event's "as if N Ops" operations, but not a free
+    # coup (user ruling 2026-11-25).
+    suppressed = (
+        side is Side.USA and not free and state.in_play("Nuclear Subs", owner=Side.USA)
+    )
     if COUNTRIES[name].battleground and not suppressed:
         state.change_defcon(-1)
 
@@ -597,6 +688,7 @@ __all__ = [
     "defcon_allows_operation",
     "influence_cost",
     "is_controlled_by_superpower",
+    "nato_protects",
     "placeable_countries",
     "reachable_countries",
     "realignment_modifier",
@@ -606,4 +698,6 @@ __all__ = [
     "resolve_realignment",
     "restricted_regions",
     "score_region",
+    "shuttle_diplomacy_candidates",
+    "shuttle_diplomacy_excluded",
 ]

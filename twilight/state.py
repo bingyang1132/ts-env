@@ -137,6 +137,11 @@ class GameState:
     #: Action rounds in the current turn, which grows from 6 to 7 in the Mid War.
     action_rounds_this_turn: int = 6
     headline: dict[int, str | None] = field(default_factory=lambda: {0: None, 1: None})
+    #: Sides whose ``headline`` pick has been revealed to both players: the opponent of
+    #: a Man in Earth Orbit holder reveals first, and both are public once chosen.
+    headline_public: set[int] = field(default_factory=set)
+    #: Headlines cancelled while the phase is under way (Defectors drawn by Grain Sales).
+    headline_cancelled: set[int] = field(default_factory=set)
     #: Set while resolving an opponent's event through UN Intervention and similar,
     #: so that "the player" inside an event means the right side.
     event_player: Side | None = None
@@ -157,6 +162,15 @@ class GameState:
     #: A card a player is compelled to play for operations on their next action round,
     #: per side. Set by Missile Envy.
     must_play: dict[int, str | None] = field(default_factory=lambda: {0: None, 1: None})
+
+    #: Rule 6.1.1 placement reach, per side, captured at the start of the current
+    #: action round. ``None`` outside action rounds.
+    reach_snapshot: dict[int, frozenset[str]] | None = None
+    #: Whether the DEFCON marker has moved to 2 during the current action round (NORAD).
+    defcon_moved_to_two: bool = False
+    #: Set from the end of turn 10 on (the China Card point and final scoring). Reaching
+    #: 20 VP then is not an automatic victory (rule 10.3.2); the final tally decides.
+    final_scoring: bool = False
 
     # -- outcome ----------------------------------------------------------- #
     winner: Side | None = None
@@ -203,18 +217,41 @@ class GameState:
     # ------------------------------------------------------------------ #
 
     def award_vp(self, side: Side, amount: int) -> None:
-        """Give *amount* VP to *side*, clamped to the ends of the track."""
-        if amount == 0:
+        """Give *amount* VP to *side*, clamped to the ends of the track.
+
+        Reaching either end of the track wins the game the instant it happens (rule
+        10.3.1), so this is the single place the VP limit is checked: every card, the
+        space race, scoring and the military operations check all go through here. Play
+        stops at the next decision point; see :meth:`twilight.engine.Game._advance`.
+        The exception is scoring at the end of turn 10 (:attr:`final_scoring`).
+
+        Clipping therefore never changes a result: the award that reaches the end of
+        the track ends the game, and nothing is awarded once the game is over (code
+        still running to the next decision point cannot move the track past the win).
+        """
+        if amount == 0 or self.phase is Phase.GAME_OVER:
             return
         delta = amount if side is Side.USSR else -amount
+        if self.final_scoring:
+            # Rule 10.3.2: every region is added to the score before victory is
+            # decided, so the running total is not clipped at +/-20 here.
+            self.vp += delta
+            return
         self.vp = max(-VP_LIMIT, min(VP_LIMIT, self.vp + delta))
+        if self.vp >= VP_LIMIT:
+            self.finish(Side.USSR, WinReason.VICTORY_POINTS)
+        elif self.vp <= -VP_LIMIT:
+            self.finish(Side.USA, WinReason.VICTORY_POINTS)
 
     def vp_for(self, side: Side) -> int:
         """The VP track read from *side*'s point of view."""
         return self.vp if side is Side.USSR else -self.vp
 
     def change_defcon(self, delta: int) -> None:
+        before = self.defcon
         self.defcon = max(MIN_DEFCON, min(MAX_DEFCON, self.defcon + delta))
+        if self.defcon == 2 and before != 2:
+            self.defcon_moved_to_two = True
 
     # ------------------------------------------------------------------ #
     # Effects
@@ -409,6 +446,15 @@ class GameState:
         return self.phase is Phase.GAME_OVER
 
     def finish(self, winner: Side | None, reason: WinReason) -> None:
+        """End the game. The first ending wins: a later call is ignored.
+
+        Code after the ending runs on until the engine's next decision point (an event
+        handler's remaining non-interactive lines, for instance), and may try to end
+        the game again -- a VP win followed by a DEFCON drop in the same coup. The game
+        already ended at the first one.
+        """
+        if self.phase is Phase.GAME_OVER:
+            return
         self.phase = Phase.GAME_OVER
         self.winner = winner
         self.win_reason = reason

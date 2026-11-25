@@ -2,13 +2,9 @@
 
 Conventions are the ones set out in :mod:`twilight.events.early_war`.
 
-Three cards here need a hook the engine does not yet offer, and are implemented as
-far as they can be from inside this module -- the effect is placed correctly, but
-nothing consults it yet. Each is marked with a ``HOOK NEEDED`` comment:
-
-* Flower Power, which watches every subsequent US card play;
-* U2 Incident, which watches for UN Intervention;
-* Shuttle Diplomacy, which alters Asia / Middle East scoring.
+Three cards here are read elsewhere: Flower Power by ``Game._check_flower_power``, U2
+Incident by UN Intervention's handler, Shuttle Diplomacy by
+:meth:`twilight.engine.Game.score_region` (the US picks the battleground).
 """
 
 from __future__ import annotations
@@ -53,41 +49,11 @@ def _hand_label(name: str) -> str:
 
 
 def _operations_with_card(game, side: Side, ops: int, prompt: str):
-    """Conduct operations with the card being played, rather than a free grant.
-
-    ``Game.free_operations`` exists for events worded "as if they played an N Op
-    card", and marks any coup free so it does not count toward the required military
-    operations. Grain Sales to Soviets instead says "use this card to conduct
-    Operations normally", so the coup has to be a paid one.
-    """
-    state = game.state
-    available = []
-    if rules.placeable_countries(state, side):
-        available.append(use_action(OpsUse.INFLUENCE, f"place {ops} influence"))
-    if any(rules.can_coup(state, side, n) for n in COUNTRY_ORDER):
-        available.append(use_action(OpsUse.COUP, f"coup with {ops} ops"))
-    if any(rules.can_realign(state, side, n) for n in COUNTRY_ORDER):
-        available.append(use_action(OpsUse.REALIGN, f"{ops} realignment rolls"))
-
-    if not available:
-        state.note(f"{ops} operations point(s) wasted: nothing legal", side)
-        return
-
-    if len(available) == 1:
-        use = OpsUse(available[0].value)
-    else:
-        action = yield from game.ask(
-            Decision(
-                DecisionType.CARD_USE,
-                side,
-                prompt,
-                tuple(available),
-                {"ops": ops},
-            )
-        )
-        use = OpsUse(action.value)
-
-    yield from game.conduct_operations(side, ops, use)
+    """Grain Sales to Soviets: "use this card to conduct Operations normally"."""
+    yield from game.operations(
+        side, ops, prompt=prompt,
+        bonus_regions=game._ops_bonus_regions("Grain Sales to Soviets", side),
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -103,9 +69,9 @@ def _flower_power_playable(game, side) -> bool:
 @register("Flower Power", playable_if=_flower_power_playable)
 def flower_power(game, ctx):
     """The USSR scores 2 VP for every war card the US subsequently plays."""
-    # HOOK NEEDED: the engine has to award 2 VP to the USSR whenever the US plays
-    # one of WAR_CARDS for its event or for operations -- but not on the space race
-    # -- while this effect is in play. The natural place is Game._perform_use.
+    # Scored by Game._check_flower_power: US plays of WAR_CARDS for the event or for
+    # operations (headline and Missile Envy included), not on the space race, and not a
+    # war card whose event is banned (FAQ #59).
     game.state.add_effect(ctx.card, owner=Side.USSR)
     return (yield from nothing())
 
@@ -118,8 +84,7 @@ def flower_power(game, ctx):
 @register("U2 Incident")
 def u2_incident(game, ctx):
     """1 VP to the USSR, and 1 more if UN Intervention is evented later this turn."""
-    # HOOK NEEDED: UN Intervention's handler has to award the USSR 1 further VP and
-    # remove this effect when it fires as an event while this card is in play.
+    # The further 1 VP is paid by UN Intervention's handler while this is in play.
     game.state.award_vp(Side.USSR, 1)
     game.state.add_effect(ctx.card, owner=Side.USSR, expires="end_of_turn")
     return (yield from nothing())
@@ -364,11 +329,11 @@ def sadat_expels_soviets(game, ctx):
 
 @register("Shuttle Diplomacy")
 def shuttle_diplomacy(game, ctx):
-    """The next Asia or Middle East scoring ignores one USSR battleground."""
-    # HOOK NEEDED: rules.region_status has to subtract one from the USSR battleground
-    # count when scoring Asia or the Middle East while this effect is in play, and
-    # Game.score_region then has to remove the effect and discard the card. Neither
-    # may apply during the turn-10 final scoring.
+    """The next Asia or Middle East scoring card ignores one USSR battleground.
+
+    Applied and spent by :meth:`twilight.engine.Game.score_region`, where the US chooses
+    which USSR-controlled battleground to subtract; final scoring ignores it.
+    """
     game.state.add_effect(ctx.card, owner=Side.USA)
     return (yield from nothing())
 
