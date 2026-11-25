@@ -315,3 +315,50 @@ def test_b5_passing_keeps_the_card():
     state.hands[Side.USSR][:] = ["Fidel"]
     drive(game._turn_end(), prefer("pass"))
     assert state.hands[Side.USSR] == ["Fidel"]
+
+
+# --------------------------------------------------------------------------- #
+# B4 -- Man in Earth Orbit: the opponent's headline is revealed before the holder picks
+# --------------------------------------------------------------------------- #
+
+
+def test_b4_man_in_earth_orbit_holder_sees_the_opponent_headline():
+    from twilight.observe import observe
+    from twilight.render import render
+
+    # The ability only changes the order from turn 2 on, when the headline phase
+    # starts with the space race already advanced, so set it before the first phase.
+    game = Game(seed=4)
+    game.state.space_race = [0, 4]
+    rng = random.Random(4)
+    while game.state.phase is not Phase.HEADLINE:
+        game.step(rng.choice(game.decision.options))
+    assert game.decision.type.value == "headline"
+    assert game.decision.player is Side.USSR  # the non-holder picks first
+    pick = game.decision.options[0].value
+    game.step(game.decision.options[0])
+    assert game.decision.player is Side.USA
+    us_view = observe(game.state, Side.USA, game.decision)
+    assert us_view.opponent_headline == pick
+    assert pick not in us_view.unseen
+    assert pick in render(us_view, include_log=False)
+    ussr_view = observe(game.state, Side.USSR, game.decision)
+    assert ussr_view.opponent_headline is None
+    assert ussr_view.own_headline == pick
+
+
+def test_b4_without_the_ability_headlines_stay_secret_until_both_are_chosen():
+    from twilight.observe import observe
+
+    game = Game(seed=4)
+    rng = random.Random(4)
+    while game.state.phase is not Phase.HEADLINE:
+        game.step(rng.choice(game.decision.options))
+    first = game.decision.player
+    pick = game.decision.options[0].value
+    game.step(game.decision.options[0])
+    second = game.decision.player
+    assert second is first.opponent
+    view = observe(game.state, second, game.decision)
+    assert view.opponent_headline is None
+    assert pick in view.unseen

@@ -553,14 +553,18 @@ class Game:
         state.phase = Phase.HEADLINE
         state.action_round = 0
         state.headline = {0: None, 1: None}
+        state.headline_public = set()
 
         # Man in Earth Orbit: its holder chooses last, after the opponent has revealed.
         order = list(Side)
         ability = spacerace.OPPONENT_HEADLINE_FIRST
+        reveal_first: Side | None = None
         if spacerace.has_ability(state.space_race, Side.USA, ability):
             order = [Side.USSR, Side.USA]
+            reveal_first = Side.USSR
         elif spacerace.has_ability(state.space_race, Side.USSR, ability):
             order = [Side.USA, Side.USSR]
+            reveal_first = Side.USA
 
         for side in order:
             candidates = [
@@ -580,7 +584,14 @@ class Game:
             if chosen is not None:
                 state.headline[int(side)] = chosen
                 state.hand(side).remove(chosen)
+                if side is reveal_first:
+                    # Rule 6.4.4: selected *and revealed* before the holder chooses.
+                    state.headline_public.add(int(side))
+                    state.note(
+                        f"headline revealed first (Man in Earth Orbit): {chosen}", side
+                    )
 
+        state.headline_public = {int(side) for side in Side}
         picks = {side: state.headline[int(side)] for side in Side}
         shown = ", ".join(f"{s.label}: {picks[s] or '-'}" for s in Side)
         state.note(f"headlines revealed -- {shown}")

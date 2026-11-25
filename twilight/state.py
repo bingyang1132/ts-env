@@ -137,6 +137,9 @@ class GameState:
     #: Action rounds in the current turn, which grows from 6 to 7 in the Mid War.
     action_rounds_this_turn: int = 6
     headline: dict[int, str | None] = field(default_factory=lambda: {0: None, 1: None})
+    #: Sides whose ``headline`` pick has been revealed to both players: the opponent of
+    #: a Man in Earth Orbit holder reveals first, and both are public once chosen.
+    headline_public: set[int] = field(default_factory=set)
     #: Set while resolving an opponent's event through UN Intervention and similar,
     #: so that "the player" inside an event means the right side.
     event_player: Side | None = None

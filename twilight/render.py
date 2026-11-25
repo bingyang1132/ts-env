@@ -204,6 +204,14 @@ def render(obs: Observation, *, include_log: bool = True) -> str:
     parts.append(f"YOUR HAND ({len(obs.hand)} cards; opponent holds {obs.opponent_hand_size})")
     parts.append(render_hand(obs))
 
+    if obs.opponent_headline is not None or obs.own_headline is not None:
+        parts.append("")
+        parts.append("HEADLINES (waiting to resolve)")
+        if obs.own_headline is not None:
+            parts.append(f"    yours: {obs.own_headline}")
+        if obs.opponent_headline is not None:
+            parts.append(f"    opponent's (revealed): {obs.opponent_headline}")
+
     if obs.opponent_hand_revealed is not None:
         parts.append("")
         parts.append("OPPONENT HAND (revealed to you)")

@@ -129,6 +129,12 @@ class Observation:
     winner: Side | None = None
     win_reason: str | None = None
     log_tail: tuple[str, ...] = field(default=())
+    #: The observer's own headline pick while it waits to resolve.
+    own_headline: str | None = None
+    #: The opponent's headline pick, once it is public: after both are chosen, or as
+    #: soon as it is chosen when the observer holds Man in Earth Orbit (rule 6.4.4).
+    #: Not part of the numeric encoding (see :mod:`twilight.encode`).
+    opponent_headline: str | None = None
 
     # -- convenience -------------------------------------------------------- #
 
@@ -208,6 +214,12 @@ def _unseen_cards(state: GameState, player: Side) -> tuple[str, ...]:
     accounted = set(state.hand(player)) | set(state.discard) | set(state.removed)
     accounted |= set(state.effects) | set(state.transit)
     accounted.add(CHINA_CARD)
+    # Headline picks waiting to resolve: the observer's own, and the opponent's once
+    # it has been revealed.
+    for side in Side:
+        name = state.headline.get(int(side))
+        if name is not None and (side is player or int(side) in state.headline_public):
+            accounted.add(name)
     if state.playing_card is not None:
         accounted.add(state.playing_card)
 
@@ -339,6 +351,12 @@ def observe(
         winner=state.winner,
         win_reason=state.win_reason.value if state.win_reason is not None else None,
         log_tail=tuple(str(e) for e in state.log[-log_tail:]) if log_tail else (),
+        own_headline=state.headline.get(int(player)),
+        opponent_headline=(
+            state.headline.get(int(player.opponent))
+            if int(player.opponent) in state.headline_public
+            else None
+        ),
     )
 
 
