@@ -158,6 +158,10 @@ class GameState:
     #: per side. Set by Missile Envy.
     must_play: dict[int, str | None] = field(default_factory=lambda: {0: None, 1: None})
 
+    #: Set from the end of turn 10 on (the China Card point and final scoring). Reaching
+    #: 20 VP then is not an automatic victory (rule 10.3.2); the final tally decides.
+    final_scoring: bool = False
+
     # -- outcome ----------------------------------------------------------- #
     winner: Side | None = None
     win_reason: WinReason | None = None
@@ -205,15 +209,18 @@ class GameState:
     def award_vp(self, side: Side, amount: int) -> None:
         """Give *amount* VP to *side*, clamped to the ends of the track.
 
-        Reaching either end of the track wins the game at once (rule 10.1.1), so this is
-        the single place the VP limit is checked: every card, the space race, scoring
-        and the military operations check all go through here. Play stops at the next
-        decision point; see :meth:`twilight.engine.Game._advance`.
+        Reaching either end of the track wins the game the instant it happens (rule
+        10.3.1), so this is the single place the VP limit is checked: every card, the
+        space race, scoring and the military operations check all go through here. Play
+        stops at the next decision point; see :meth:`twilight.engine.Game._advance`.
+        The exception is scoring at the end of turn 10 (:attr:`final_scoring`).
         """
         if amount == 0:
             return
         delta = amount if side is Side.USSR else -amount
         self.vp = max(-VP_LIMIT, min(VP_LIMIT, self.vp + delta))
+        if self.final_scoring:
+            return
         if self.vp >= VP_LIMIT:
             self.finish(Side.USSR, WinReason.VICTORY_POINTS)
         elif self.vp <= -VP_LIMIT:

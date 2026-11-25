@@ -1339,7 +1339,13 @@ class Game:
         state = self.state
         state.phase = Phase.TURN_END
 
-        # Holding a scoring card at the end of a turn loses the game.
+        # Phase E: military operations. A VP win here ends the game before the held
+        # cards are ever revealed (rule 4.5, FAQ 8.5).
+        self._military_operations_check()
+        if state.is_over:
+            return
+
+        # Phase F: holding a scoring card at the end of a turn loses the game.
         holders = [
             side
             for side in Side
@@ -1351,9 +1357,9 @@ class Game:
             state.finish(winner, WinReason.HELD_SCORING_CARD)
             return
 
-        self._military_operations_check()
-        if state.is_over:
-            return
+        # Space race box 6: its holder may discard one held card (rule 6.4.4). After
+        # Phase F, so it can never be a scoring card (FAQ 6.4).
+        yield from self._discard_held_card()
 
         # Effects that last only for the turn expire now.
         for name, effect in list(state.effects.items()):
@@ -1364,7 +1370,9 @@ class Game:
                 effect.expires = "end_of_turn"
 
         if state.turn == FINAL_TURN:
-            # The China Card is worth a point to whoever holds it at the very end.
+            # The China Card is worth a point to whoever holds it at the very end. It is
+            # part of final scoring, where 20 VP is not an automatic win (rule 10.3.2).
+            state.final_scoring = True
             state.award_vp(state.china_card_owner, 1)
             state.note(f"{state.china_card_owner.label} holds the China Card: +1 VP")
 
@@ -1374,8 +1382,32 @@ class Game:
         state.note(f"turn {state.turn} ends; DEFCON now {state.defcon}")
 
         self._check_victory_points()
-        return
-        yield  # pragma: no cover - uniform generator interface
+
+    def _discard_held_card(self) -> Iterator[Decision]:
+        """Eagle/Bear Has Landed: the box 6 holder may discard one held card."""
+        state = self.state
+        if state.turn == FINAL_TURN:
+            return  # nothing is held over past the last turn
+        for side in Side:
+            if not spacerace.has_ability(
+                state.space_race, side, spacerace.DISCARD_HELD_CARD
+            ):
+                continue
+            hand = list(state.hand(side))
+            if not hand:
+                continue
+            chosen = yield from self.choose_card(
+                side,
+                hand,
+                "Eagle/Bear Has Landed: discard one held card, or pass to keep it",
+                dtype=DecisionType.DISCARD_CARD,
+                allow_pass=True,
+                labels={n: self._card_label(n, side) for n in hand},
+            )
+            if chosen is not None:
+                state.hand(side).remove(chosen)
+                state.discard_card(chosen)
+                state.note(f"Eagle/Bear Has Landed: discards held card {chosen}", side)
 
     def _military_operations_check(self) -> None:
         """Award VP for falling short of the required military operations.
@@ -1404,7 +1436,7 @@ class Game:
 
     def _check_victory_points(self) -> None:
         state = self.state
-        if state.is_over:
+        if state.is_over or state.final_scoring:
             return
         if state.vp >= VP_LIMIT:
             state.finish(Side.USSR, WinReason.VICTORY_POINTS)
@@ -1425,6 +1457,7 @@ class Game:
         before victory is decided.
         """
         state = self.state
+        state.final_scoring = True
         state.note("--- final scoring ---")
 
         for region in (
@@ -1437,10 +1470,9 @@ class Game:
         ):
             _, _, auto = rules.score_region(state, region)
             if auto is not None:
-                # Europe is scored first, and controlling it wins outright.
+                # Europe is scored first, and controlling it still wins outright; 20 VP
+                # reached here does not (rule 10.3.2), so the rest is a plain tally.
                 state.finish(auto, WinReason.EUROPE_CONTROL)
-            if state.is_over:
-                # Europe control, or the VP track reaching 20 (rule 10.1.1).
                 return
 
         if state.vp > 0:

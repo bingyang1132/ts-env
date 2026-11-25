@@ -214,3 +214,104 @@ def _single_play(game, card, side):
 )
 def test_b11_audit_games_issue_no_post_terminal_decisions(seed, ussr, usa, optional):
     play_agents(seed, ussr, usa, optional)
+
+
+# --------------------------------------------------------------------------- #
+# B10 (verdict) -- turn-end order, and no VP auto-victory in final scoring
+# --------------------------------------------------------------------------- #
+
+
+def _turn_end_game(turn: int = 3) -> Game:
+    game = Game(seed=2)
+    state = game.state
+    state.turn = turn
+    state.phase = Phase.ACTION_ROUND
+    for side in Side:
+        state.hands[side][:] = []
+    return game
+
+
+def test_b10_military_ops_check_comes_before_the_held_scoring_card_check():
+    """Phase E (military ops) precedes Phase F (held cards): a VP win there stands."""
+    game = _turn_end_game()
+    state = game.state
+    state.vp = 18
+    state.defcon = 3
+    state.military_ops = [3, 0]  # US short by 3: USSR +3 VP -> 20
+    state.hands[Side.USSR].append("Asia Scoring")  # would lose on held card
+    drive(game._turn_end())
+    assert state.is_over
+    assert state.winner is Side.USSR
+    assert state.win_reason is WinReason.VICTORY_POINTS
+
+
+def test_b10_china_card_vp_at_end_of_turn_ten_is_not_an_automatic_victory():
+    """Rule 10.3.2: reaching 20 during end-of-turn-10 scoring does not win outright."""
+    game = _turn_end_game(turn=10)
+    state = game.state
+    clear_board(game)
+    state.vp = 19
+    state.china_card_owner = Side.USSR
+    state.set_inf(Side.USA, "Japan", 4)
+    state.set_inf(Side.USA, "South Korea", 3)
+    state.set_inf(Side.USA, "Thailand", 2)
+    drive(game._turn_end())
+    assert not state.is_over
+    game._final_scoring()
+    assert state.is_over
+    assert state.win_reason is WinReason.FINAL_SCORING
+
+
+def test_b10_final_scoring_reaching_twenty_is_not_an_automatic_victory():
+    game = _turn_end_game(turn=10)
+    state = game.state
+    clear_board(game)
+    state.final_scoring = True
+    state.vp = 19
+    state.set_inf(Side.USSR, "Poland", 4)  # USSR scores Europe first: 19 + 4
+    state.set_inf(Side.USA, "Japan", 4)  # then the US scores Asia
+    state.set_inf(Side.USA, "South Korea", 3)
+    state.set_inf(Side.USA, "Pakistan", 2)
+    game._final_scoring()
+    assert state.win_reason is WinReason.FINAL_SCORING
+
+
+# --------------------------------------------------------------------------- #
+# B5 -- space race box 6: discard a held card at the end of the turn
+# --------------------------------------------------------------------------- #
+
+
+def test_b5_eagle_bear_has_landed_lets_the_holder_discard_a_held_card():
+    game = _turn_end_game()
+    state = game.state
+    state.space_race = [0, 6]
+    state.hands[Side.USA][:] = ["Duck and Cover", "Containment"]
+    state.hands[Side.USSR][:] = ["Fidel"]
+    log = []
+    drive(game._turn_end(), prefer("card:Duck and Cover"), log)
+    asks = [d for d in log if d.type.value == "discard_card"]
+    assert len(asks) == 1 and asks[0].player is Side.USA
+    assert "pass" in asks[0].legal_keys
+    assert state.hands[Side.USA] == ["Containment"]
+    assert "Duck and Cover" in state.discard
+    assert state.hands[Side.USSR] == ["Fidel"]
+
+
+def test_b5_the_ability_is_cancelled_once_the_opponent_arrives():
+    game = _turn_end_game()
+    state = game.state
+    state.space_race = [6, 6]
+    state.hands[Side.USA][:] = ["Duck and Cover"]
+    log = []
+    drive(game._turn_end(), None, log)
+    assert not [d for d in log if d.type.value == "discard_card"]
+    assert state.hands[Side.USA] == ["Duck and Cover"]
+
+
+def test_b5_passing_keeps_the_card():
+    game = _turn_end_game()
+    state = game.state
+    state.space_race = [6, 2]
+    state.hands[Side.USSR][:] = ["Fidel"]
+    drive(game._turn_end(), prefer("pass"))
+    assert state.hands[Side.USSR] == ["Fidel"]
