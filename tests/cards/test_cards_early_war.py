@@ -975,7 +975,9 @@ class TestC033DeStalinization:
         t = Table(turn=2)
         t.inf(ussr={"Poland": 4})
         t.play(USSR, "De-Stalinization", "event")
-        # Poland is the only source, so the removals ask nothing.
+        # Poland is the only source, but "up to 4" lets the USSR stop at any point, so
+        # each removal is still asked (with a pass); take all four from Poland.
+        t.answer(*["country:Poland"] * 4)
         t.answer("country:Angola", "country:Angola")
         assert "country:Angola" not in t.keys()
         t.answer("country:Zaire", "country:Zaire")
