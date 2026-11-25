@@ -206,6 +206,8 @@ class GreedyAgent:
         if obs is None:
             obs = observe(state, side, decision)
 
+        if action.kind is ActionKind.PASS:
+            return -0.5  # mildly prefer doing something
         if decision.type is DecisionType.PLAY_CARD:
             return self._value_card(obs, action)
         if decision.type is DecisionType.CARD_USE:
