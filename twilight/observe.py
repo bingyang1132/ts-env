@@ -280,7 +280,7 @@ def observe(
     region_views = []
     for region in SCORING_REGIONS:
         # A preview of the scoring card, so Shuttle Diplomacy applies.
-        status = rules.region_status(state, region, shuttle=True)
+        status = rules.region_status(state, region, scoring=True, shuttle=True)
         vp = tuple(rules.region_vp(state, region, s, shuttle=True) for s in Side)
         # Europe control is an automatic win rather than a VP amount; report the swing
         # as the VP cap so it still reads as overwhelmingly good.

@@ -662,3 +662,16 @@ def test_b2_not_applied_in_final_scoring():
     vp0 = state.vp
     game._final_scoring()
     assert state.vp - vp0 == expected
+
+
+def test_b2_formosan_resolution_counts_for_scoring_but_not_for_summit():
+    game = Game(seed=1)
+    clear_board(game)
+    state = game.state
+    state.add_effect("Formosan Resolution", owner=Side.USA)
+    state.set_inf(Side.USA, "Taiwan", 3)
+    state.set_inf(Side.USA, "Afghanistan", 2)
+    assert rules.region_status(state, Region.ASIA).sides[Side.USA].battlegrounds == 0
+    assert rules.region_status(state, Region.ASIA, scoring=True).sides[Side.USA].battlegrounds == 1
+    # domination + Taiwan battleground + Afghanistan next to the USSR
+    assert rules.region_vp(state, Region.ASIA, Side.USA) == 7 + 1 + 1

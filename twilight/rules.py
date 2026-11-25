@@ -66,7 +66,9 @@ def is_controlled_by_superpower(state: GameState, side: Side, name: str) -> bool
     return controls(state, side, name)
 
 
-def counts_as_battleground(state: GameState, name: str, region: Region | None = None) -> bool:
+def counts_as_battleground(
+    state: GameState, name: str, region: Region | None = None, *, scoring: bool = True
+) -> bool:
     """Whether *name* counts as a battleground right now.
 
     Formosan Resolution makes Taiwan a battleground for Asia scoring while the US
@@ -75,7 +77,8 @@ def counts_as_battleground(state: GameState, name: str, region: Region | None = 
     if COUNTRIES[name].battleground:
         return True
     if (
-        name == "Taiwan"
+        scoring
+        and name == "Taiwan"
         and region in (Region.ASIA, Region.SOUTHEAST_ASIA)
         and state.in_play("Formosan Resolution")
         and controls(state, Side.USA, "Taiwan")
@@ -157,19 +160,26 @@ def shuttle_diplomacy_excluded(state: GameState, region: Region) -> str | None:
     return next((n for n in bgs if n in adjacent), bgs[0])
 
 
-def region_status(state: GameState, region: Region, *, shuttle: bool = False) -> RegionStatus:
+def region_status(
+    state: GameState, region: Region, *, scoring: bool = False, shuttle: bool = False
+) -> RegionStatus:
     """Both players' standing in *region*.
 
-    *shuttle* applies Shuttle Diplomacy, which only a scoring card does; Summit, Kitchen
-    Debates and final scoring see the board as it is.
+    *scoring* counts Formosan Resolution's Taiwan as a battleground ("for scoring
+    purposes only": scoring cards and final scoring). *shuttle* also applies Shuttle
+    Diplomacy, which only a scoring card does. Summit sees the board as it is.
     """
+    scoring = scoring or shuttle
     names = REGION_COUNTRIES[region]
     excluded = shuttle_diplomacy_excluded(state, region) if shuttle else None
     per_side: list[RegionSide] = []
 
     for side in Side:
         controlled = [n for n in names if controls(state, side, n) and n != excluded]
-        bgs = [n for n in controlled if counts_as_battleground(state, n, region)]
+        bgs = [
+            n for n in controlled
+            if counts_as_battleground(state, n, region, scoring=scoring)
+        ]
         adjacent = ADJACENT_TO_SUPERPOWER[side.opponent]
         per_side.append(
             RegionSide(
@@ -181,7 +191,8 @@ def region_status(state: GameState, region: Region, *, shuttle: bool = False) ->
         )
 
     total_bgs = sum(
-        1 for n in REGION_COUNTRIES[region] if counts_as_battleground(state, n, region)
+        1 for n in REGION_COUNTRIES[region]
+        if counts_as_battleground(state, n, region, scoring=scoring)
     )
     return RegionStatus(region=region, total_battlegrounds=total_bgs, sides=tuple(per_side))
 
@@ -202,7 +213,7 @@ def region_vp(state: GameState, region: Region, side: Side, *, shuttle: bool = F
             if controls(state, side, n)
         )
 
-    status = region_status(state, region, shuttle=shuttle)
+    status = region_status(state, region, scoring=True, shuttle=shuttle)
     presence, domination, control = SCORING_VALUES[region]
     tier = status.tier(side)
     base = {"control": control, "domination": domination, "presence": presence, "none": 0}[tier]
@@ -239,7 +250,8 @@ def score_region(
         state.award_vp(Side.USA, -net)
 
     status_note = ", ".join(
-        f"{side.label} {region_status(state, region, shuttle=shuttle).tier(side)} "
+        f"{side.label} "
+        f"{region_status(state, region, scoring=True, shuttle=shuttle).tier(side)} "
         f"({totals[side]})"
         for side in Side
     ) if region is not Region.SOUTHEAST_ASIA else ", ".join(
