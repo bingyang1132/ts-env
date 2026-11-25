@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from ..enums import Region
 from . import register
-from .helpers import nothing
 
 _SCORING_CARDS = {
     "Europe Scoring": Region.EUROPE,
@@ -23,8 +22,7 @@ _SCORING_CARDS = {
 
 def _make(region: Region):
     def handler(game, ctx):
-        game.score_region(region)
-        return (yield from nothing())
+        yield from game.score_region(region)
 
     handler.__name__ = f"score_{region.name.lower()}"
     handler.__doc__ = f"Score the {region} region for both players."

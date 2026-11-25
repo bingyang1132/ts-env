@@ -622,6 +622,9 @@ class TestC073ShuttleDiplomacy:
         t.effect("Shuttle Diplomacy", USA)
         t.inf(ussr={"Iraq": 3, "Iran": 2, "Saudi Arabia": 3}, usa={"Israel": 4, "Jordan": 2})
         t.play(USSR, "Middle East Scoring")
+        # Three USSR battlegrounds: the US is asked which one to strike (any will do).
+        assert t.d is not None and t.d.player is USA
+        t.answer("country:Iraq")
         assert t.done
         assert t.s.vp == 1
 

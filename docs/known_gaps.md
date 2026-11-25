@@ -15,7 +15,6 @@ or FAQ).
 
 | Item | What the engine does | Rule |
 |---|---|---|
-| Shuttle Diplomacy: which battleground | The US's choice of the discounted USSR battleground is automated: one adjacent to the US if any (the only case where the choice matters, through the adjacency point). | FAQ #73 ("the US player chooses") |
 | Cuban Missile Crisis cancel timing | Offered at the start of the threatened player's action round and again before any coup they could be given (their own operations, an event's operations, a free coup), in either player's round. Not offered at other moments, where cancelling cannot change anything. | Card: "at any time"; FAQ #40 |
 | We Will Bury You timing | The 3 VP are settled once the US has chosen its play for its next action round, before that play resolves. If the US plays UN Intervention, Missile Envy, Star Wars or Grain Sales (each can still lead to a UN Intervention event), they are settled at the end of the round instead, so a US VP award inside such a chain comes first. | Card: "prior to any US VP award"; FAQ #50 |
 | "may" on beneficial effects | Some "may" / "up to" effects that can never hurt the player have no decline option: Pershing II's removals, NORAD's and Puppet Governments' and Cambridge Five's influence, Chernobyl naming a region, an "as if N Ops" operations play. De-Stalinization, Wargames, The Reformer, Summit, Junta, Che, Ortega, Tear Down This Wall, SALT and Our Man in Tehran do offer the choice. | Card texts |

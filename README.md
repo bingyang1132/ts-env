@@ -349,7 +349,7 @@ docs/
   影响力；实现了 Vietnam Revolts 的东南亚 +1；放置可达范围取行动轮开始时的快照。
 - **太空竞赛**：实现第 6 格回合末弃持牌；Man in Earth Orbit 让持有者看到对方头条；Space Station /
   North Sea Oil 合计 8 个行动轮（不会变成 9）、回合中途生效、额外的第 8 轮可以放弃。
-- **卡牌**：Warsaw Pact 不再提供保护；Shuttle Diplomacy 只作用于亚洲/中东计分卡、整个剔除被扣战场国、
+- **卡牌**：Warsaw Pact 不再提供保护；Shuttle Diplomacy 只作用于亚洲/中东计分卡、整个剔除被扣战场国（由美方选择）、
   终局计分和 Summit 不受影响；Formosan Resolution 只在计分时生效；Quagmire / Bear Trap 用修正后 ops、
   无合格牌时不解除且可打计分牌；NATO 防 Brush War、TDTW 后恢复对西德的保护；战争牌邻接修正计超级大国；
   De-Stalinization 可提前停止、可移入苏控国；Five-Year Plan 只触发可打的美方事件；East European Unrest
@@ -362,7 +362,7 @@ docs/
 
 - **词表**：不变（扁平编码仍为 3,081 维）。现有 key 的新用法：PLAY_CARD 上的 `pass`（只剩 China Card、
   可放弃的额外行动轮）、REMOVE_INFLUENCE 上的 `pass`（De-Stalinization）、回合末的 DISCARD_CARD（第 6 格）、
-  Wargames 与 The Reformer 的 CHOOSE_OPTION。观测新增 `own_headline` / `opponent_headline`（文本视图多一个
+  Wargames 与 The Reformer 的 CHOOSE_OPTION、亚洲/中东计分卡中由美方回答的 CHOOSE_COUNTRY（Shuttle Diplomacy 剔除哪个战场国，多于一个时才问）。观测新增 `own_headline` / `opponent_headline`（文本视图多一个
   HEADLINES 段），部分特征语义有细微变化（`can_realign`、`can_place`、`unseen` 通道、Shuttle Diplomacy /
   Formosan Resolution 生效时的地区预览）。
 - **历史对局不可重放**：在 `6791b34` 及更早 commit 上记录的动作历史在本版本上会分叉。要从

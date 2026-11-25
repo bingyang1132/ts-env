@@ -1757,17 +1757,25 @@ class Game:
     # Convenience
     # ------------------------------------------------------------------ #
 
-    def score_region(self, region: Region) -> None:
+    def score_region(self, region: Region) -> Iterator[Decision]:
         """Resolve a scoring card, handling the Europe automatic victory.
 
         Shuttle Diplomacy is spent by the next Asia or Middle East scoring card, whether
         or not the USSR controlled a battleground there, and goes to the discard pile.
+        The US chooses which USSR-controlled battleground it subtracts (asked only when
+        there is more than one).
         """
         state = self.state
-        excluded = rules.shuttle_diplomacy_excluded(state, region)
+        candidates = rules.shuttle_diplomacy_candidates(state, region)
+        excluded = yield from self.choose_country(
+            Side.USA,
+            candidates,
+            f"Shuttle Diplomacy: choose the USSR battleground that does not count in "
+            f"{region} scoring",
+        )
         if excluded is not None:
-            state.note(f"Shuttle Diplomacy: {excluded} does not count for the USSR")
-        _, _, auto = rules.score_region(state, region, shuttle=True)
+            state.note(f"Shuttle Diplomacy: {excluded} does not count for the USSR", Side.USA)
+        _, _, auto = rules.score_region(state, region, shuttle=True, shuttle_choice=excluded)
 
         if region in rules.SHUTTLE_DIPLOMACY_REGIONS and state.in_play("Shuttle Diplomacy"):
             state.remove_effect("Shuttle Diplomacy")

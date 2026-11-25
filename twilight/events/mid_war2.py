@@ -4,7 +4,7 @@ Conventions are the ones set out in :mod:`twilight.events.early_war`.
 
 Three cards here are read elsewhere: Flower Power by ``Game._check_flower_power``, U2
 Incident by UN Intervention's handler, Shuttle Diplomacy by
-:func:`twilight.rules.shuttle_diplomacy_excluded`.
+:meth:`twilight.engine.Game.score_region` (the US picks the battleground).
 """
 
 from __future__ import annotations
@@ -331,8 +331,8 @@ def sadat_expels_soviets(game, ctx):
 def shuttle_diplomacy(game, ctx):
     """The next Asia or Middle East scoring card ignores one USSR battleground.
 
-    Applied by :func:`twilight.rules.shuttle_diplomacy_excluded` and spent by
-    :meth:`twilight.engine.Game.score_region`; final scoring ignores it.
+    Applied and spent by :meth:`twilight.engine.Game.score_region`, where the US chooses
+    which USSR-controlled battleground to subtract; final scoring ignores it.
     """
     game.state.add_effect(ctx.card, owner=Side.USA)
     return (yield from nothing())

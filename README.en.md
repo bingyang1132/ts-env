@@ -393,8 +393,8 @@ tests per item) and the card-by-card suite `tests/cards/` (455 tests) pin them d
   the opponent's headline; Space Station / North Sea Oil give eight rounds (never nine),
   take effect mid-turn, and the extra round may be forgone.
 - **Cards**: Warsaw Pact gives no protection; Shuttle Diplomacy only affects the Asia /
-  Middle East scoring card, removes the battleground entirely and is ignored by final
-  scoring and Summit; Formosan Resolution counts only for scoring; Quagmire / Bear Trap
+  Middle East scoring card, removes the battleground (chosen by the US) entirely and is
+  ignored by final scoring and Summit; Formosan Resolution counts only for scoring; Quagmire / Bear Trap
   use modified ops, persist with no qualifying card and let scoring cards be played;
   NATO shields against Brush War and protects West Germany again after Tear Down This
   Wall; war cards count an adjacent superpower; De-Stalinization may stop early and
@@ -412,7 +412,8 @@ tests per item) and the card-by-card suite `tests/cards/` (455 tests) pin them d
 - **Vocabulary**: unchanged (3,081-dimensional flat encoding unchanged). New uses of
   existing keys: `pass` on PLAY_CARD (China Card alone, optional extra round) and on
   REMOVE_INFLUENCE (De-Stalinization), DISCARD_CARD at turn end (box 6), CHOOSE_OPTION
-  for Wargames and The Reformer. The observation gains `own_headline` /
+  for Wargames and The Reformer, CHOOSE_COUNTRY for the US inside an Asia / Middle East
+  scoring card (Shuttle Diplomacy's battleground, when there is more than one). The observation gains `own_headline` /
   `opponent_headline` (text view: a HEADLINES section), and some feature values change
   meaning slightly (`can_realign`, `can_place`, the `unseen` channel, region previews
   under Shuttle Diplomacy / Formosan Resolution).

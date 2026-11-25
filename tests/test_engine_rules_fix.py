@@ -14,6 +14,7 @@ import pytest
 from twilight import Game, Side, rules
 from twilight.baselines import AGENTS
 from twilight.data import COUNTRY_ORDER
+from twilight.decisions import DecisionType
 from twilight.engine import EventContext
 from twilight.enums import Phase, Region, WinReason
 from twilight.events import handler_for
@@ -626,7 +627,7 @@ def test_b2_only_one_region_is_discounted_and_the_card_is_discarded():
     state.set_inf(Side.USSR, "Iraq", 3)
     state.set_inf(Side.USSR, "North Korea", 3)
     asia_before = rules.region_vp(state, Region.ASIA, Side.USSR)
-    game.score_region(Region.MIDDLE_EAST)
+    drive(game.score_region(Region.MIDDLE_EAST))
     assert not state.in_play("Shuttle Diplomacy")
     assert "Shuttle Diplomacy" in state.discard
     assert rules.region_vp(state, Region.ASIA, Side.USSR, shuttle=True) == asia_before
@@ -636,7 +637,7 @@ def test_b2_southeast_asia_scoring_neither_uses_nor_spends_it():
     game = _shuttle_game()
     state = game.state
     state.set_inf(Side.USSR, "Thailand", 3)
-    game.score_region(Region.SOUTHEAST_ASIA)
+    drive(game.score_region(Region.SOUTHEAST_ASIA))
     assert state.in_play("Shuttle Diplomacy")
 
 
@@ -652,6 +653,54 @@ def test_b2_the_adjacency_bonus_goes_with_the_discounted_country():
     # With: Japan removed -> 1 bg + 1 non-bg, domination needs more bg than the US
     # (0): domination 7 + 1 bg = 8, no adjacency bonus.
     assert rules.region_vp(state, Region.ASIA, Side.USSR, shuttle=True) == 8
+
+
+def _shuttle_asia_position() -> Game:
+    game = _shuttle_game()
+    state = game.state
+    state.set_inf(Side.USSR, "Japan", 4)
+    state.set_inf(Side.USSR, "North Korea", 3)
+    state.set_inf(Side.USSR, "Afghanistan", 2)
+    return game
+
+
+@pytest.mark.parametrize("struck, expected", [("Japan", 8), ("North Korea", 7 + 1 + 1)])
+def test_b2_the_us_chooses_the_struck_battleground(struck, expected):
+    """FAQ #73: "the US player chooses". Asked of the US, among the USSR-controlled
+    battlegrounds only; striking North Korea instead of Japan leaves the USSR its
+    Japan adjacency point (domination 7 + 1 bg + 1 adjacent)."""
+    game = _shuttle_asia_position()
+    state = game.state
+    vp0 = state.vp
+    log: list = []
+    drive(game.score_region(Region.ASIA), prefer(f"country:{struck}"), log)
+    assert len(log) == 1
+    decision = log[0]
+    assert decision.type is DecisionType.CHOOSE_COUNTRY and decision.player is Side.USA
+    assert set(decision.legal_keys) == {"country:Japan", "country:North Korea"}
+    assert state.vp - vp0 == expected
+    assert "Shuttle Diplomacy" in state.discard
+
+
+def test_b2_a_single_candidate_is_struck_without_asking():
+    game = _shuttle_game()
+    state = game.state
+    state.set_inf(Side.USSR, "Iraq", 3)
+    vp0 = state.vp
+    log: list = []
+    drive(game.score_region(Region.MIDDLE_EAST), None, log)
+    assert log == []
+    assert state.vp == vp0, "Iraq leaves the count entirely: no presence"
+
+
+def test_b2_no_choice_when_the_card_is_not_in_play():
+    game = Game(seed=1)
+    clear_board(game)
+    game.state.set_inf(Side.USSR, "Japan", 4)
+    game.state.set_inf(Side.USSR, "North Korea", 3)
+    log: list = []
+    drive(game.score_region(Region.ASIA), None, log)
+    assert log == []
 
 
 def test_b2_not_applied_in_final_scoring():

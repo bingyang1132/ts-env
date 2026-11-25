@@ -137,23 +137,32 @@ class RegionStatus:
 SHUTTLE_DIPLOMACY_REGIONS = (Region.ASIA, Region.MIDDLE_EAST)
 
 
+def shuttle_diplomacy_candidates(state: GameState, region: Region) -> list[str]:
+    """The USSR battlegrounds Shuttle Diplomacy could remove from this scoring.
+
+    Empty unless the card is in play and *region* is Asia or the Middle East (never
+    Southeast Asia, final scoring, Summit or Kitchen Debates).
+    """
+    if region not in SHUTTLE_DIPLOMACY_REGIONS or not state.in_play("Shuttle Diplomacy"):
+        return []
+    return [
+        n for n in REGION_COUNTRIES[region]
+        if controls(state, Side.USSR, n) and counts_as_battleground(state, n, region)
+    ]
+
+
 def shuttle_diplomacy_excluded(state: GameState, region: Region) -> str | None:
-    """The USSR battleground Shuttle Diplomacy removes from this scoring, if any.
+    """The USSR battleground Shuttle Diplomacy would remove, for previews.
 
     "During the next scoring of the Middle East or Asia, subtract one Battleground
     country from USSR total." The country leaves the count entirely -- one fewer
     country, one fewer battleground, and no superpower-adjacency point for it (FAQ #73)
-    -- it does not become a non-battleground. The US picks which; the choice only
-    matters for the adjacency point, so the engine picks a country adjacent to the US
-    when there is one. Applies only to the Asia and Middle East scoring cards, never to
-    Southeast Asia, final scoring, Summit or Kitchen Debates.
+    -- it does not become a non-battleground. The US picks which when the scoring card
+    resolves (:meth:`twilight.engine.Game.score_region`); the choice only matters for
+    the adjacency point, so a preview assumes the US takes a country adjacent to it
+    when there is one.
     """
-    if region not in SHUTTLE_DIPLOMACY_REGIONS or not state.in_play("Shuttle Diplomacy"):
-        return None
-    bgs = [
-        n for n in REGION_COUNTRIES[region]
-        if controls(state, Side.USSR, n) and counts_as_battleground(state, n, region)
-    ]
+    bgs = shuttle_diplomacy_candidates(state, region)
     if not bgs:
         return None
     adjacent = ADJACENT_TO_SUPERPOWER[Side.USA]
@@ -161,17 +170,26 @@ def shuttle_diplomacy_excluded(state: GameState, region: Region) -> str | None:
 
 
 def region_status(
-    state: GameState, region: Region, *, scoring: bool = False, shuttle: bool = False
+    state: GameState,
+    region: Region,
+    *,
+    scoring: bool = False,
+    shuttle: bool = False,
+    shuttle_choice: str | None = None,
 ) -> RegionStatus:
     """Both players' standing in *region*.
 
     *scoring* counts Formosan Resolution's Taiwan as a battleground ("for scoring
     purposes only": scoring cards and final scoring). *shuttle* also applies Shuttle
-    Diplomacy, which only a scoring card does. Summit sees the board as it is.
+    Diplomacy, which only a scoring card does; *shuttle_choice* is the battleground the
+    US picked (default: the preview pick of :func:`shuttle_diplomacy_excluded`). Summit
+    sees the board as it is.
     """
     scoring = scoring or shuttle
     names = REGION_COUNTRIES[region]
-    excluded = shuttle_diplomacy_excluded(state, region) if shuttle else None
+    excluded = None
+    if shuttle:
+        excluded = shuttle_choice or shuttle_diplomacy_excluded(state, region)
     per_side: list[RegionSide] = []
 
     for side in Side:
@@ -197,10 +215,18 @@ def region_status(
     return RegionStatus(region=region, total_battlegrounds=total_bgs, sides=tuple(per_side))
 
 
-def region_vp(state: GameState, region: Region, side: Side, *, shuttle: bool = False) -> int:
+def region_vp(
+    state: GameState,
+    region: Region,
+    side: Side,
+    *,
+    shuttle: bool = False,
+    shuttle_choice: str | None = None,
+) -> int:
     """VP *side* would score for *region* right now, before the opponent's total.
 
-    *shuttle*: as the scoring card would, applying Shuttle Diplomacy.
+    *shuttle*: as the scoring card would, applying Shuttle Diplomacy (to
+    *shuttle_choice*, if the US has picked one).
     """
     if region not in SCORING_VALUES:
         raise ValueError(
@@ -213,7 +239,9 @@ def region_vp(state: GameState, region: Region, side: Side, *, shuttle: bool = F
             if controls(state, side, n)
         )
 
-    status = region_status(state, region, scoring=True, shuttle=shuttle)
+    status = region_status(
+        state, region, scoring=True, shuttle=shuttle, shuttle_choice=shuttle_choice
+    )
     presence, domination, control = SCORING_VALUES[region]
     tier = status.tier(side)
     base = {"control": control, "domination": domination, "presence": presence, "none": 0}[tier]
@@ -228,15 +256,24 @@ def region_vp(state: GameState, region: Region, side: Side, *, shuttle: bool = F
 
 
 def score_region(
-    state: GameState, region: Region, *, shuttle: bool = False
+    state: GameState,
+    region: Region,
+    *,
+    shuttle: bool = False,
+    shuttle_choice: str | None = None,
 ) -> tuple[int, int, Side | None]:
     """Score *region*: a scoring card (``shuttle=True``) or final scoring.
+
+    *shuttle_choice* is the USSR battleground the US removed with Shuttle Diplomacy.
 
     Returns ``(ussr_vp, usa_vp, auto_winner)``. The VP difference is applied to the
     track; *auto_winner* is set only when a player controls Europe, which ends the
     game immediately.
     """
-    totals = {side: region_vp(state, region, side, shuttle=shuttle) for side in Side}
+    totals = {
+        side: region_vp(state, region, side, shuttle=shuttle, shuttle_choice=shuttle_choice)
+        for side in Side
+    }
 
     for side in Side:
         if totals[side] == AUTO_VICTORY:
@@ -249,14 +286,15 @@ def score_region(
     elif net < 0:
         state.award_vp(Side.USA, -net)
 
-    status_note = ", ".join(
-        f"{side.label} "
-        f"{region_status(state, region, scoring=True, shuttle=shuttle).tier(side)} "
-        f"({totals[side]})"
-        for side in Side
-    ) if region is not Region.SOUTHEAST_ASIA else ", ".join(
-        f"{side.label} {totals[side]}" for side in Side
-    )
+    if region is Region.SOUTHEAST_ASIA:
+        status_note = ", ".join(f"{side.label} {totals[side]}" for side in Side)
+    else:
+        status = region_status(
+            state, region, scoring=True, shuttle=shuttle, shuttle_choice=shuttle_choice
+        )
+        status_note = ", ".join(
+            f"{side.label} {status.tier(side)} ({totals[side]})" for side in Side
+        )
     state.note(f"scored {region}: {status_note} -> net {net:+d} VP to USSR")
     return (totals[Side.USSR], totals[Side.USA], None)
 
@@ -660,5 +698,6 @@ __all__ = [
     "resolve_realignment",
     "restricted_regions",
     "score_region",
+    "shuttle_diplomacy_candidates",
     "shuttle_diplomacy_excluded",
 ]
