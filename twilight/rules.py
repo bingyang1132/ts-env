@@ -372,18 +372,29 @@ def defcon_allows_operation(state: GameState, name: str) -> bool:
     return not any(region in blocked for region in COUNTRIES[name].regions)
 
 
-def can_coup(state: GameState, side: Side, name: str) -> bool:
+def can_coup(
+    state: GameState, side: Side, name: str, *, ignore_defcon: bool = False
+) -> bool:
+    """Whether *side* may make a coup attempt in *name*.
+
+    *ignore_defcon* is for an event's free coup in a named region, which ignores the
+    DEFCON geographic restrictions (rule 6.3.5); every other restriction still holds.
+    """
     if state.inf(side.opponent, name) == 0:
         return False
-    if not defcon_allows_operation(state, name):
+    if not ignore_defcon and not defcon_allows_operation(state, name):
         return False
     return _extra_operation_restrictions_allow(state, side, name, coup=True)
 
 
-def can_realign(state: GameState, side: Side, name: str) -> bool:
-    if state.inf(Side.USSR, name) == 0 and state.inf(Side.USA, name) == 0:
+def can_realign(
+    state: GameState, side: Side, name: str, *, ignore_defcon: bool = False
+) -> bool:
+    # The target must hold some opponent influence (FAQ 6.2.1: "at least one enemy
+    # influence must be present"); the realigning side needs none of its own.
+    if state.inf(side.opponent, name) == 0:
         return False
-    if not defcon_allows_operation(state, name):
+    if not ignore_defcon and not defcon_allows_operation(state, name):
         return False
     return _extra_operation_restrictions_allow(state, side, name, coup=False)
 
@@ -425,7 +436,9 @@ def nato_protects(state: GameState, name: str) -> bool:
         return False
     if name == "France" and state.has_resolved("De Gaulle Leads France"):
         return False
-    if name == "West Germany" and state.has_resolved("Willy Brandt"):
+    # Willy Brandt cancels NATO for West Germany only while it is in effect: Tear Down
+    # This Wall cancels it and restores the protection.
+    if name == "West Germany" and state.in_play("Willy Brandt"):
         return False
     return True
 

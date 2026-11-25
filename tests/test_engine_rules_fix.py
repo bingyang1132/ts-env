@@ -675,3 +675,101 @@ def test_b2_formosan_resolution_counts_for_scoring_but_not_for_summit():
     assert rules.region_status(state, Region.ASIA, scoring=True).sides[Side.USA].battlegrounds == 1
     # domination + Taiwan battleground + Afghanistan next to the USSR
     assert rules.region_vp(state, Region.ASIA, Side.USA) == 7 + 1 + 1
+
+
+# --------------------------------------------------------------------------- #
+# O8 -- realignment needs opponent influence in the target
+# --------------------------------------------------------------------------- #
+
+
+def test_o8_cannot_realign_a_country_with_only_your_own_influence():
+    game = Game(seed=1)
+    clear_board(game)
+    state = game.state
+    state.set_inf(Side.USSR, "Angola", 2)
+    assert not rules.can_realign(state, Side.USSR, "Angola")
+    assert rules.can_realign(state, Side.USA, "Angola")
+
+
+# --------------------------------------------------------------------------- #
+# B12d -- NATO protects West Germany again once Tear Down This Wall cancels Brandt
+# --------------------------------------------------------------------------- #
+
+
+def test_b12d_nato_covers_west_germany_after_tear_down_this_wall():
+    game = Game(seed=1)
+    clear_board(game)
+    state = game.state
+    state.add_effect("NATO", owner=Side.USA)
+    state.events_resolved.add("Willy Brandt")
+    state.add_effect("Willy Brandt", owner=Side.USSR)
+    state.set_inf(Side.USA, "West Germany", 5)
+    state.set_inf(Side.USSR, "West Germany", 1)
+    assert rules.can_coup(state, Side.USSR, "West Germany")  # Brandt in effect
+    run_event(game, "Tear Down This Wall", Side.USA, prefer("option:2", "pass"))
+    assert not state.in_play("Willy Brandt")
+    assert not rules.can_coup(state, Side.USSR, "West Germany")
+
+
+# --------------------------------------------------------------------------- #
+# B12c -- Brush War: NATO protection, and superpower adjacency counts
+# --------------------------------------------------------------------------- #
+
+
+def test_b12c_brush_war_cannot_target_nato_protected_countries():
+    game = Game(seed=1)
+    clear_board(game)
+    state = game.state
+    state.set_inf(Side.USA, "Greece", 2)
+    state.add_effect("NATO", owner=Side.USA)
+    log = []
+    run_event(game, "Brush War", Side.USSR, prefer("country:Turkey"), log)
+    assert "country:Greece" not in log[0].legal_keys
+    # The US playing Brush War is unaffected.
+    log = []
+    state.set_inf(Side.USSR, "Finland", 0)
+    run_event(game, "Brush War", Side.USA, None, log)
+    assert "country:Greece" in log[0].legal_keys
+
+
+def test_b12c_war_penalty_counts_the_adjacent_enemy_superpower():
+    """FAQ #36 / rule 2.1.5: USSR attacking Mexico subtracts 1 for the adjacent USA."""
+    game = Game(seed=1)
+    clear_board(game)
+    state = game.state
+    state.set_inf(Side.USA, "Mexico", 2)
+    state.rng = FixedRoll([3])  # 3 - 1 (USA) = 2: no victory on 3-6
+    run_event(game, "Brush War", Side.USSR, prefer("country:Mexico"))
+    assert state.inf(Side.USA, "Mexico") == 2
+    assert state.inf(Side.USSR, "Mexico") == 0
+
+
+# --------------------------------------------------------------------------- #
+# B13 -- region-specific free coups / realignments ignore DEFCON geography
+# --------------------------------------------------------------------------- #
+
+
+def test_b13_tear_down_this_wall_coup_in_europe_at_defcon_four():
+    game = Game(seed=1)
+    clear_board(game)
+    state = game.state
+    state.defcon = 4
+    state.phasing_player = Side.USA
+    state.set_inf(Side.USSR, "Poland", 2)
+    state.rng = FixedRoll([6])
+    log = []
+    run_event(game, "Tear Down This Wall", Side.USA, prefer("option:0", "country:Poland"), log)
+    labels = [o.label for d in log for o in d.options]
+    assert any("coup" in lab for lab in labels)
+    assert state.inf(Side.USSR, "Poland") < 2  # the coup happened
+    assert state.defcon == 3  # battleground coup still degrades DEFCON
+    assert state.military_ops[Side.USA] == 0  # free: no military ops
+
+
+def test_b13_ordinary_operations_still_respect_defcon():
+    game = Game(seed=1)
+    clear_board(game)
+    state = game.state
+    state.defcon = 4
+    state.set_inf(Side.USSR, "Poland", 2)
+    assert not rules.can_coup(state, Side.USA, "Poland")

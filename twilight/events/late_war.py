@@ -40,10 +40,15 @@ def _choose_region(game, side, prompt, regions=_NAMEABLE_REGIONS):
 
 
 def _free_realignments(game, side, rolls, *, allowed, prompt):
-    """Realignment rolls granted by an event, restricted to *allowed* countries."""
+    """Free realignment rolls granted by an event in a named region.
+
+    They ignore DEFCON geography, like a free coup (FAQ #96).
+    """
     pool = list(allowed)
     for remaining in range(rolls, 0, -1):
-        targets = [n for n in pool if rules.can_realign(game.state, side, n)]
+        targets = [
+            n for n in pool if rules.can_realign(game.state, side, n, ignore_defcon=True)
+        ]
         if not targets:
             return
         name = yield from game.choose_country(
@@ -410,9 +415,9 @@ def tear_down_this_wall(game, ctx):
     ops = game.effective_ops(ctx.card, Side.USA)
     europe = in_region(Region.EUROPE)
     choices: list[tuple[str, str]] = []
-    if any(rules.can_coup(state, Side.USA, n) for n in europe):
+    if any(rules.can_coup(state, Side.USA, n, ignore_defcon=True) for n in europe):
         choices.append(("coup", f"free coup attempt in Europe with {ops} ops"))
-    if any(rules.can_realign(state, Side.USA, n) for n in europe):
+    if any(rules.can_realign(state, Side.USA, n, ignore_defcon=True) for n in europe):
         choices.append(("realign", f"{ops} realignment rolls in Europe"))
     choices.append(("none", "no coup or realignment"))
 

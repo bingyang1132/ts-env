@@ -93,10 +93,10 @@ def war(
     state = game.state
     opponent = ctx_player.opponent
 
-    # Only countries adjacent to the target count; the target itself never does.
-    penalty = sum(
-        1 for n in adjacent_to(target) if rules.controls(state, opponent, n)
-    )
+    # Only countries adjacent to the target count; the target itself never does. An
+    # adjacent enemy superpower counts as an enemy-controlled country (rule 2.1.5,
+    # FAQ #36).
+    penalty = war_penalty(state, opponent, target)
     roll = game.roll()
     modified = roll - penalty
     state.military_ops[ctx_player] = min(5, state.military_ops[ctx_player] + military_ops)
@@ -119,6 +119,16 @@ def war(
     yield  # pragma: no cover
 
 
+def war_penalty(state: "GameState", defender: Side, target: str) -> int:
+    """Die-roll penalty for a war on *target*: one per adjacent *defender*-controlled
+    country, the defender's superpower space included (rule 2.1.5, FAQ #36)."""
+    return sum(
+        1
+        for n in COUNTRIES[target].adjacent
+        if rules.is_controlled_by_superpower(state, defender, n)
+    )
+
+
 def free_coup(
     game: "Game",
     side: Side,
@@ -126,9 +136,18 @@ def free_coup(
     *,
     allowed: Iterable[str],
     prompt: str = "Choose a country to coup",
+    ignore_defcon: bool = True,
 ) -> Iterator["Decision"]:
-    """Let *side* make a coup attempt granted by an event."""
-    pool = [n for n in allowed if rules.can_coup(game.state, side, n)]
+    """Let *side* make a free coup attempt granted by an event in a named region.
+
+    Such a coup ignores the DEFCON geographic restrictions (rule 6.3.5, FAQ #96) but
+    still degrades DEFCON in a battleground, and does not count toward the required
+    military operations (rule 8.2.5).
+    """
+    pool = [
+        n for n in allowed
+        if rules.can_coup(game.state, side, n, ignore_defcon=ignore_defcon)
+    ]
     name = yield from game.choose_country(
         side, pool, prompt, allow_pass=True,
         labels={n: game.coup_label(n, ops) for n in pool},
@@ -143,6 +162,7 @@ __all__ = [
     "empty_countries",
     "ensure_control",
     "free_coup",
+    "war_penalty",
     "in_region",
     "nothing",
     "uncontrolled",

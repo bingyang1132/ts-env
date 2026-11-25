@@ -21,12 +21,12 @@ from ..data import CARDS, COUNTRY_ORDER
 from ..enums import Phase, Region, Side
 from . import register
 from .helpers import (
-    adjacent_to,
     ensure_control,
     in_region,
     nothing,
     uncontrolled,
     war,
+    war_penalty,
     with_influence,
 )
 
@@ -196,7 +196,7 @@ def arab_israeli_war(game, ctx):
     """A pan-Arab coalition attacks Israel. Israel itself counts against the USSR."""
     state = game.state
     # Unusually, US control of Israel is itself a penalty, on top of adjacency.
-    penalty = sum(1 for n in adjacent_to("Israel") if rules.controls(state, Side.USA, n))
+    penalty = war_penalty(state, Side.USA, "Israel")
     if rules.controls(state, Side.USA, "Israel"):
         penalty += 1
 

@@ -42,13 +42,15 @@ _LATIN_AMERICA = tuple(in_region(Region.CENTRAL_AMERICA)) + tuple(
 
 
 def _free_realignments(game, side, ops, *, allowed, prompt):
-    """Realignment rolls granted by an event, restricted to *allowed*.
+    """Free realignment rolls granted by an event in a named region.
 
     The engine's own realignment loop covers the whole board, so the region-limited
-    cards need their own.
+    cards need their own. Like a free coup, they ignore DEFCON geography (FAQ).
     """
     for remaining in range(ops, 0, -1):
-        targets = [n for n in allowed if rules.can_realign(game.state, side, n)]
+        targets = [
+            n for n in allowed if rules.can_realign(game.state, side, n, ignore_defcon=True)
+        ]
         name = yield from game.choose_country(
             side,
             targets,
@@ -74,10 +76,14 @@ def _controlled_battlegrounds(state, side) -> int:
 @register("Brush War")
 def brush_war(game, ctx):
     """Attack a stability 1-2 country: victory on 3-6 for 1 VP and 3 military ops."""
+    state = game.state
     pool = [
         n
         for n in COUNTRIES
-        if not COUNTRIES[n].superpower and COUNTRIES[n].stability <= 2
+        if not COUNTRIES[n].superpower
+        and COUNTRIES[n].stability <= 2
+        # NATO: US-controlled countries in Europe may not be attacked by Brush War.
+        and not (ctx.player is Side.USSR and rules.nato_protects(state, n))
     ]
     target = yield from game.choose_country(
         ctx.player, pool, "Brush War: choose a country with stability 1 or 2 to attack"
@@ -306,10 +312,12 @@ def junta(game, ctx):
     ops = game.effective_ops(ctx.card, ctx.player)
     labels: list[str] = []
     kinds: list[str | None] = []
-    if any(rules.can_coup(state, ctx.player, n) for n in _LATIN_AMERICA):
+    if any(rules.can_coup(state, ctx.player, n, ignore_defcon=True) for n in _LATIN_AMERICA):
         labels.append(f"free coup attempt with {ops} ops")
         kinds.append("coup")
-    if any(rules.can_realign(state, ctx.player, n) for n in _LATIN_AMERICA):
+    if any(
+        rules.can_realign(state, ctx.player, n, ignore_defcon=True) for n in _LATIN_AMERICA
+    ):
         labels.append(f"{ops} free realignment rolls")
         kinds.append("realign")
     labels.append("neither")
