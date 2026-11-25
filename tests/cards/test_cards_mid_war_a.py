@@ -586,15 +586,17 @@ class TestC047Junta:
         """PD #47 / FAQ #47: "the number of Realignment rolls will depend on the cards Op
         Value, which is normally 2" -- two rolls in Central/South America."""
         t = Table(turn=4)
-        t.inf(usa={"Panama": 3, "Chile": 3})
+        # Both rolls in one region (FAQ #47, see TestC047JuntaOneRegion): Panama and
+        # Costa Rica, both Central America.
+        t.inf(usa={"Panama": 3, "Costa Rica": 3})
         t.dice(6, 1, 6, 1)
         t.play(USSR, "Junta", "event", "country:Mexico")
         t.answer(option_with(t, "realign"))
         t.answer("country:Panama")
         assert t.d is not None, "a second realignment roll should be available"
-        t.answer("country:Chile")
+        t.answer("country:Costa Rica")
         assert t.done
-        assert t.s.inf(USA, "Panama") < 3 and t.s.inf(USA, "Chile") < 3
+        assert t.s.inf(USA, "Panama") < 3 and t.s.inf(USA, "Costa Rica") < 3
 
 
 # --------------------------------------------------------------------------- #
