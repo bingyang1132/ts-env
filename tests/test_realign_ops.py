@@ -126,7 +126,7 @@ def test_a_player_who_never_passes_still_finishes_the_game(seed):
         if decision.type is DecisionType.REALIGN_TARGET:
             run += 1
             longest = max(longest, run)
-            assert decision.context["remaining"] <= 5
+            assert decision.context["remaining"] <= 6
             choices = [a for a in decision.options if a.key != PASS.key]
         else:
             run = 0
@@ -134,5 +134,6 @@ def test_a_player_who_never_passes_still_finishes_the_game(seed):
             choices = [realign] if realign is not None else list(decision.options)
         game.step(rng.choice(choices))
     assert game.decision is None, "the game did not finish within 20,000 steps"
-    # Four ops plus the China Card's Asia bonus is the most one operation can give.
-    assert longest <= 5
+    # Four ops plus the China Card's Asia bonus plus Vietnam Revolts' Southeast Asia
+    # bonus (rule 7.4 example) is the most one operation can give.
+    assert longest <= 6
