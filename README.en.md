@@ -360,8 +360,9 @@ handled correctly here:
 ### Known gaps
 
 `docs/known_gaps.md` lists the remaining simplifications, the rulings taken where the
-sources are silent (several by the user, 2026-11-25), and what is unverified (the space
-race box values, which are only on the board graphic). Nothing is silently approximated —
+sources are silent (several by the user, 2026-11-25), and what is not yet covered (the
+space race box values are checked against the track graphic in GMT's 20th Anniversary
+rulebook). Nothing is silently approximated —
 `Game(strict_events=True)` raises on any card with no handler, and the test suite asserts
 full coverage.
 

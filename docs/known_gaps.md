@@ -96,12 +96,16 @@ be found (the Deluxe rule 7.4.3 cited by the FAQ is not in any available copy).
 
 ## Not verified / not covered
 
-- **Space race box values.** The rulebook's text gives only Lunar Orbit (3/1) and the
-  count of VP boxes (five); the track itself is a board graphic that is in neither
-  available rulebook PDF. The engine's values (Deluxe: 2/1, ability, 2/0, ability, 3/1,
-  ability, 4/2, 2/0; ops 2,2,2,2,3,3,3,4; success on 3,4,3,4,3,4,3,2) agree with those
-  two facts and with the README's earlier cross-check, but box by box they are not
-  verified against a primary source.
+- **Space race box values: verified 2026-11-25.** The track graphic printed with rule
+  6.4.1 in GMT's 20th Anniversary Hall of Fame Edition rulebook (p. 12; same box names and
+  abilities as the Deluxe rule 6.4.4) reads, box 1 to 8: Earth Satellite 2 ops roll 1-3
+  2/1; Animal in Space 2 ops 1-4 (two space cards per turn); Man in Space 2 ops 1-3 2/0;
+  Man in Earth Orbit 2 ops 1-4 (opponent shows headline first); Lunar Orbit 3 ops 1-3
+  3/1; Eagle/Bear Has Landed 3 ops 1-4 (discard a held card); Space Shuttle 3 ops 1-3
+  4/2; Space Station 4 ops 1-2 2/0 (eight action rounds). The engine matches every box
+  (`tests/cards/test_mech_space.py::TestTrackValues::test_full_track_table`). Source:
+  <https://gmtwebsiteassets.s3.us-west-2.amazonaws.com/Twilight+Struggle+20th+Anniversary+HOF+Edition/Twilight+Struggle+20th+Ann_Rule+Book_WEB.pdf>.
+  The Deluxe PDFs available here carry only the rule text, not the graphic.
 - **Untested boundaries**: no tests yet for Grain Sales drawing UN Intervention in the
   headline, or for an event awarding VP after a DEFCON drop to 1 in the same card.
 

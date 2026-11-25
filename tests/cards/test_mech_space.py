@@ -35,13 +35,43 @@ class TestTrackValues:
         assert len(vp_boxes) == 5
         assert {b.number for b in spacerace.SPACE_TRACK if b.ability} == {2, 4, 6, 8}
 
-    @pytest.mark.skip(
-        reason="box-by-box ops requirement / roll range / VP are printed on the map; "
-        "no text source available here (rulebook R 6.4 only quotes Lunar Orbit 3/1) "
-        "-- not verifiable, deliberately not asserted from memory"
-    )
+    #: The track graphic printed with R 6.4.1 in the GMT 20th Anniversary Hall of Fame
+    #: Edition rulebook (p. 12, "SPACE RACE TRACK"; same box names and abilities as the
+    #: Deluxe R 6.4.4): (name, ops, highest successful roll, VP first, VP second).
+    #: https://gmtwebsiteassets.s3.us-west-2.amazonaws.com/Twilight+Struggle+20th+Anniversary+HOF+Edition/Twilight+Struggle+20th+Ann_Rule+Book_WEB.pdf
+    PRINTED_TRACK = [
+        ("Earth Satellite", 2, 3, 2, 1),
+        ("Animal in Space", 2, 4, 0, 0),
+        ("Man in Space", 2, 3, 2, 0),
+        ("Man in Earth Orbit", 2, 4, 0, 0),
+        ("Lunar Orbit", 3, 3, 3, 1),
+        ("Eagle/Bear has Landed", 3, 4, 0, 0),
+        ("Space Shuttle", 3, 3, 4, 2),
+        ("Space Station", 4, 2, 2, 0),
+    ]
+
     def test_full_track_table(self):
-        """Printed Space Race track (map) -- unverified."""
+        """Box by box as printed: "2 OPS [roll 1-3] ... 2/1" for Earth Satellite, and so
+        on to "4 OPS [roll 1-2] ... 2/0" for Space Station."""
+        got = [
+            (b.name, b.ops_required, b.max_roll, b.vp_first, b.vp_second)
+            for b in spacerace.SPACE_TRACK[1:]
+        ]
+        assert [g[0].lower() for g in got] == [p[0].lower() for p in self.PRINTED_TRACK]
+        assert [g[1:] for g in got] == [p[1:] for p in self.PRINTED_TRACK]
+
+    @pytest.mark.parametrize("box", range(1, 9))
+    def test_each_box_succeeds_on_its_printed_roll_and_fails_above(self, box):
+        """The printed roll range at work: success on the top of the range, failure one
+        above it (Space Station's 1-2 included)."""
+        _, ops, top, first, _ = self.PRINTED_TRACK[box - 1]
+        card = {2: "Decolonization", 3: "Socialist Governments", 4: "Muslim Revolution"}[ops]
+        for roll, advanced in ((top, True), (top + 1, False)):
+            t = Table(turn=5)
+            t.s.space_race = [box - 1, box - 1]
+            attempt(t, USSR, card, roll)
+            assert (t.s.space_race[USSR] == box) is advanced
+            assert t.s.vp == (first if advanced else 0)
 
 
 class TestAttempts:
