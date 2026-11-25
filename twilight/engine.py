@@ -1554,11 +1554,14 @@ class Game:
     def score_region(self, region: Region) -> None:
         """Resolve a scoring card, handling the Europe automatic victory.
 
-        Shuttle Diplomacy is spent by the first Asia or Middle East scoring it affects,
-        so it comes off the table here rather than expiring on a timer.
+        Shuttle Diplomacy is spent by the next Asia or Middle East scoring card, whether
+        or not the USSR controlled a battleground there, and goes to the discard pile.
         """
         state = self.state
-        _, _, auto = rules.score_region(state, region)
+        excluded = rules.shuttle_diplomacy_excluded(state, region)
+        if excluded is not None:
+            state.note(f"Shuttle Diplomacy: {excluded} does not count for the USSR")
+        _, _, auto = rules.score_region(state, region, shuttle=True)
 
         if region in rules.SHUTTLE_DIPLOMACY_REGIONS and state.in_play("Shuttle Diplomacy"):
             state.remove_effect("Shuttle Diplomacy")

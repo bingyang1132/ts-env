@@ -7,8 +7,9 @@ far as they can be from inside this module -- the effect is placed correctly, bu
 nothing consults it yet. Each is marked with a ``HOOK NEEDED`` comment:
 
 * Flower Power, which watches every subsequent US card play;
-* U2 Incident, which watches for UN Intervention;
-* Shuttle Diplomacy, which alters Asia / Middle East scoring.
+* U2 Incident, which watches for UN Intervention.
+
+(Shuttle Diplomacy's scoring hook now lives in :mod:`twilight.rules`.)
 """
 
 from __future__ import annotations
@@ -364,11 +365,11 @@ def sadat_expels_soviets(game, ctx):
 
 @register("Shuttle Diplomacy")
 def shuttle_diplomacy(game, ctx):
-    """The next Asia or Middle East scoring ignores one USSR battleground."""
-    # HOOK NEEDED: rules.region_status has to subtract one from the USSR battleground
-    # count when scoring Asia or the Middle East while this effect is in play, and
-    # Game.score_region then has to remove the effect and discard the card. Neither
-    # may apply during the turn-10 final scoring.
+    """The next Asia or Middle East scoring card ignores one USSR battleground.
+
+    Applied by :func:`twilight.rules.shuttle_diplomacy_excluded` and spent by
+    :meth:`twilight.engine.Game.score_region`; final scoring ignores it.
+    """
     game.state.add_effect(ctx.card, owner=Side.USA)
     return (yield from nothing())
 

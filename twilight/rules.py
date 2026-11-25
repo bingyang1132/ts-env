@@ -130,37 +130,52 @@ class RegionStatus:
         return "presence"
 
 
-#: Regions in which Shuttle Diplomacy discounts one of the opponent's battlegrounds.
+#: Regions whose scoring card Shuttle Diplomacy affects.
 SHUTTLE_DIPLOMACY_REGIONS = (Region.ASIA, Region.MIDDLE_EAST)
 
 
-def shuttle_diplomacy_penalty(state: GameState, side: Side, region: Region) -> int:
-    """Battlegrounds *side* does not get credit for because of Shuttle Diplomacy.
+def shuttle_diplomacy_excluded(state: GameState, region: Region) -> str | None:
+    """The USSR battleground Shuttle Diplomacy removes from this scoring, if any.
 
-    The card discounts one battleground for its owner's opponent when Asia or the
-    Middle East is scored. Battleground count only -- the total country count is
-    untouched -- so it affects both the tier test and the per-battleground bonus.
+    "During the next scoring of the Middle East or Asia, subtract one Battleground
+    country from USSR total." The country leaves the count entirely -- one fewer
+    country, one fewer battleground, and no superpower-adjacency point for it (FAQ #73)
+    -- it does not become a non-battleground. The US picks which; the choice only
+    matters for the adjacency point, so the engine picks a country adjacent to the US
+    when there is one. Applies only to the Asia and Middle East scoring cards, never to
+    Southeast Asia, final scoring, Summit or Kitchen Debates.
     """
-    effect = state.effects.get("Shuttle Diplomacy")
-    if effect is None or effect.owner is None or effect.owner is side:
-        return 0
-    return 1 if region in SHUTTLE_DIPLOMACY_REGIONS else 0
+    if region not in SHUTTLE_DIPLOMACY_REGIONS or not state.in_play("Shuttle Diplomacy"):
+        return None
+    bgs = [
+        n for n in REGION_COUNTRIES[region]
+        if controls(state, Side.USSR, n) and counts_as_battleground(state, n, region)
+    ]
+    if not bgs:
+        return None
+    adjacent = ADJACENT_TO_SUPERPOWER[Side.USA]
+    return next((n for n in bgs if n in adjacent), bgs[0])
 
 
-def region_status(state: GameState, region: Region) -> RegionStatus:
+def region_status(state: GameState, region: Region, *, shuttle: bool = False) -> RegionStatus:
+    """Both players' standing in *region*.
+
+    *shuttle* applies Shuttle Diplomacy, which only a scoring card does; Summit, Kitchen
+    Debates and final scoring see the board as it is.
+    """
     names = REGION_COUNTRIES[region]
+    excluded = shuttle_diplomacy_excluded(state, region) if shuttle else None
     per_side: list[RegionSide] = []
 
     for side in Side:
-        controlled = [n for n in names if controls(state, side, n)]
+        controlled = [n for n in names if controls(state, side, n) and n != excluded]
         bgs = [n for n in controlled if counts_as_battleground(state, n, region)]
         adjacent = ADJACENT_TO_SUPERPOWER[side.opponent]
-        counted_bgs = max(0, len(bgs) - shuttle_diplomacy_penalty(state, side, region))
         per_side.append(
             RegionSide(
                 countries=len(controlled),
-                battlegrounds=counted_bgs,
-                non_battlegrounds=len(controlled) - counted_bgs,
+                battlegrounds=len(bgs),
+                non_battlegrounds=len(controlled) - len(bgs),
                 adjacent_to_enemy_superpower=sum(1 for n in controlled if n in adjacent),
             )
         )
@@ -171,8 +186,11 @@ def region_status(state: GameState, region: Region) -> RegionStatus:
     return RegionStatus(region=region, total_battlegrounds=total_bgs, sides=tuple(per_side))
 
 
-def region_vp(state: GameState, region: Region, side: Side) -> int:
-    """VP *side* would score for *region* right now, before the opponent's total."""
+def region_vp(state: GameState, region: Region, side: Side, *, shuttle: bool = False) -> int:
+    """VP *side* would score for *region* right now, before the opponent's total.
+
+    *shuttle*: as the scoring card would, applying Shuttle Diplomacy.
+    """
     if region not in SCORING_VALUES:
         raise ValueError(
             f"{region} has no scoring card; it is only scored as part of its parent region"
@@ -184,7 +202,7 @@ def region_vp(state: GameState, region: Region, side: Side) -> int:
             if controls(state, side, n)
         )
 
-    status = region_status(state, region)
+    status = region_status(state, region, shuttle=shuttle)
     presence, domination, control = SCORING_VALUES[region]
     tier = status.tier(side)
     base = {"control": control, "domination": domination, "presence": presence, "none": 0}[tier]
@@ -198,14 +216,16 @@ def region_vp(state: GameState, region: Region, side: Side) -> int:
     return base + bonus
 
 
-def score_region(state: GameState, region: Region) -> tuple[int, int, Side | None]:
-    """Resolve a scoring card for *region*.
+def score_region(
+    state: GameState, region: Region, *, shuttle: bool = False
+) -> tuple[int, int, Side | None]:
+    """Score *region*: a scoring card (``shuttle=True``) or final scoring.
 
     Returns ``(ussr_vp, usa_vp, auto_winner)``. The VP difference is applied to the
     track; *auto_winner* is set only when a player controls Europe, which ends the
     game immediately.
     """
-    totals = {side: region_vp(state, region, side) for side in Side}
+    totals = {side: region_vp(state, region, side, shuttle=shuttle) for side in Side}
 
     for side in Side:
         if totals[side] == AUTO_VICTORY:
@@ -219,7 +239,8 @@ def score_region(state: GameState, region: Region) -> tuple[int, int, Side | Non
         state.award_vp(Side.USA, -net)
 
     status_note = ", ".join(
-        f"{side.label} {region_status(state, region).tier(side)} ({totals[side]})"
+        f"{side.label} {region_status(state, region, shuttle=shuttle).tier(side)} "
+        f"({totals[side]})"
         for side in Side
     ) if region is not Region.SOUTHEAST_ASIA else ", ".join(
         f"{side.label} {totals[side]}" for side in Side
@@ -610,4 +631,5 @@ __all__ = [
     "resolve_realignment",
     "restricted_regions",
     "score_region",
+    "shuttle_diplomacy_excluded",
 ]

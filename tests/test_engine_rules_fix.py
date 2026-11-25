@@ -577,3 +577,88 @@ def test_b1_warsaw_pact_enables_nato_and_leaves_play():
     assert is_playable(game, "NATO", Side.USA)
     assert not state.in_play("Warsaw Pact Formed")
     assert "Warsaw Pact Formed" in state.removed
+
+
+# --------------------------------------------------------------------------- #
+# B2 -- Shuttle Diplomacy
+# --------------------------------------------------------------------------- #
+
+
+def _shuttle_game() -> Game:
+    game = Game(seed=1)
+    clear_board(game)
+    game.state.add_effect("Shuttle Diplomacy", owner=Side.USA)
+    return game
+
+
+def test_b2_the_discounted_battleground_leaves_the_count_entirely():
+    """FAQ #73: the country is removed from the equation, not turned non-battleground."""
+    game = _shuttle_game()
+    state = game.state
+    for name, n in (("Iraq", 3), ("Iran", 2), ("Saudi Arabia", 3)):
+        state.set_inf(Side.USSR, name, n)
+    state.set_inf(Side.USA, "Israel", 4)
+    state.set_inf(Side.USA, "Jordan", 2)
+    status = rules.region_status(state, Region.MIDDLE_EAST, shuttle=True)
+    ussr = status.sides[Side.USSR]
+    assert (ussr.countries, ussr.battlegrounds, ussr.non_battlegrounds) == (2, 2, 0)
+    assert status.tier(Side.USSR) == "presence"
+    # Without the card the USSR has 3 battlegrounds, presence (no non-battleground).
+    assert rules.region_vp(state, Region.MIDDLE_EAST, Side.USSR) == 3 + 3
+    assert rules.region_vp(state, Region.MIDDLE_EAST, Side.USSR, shuttle=True) == 3 + 2
+
+
+def test_b2_only_the_scoring_card_sees_it_not_summit_or_kitchen_debates():
+    game = _shuttle_game()
+    state = game.state
+    state.set_inf(Side.USSR, "Iraq", 3)
+    state.set_inf(Side.USSR, "Syria", 2)
+    state.set_inf(Side.USSR, "Lebanon", 1)
+    assert rules.region_status(state, Region.MIDDLE_EAST).tier(Side.USSR) == "domination"
+
+
+def test_b2_only_one_region_is_discounted_and_the_card_is_discarded():
+    game = _shuttle_game()
+    state = game.state
+    state.set_inf(Side.USSR, "Iraq", 3)
+    state.set_inf(Side.USSR, "North Korea", 3)
+    asia_before = rules.region_vp(state, Region.ASIA, Side.USSR)
+    game.score_region(Region.MIDDLE_EAST)
+    assert not state.in_play("Shuttle Diplomacy")
+    assert "Shuttle Diplomacy" in state.discard
+    assert rules.region_vp(state, Region.ASIA, Side.USSR, shuttle=True) == asia_before
+
+
+def test_b2_southeast_asia_scoring_neither_uses_nor_spends_it():
+    game = _shuttle_game()
+    state = game.state
+    state.set_inf(Side.USSR, "Thailand", 3)
+    game.score_region(Region.SOUTHEAST_ASIA)
+    assert state.in_play("Shuttle Diplomacy")
+
+
+def test_b2_the_adjacency_bonus_goes_with_the_discounted_country():
+    """The US picks the discounted battleground; Japan also carries the +1 adjacency."""
+    game = _shuttle_game()
+    state = game.state
+    state.set_inf(Side.USSR, "Japan", 4)
+    state.set_inf(Side.USSR, "North Korea", 3)
+    state.set_inf(Side.USSR, "Afghanistan", 2)
+    # Without: domination 7 + 2 bg + 1 adjacent (Japan) = 10.
+    assert rules.region_vp(state, Region.ASIA, Side.USSR) == 10
+    # With: Japan removed -> 1 bg + 1 non-bg, domination needs more bg than the US
+    # (0): domination 7 + 1 bg = 8, no adjacency bonus.
+    assert rules.region_vp(state, Region.ASIA, Side.USSR, shuttle=True) == 8
+
+
+def test_b2_not_applied_in_final_scoring():
+    game = _shuttle_game()
+    state = game.state
+    state.turn = 10
+    state.set_inf(Side.USSR, "Iraq", 3)
+    state.set_inf(Side.USSR, "Iran", 2)
+    state.set_inf(Side.USSR, "Syria", 2)
+    expected = rules.region_vp(state, Region.MIDDLE_EAST, Side.USSR)
+    vp0 = state.vp
+    game._final_scoring()
+    assert state.vp - vp0 == expected
