@@ -10,7 +10,7 @@
 
 ```
 python tools/extract_lua.py     # 从游戏安装目录重新生成 twilight/data/*.json
-python -m pytest tests -q       # 278 个测试
+python -m pytest tests -q       # 799 个测试
 python tools/random_play.py --games 200
 python tools/demo_views.py      # 查看同一局面下两种智能体视图
 ```
@@ -295,7 +295,7 @@ tools/
 examples/
   baselines.py    薄壳：从 twilight.baselines re-export，兼容旧的 `from baselines import ...`
   llm_agent.py    提示词循环、非法输出重试、key 提取
-tests/            278 个测试
+tests/            799 个测试（tests/cards：逐卡测试）
 docs/
   card_spec.md    自动生成：每张卡的规则文本与内部效果函数名
   known_gaps.md   哪些地方**没有**忠实实现，以及原因
@@ -318,13 +318,16 @@ docs/
   向外接力去够到更远的国家。
 - **重整失败会让进攻方自己损失** influence——骰子对抗是对称的。
 - **每次重整掷骰消耗 1 点 ops**：4 点牌最多掷 4 次（可重复选同一国，也可随时 pass）；中国牌只有在每次都选亚洲国家时才多给第 5 次。
-- **免费政变**不受 DEFCON 地理限制、也不计入军事行动要求，但在战场国仍然会降低 DEFCON。
+- **卡面指定区域的免费政变**（Junta、Ortega、Tear Down This Wall、Che）不受 DEFCON 地理限制、也不计入
+  军事行动要求，但在战场国仍然会降低 DEFCON。「视同打出 N 点牌」类事件是常规行动：计入军事行动，受 DEFCON
+  地理限制。
 - **最终结算**结算所有地区，排除东南亚（已包含在亚洲内），并且控制欧洲依然直接获胜。
 - 美国初始布置是 25 点 influence，**包含加拿大 2 点**——这一点很容易漏。
 
 ### 已知缺口
 
-还有 3 条条款没有做到完全忠实，都列在 `docs/known_gaps.md` 里。**没有任何东西是被静默近似掉的**——`Game(strict_events=True)` 会对任何没有
+剩余的简化、书面来源缺失处采用的裁定（多条为用户 2026-11-25 的裁定）以及尚未核实的内容（太空竞赛逐格
+数值只在棋盘图上），都列在 `docs/known_gaps.md` 里。**没有任何东西是被静默近似掉的**——`Game(strict_events=True)` 会对任何没有
 处理函数的卡直接抛异常，测试套件也断言了完整覆盖。
 
 卡面写着"在对手的下一个行动轮……"的条款走的是通用**延迟触发**机制
@@ -332,6 +335,38 @@ docs/
 胜利点数、以及 Missile Envy 的强制出牌都用的这套机制。
 
 ## 变更说明
+
+**2026-11-25：规则审计（行为变化，分支 `rules-fix`）。** 对照豪华版规则书、FAQ v5、卡面原文，
+以及书面来源缺失处由用户给出的裁定，修复了下列问题。`tests/test_engine_rules_fix.py`（按条目命名）
+和逐卡测试 `tests/cards/`（455 个）固定了这些行为；裁定与剩余简化见 `docs/known_gaps.md`。
+
+- **终局**：VP 达到 ±20 立即结束（以前太空竞赛、Yuri and Samantha 等路径漏判）；游戏结束后不再发出
+  任何决策；回合末先做军事行动检查再判持计分牌；第 10 回合末（China Card 的 1 分、终局计分）达到 20
+  不算即时胜利，终局计分中途不截断。
+- **DEFCON 1**：政变导致时由 phasing player 判负（以前判政变方），古巴导弹危机除外。
+- **行动**：「视同打出 N 点牌」类事件按常规行动处理（吃 ops 修正、受 DEFCON 地理限制、计入军事行动）；
+  卡面指定区域的免费政变/调整无视 DEFCON 地理限制（实际影响 Tear Down This Wall）；调整目标国必须有对方
+  影响力；实现了 Vietnam Revolts 的东南亚 +1；放置可达范围取行动轮开始时的快照。
+- **太空竞赛**：实现第 6 格回合末弃持牌；Man in Earth Orbit 让持有者看到对方头条；Space Station /
+  North Sea Oil 合计 8 个行动轮（不会变成 9）、回合中途生效、额外的第 8 轮可以放弃。
+- **卡牌**：Warsaw Pact 不再提供保护；Shuttle Diplomacy 只作用于亚洲/中东计分卡、整个剔除被扣战场国、
+  终局计分和 Summit 不受影响；Formosan Resolution 只在计分时生效；Quagmire / Bear Trap 用修正后 ops、
+  无合格牌时不解除且可打计分牌；NATO 防 Brush War、TDTW 后恢复对西德的保护；战争牌邻接修正计超级大国；
+  De-Stalinization 可提前停止、可移入苏控国；Five-Year Plan 只触发可打的美方事件；East European Unrest
+  只打三个国家；古巴导弹危机须从一国移除 2 点、每次政变前都可取消；Missile Envy 用修正值、按常规行动、
+  打出后立即进弃牌堆、强制出牌让位于计分牌；We Will Bury You 的 3 VP 先于美方任何 VP；Flower Power
+  计入美方头条的战争牌、不计被禁的战争牌；China Card 不被强制打出（9.8）、不得挤掉必须打的计分牌（9.5）；
+  Junta 的调整限一个地区；Che 是免费政变；Nuclear Subs 只豁免用 ops 的政变；Wargames 提供「may」的选择；
+  The Reformer 为 4 或 6；NORAD 在本轮 DEFCON 曾到 2 时触发；Grain Sales 抽到 Defectors 可取消尚未结算的
+  苏联头条。
+
+- **词表**：不变（扁平编码仍为 3,081 维）。现有 key 的新用法：PLAY_CARD 上的 `pass`（只剩 China Card、
+  可放弃的额外行动轮）、REMOVE_INFLUENCE 上的 `pass`（De-Stalinization）、回合末的 DISCARD_CARD（第 6 格）、
+  Wargames 与 The Reformer 的 CHOOSE_OPTION。观测新增 `own_headline` / `opponent_headline`（文本视图多一个
+  HEADLINES 段），部分特征语义有细微变化（`can_realign`、`can_place`、`unseen` 通道、Shuttle Diplomacy /
+  Formosan Resolution 生效时的地区预览）。
+- **历史对局不可重放**：在 `6791b34` 及更早 commit 上记录的动作历史在本版本上会分叉。要从
+  `(seed, history)` 重建局面，请保留 `6791b34` 的 worktree 作为 legacy 参照。
 
 **2026-10-08：重整掷骰计入 ops 预算（行为变化）。** 此前 `Game._realign_operation` 从不扣减剩余
 次数，一次重整操作可以无限掷骰，直到玩家主动 pass（提示里一直写着"4 roll(s) left"）；中国牌
