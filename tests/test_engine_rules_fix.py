@@ -499,3 +499,52 @@ def test_b7_round_count_is_read_every_round():
     drive(game._play_turn())
     assert (8, Side.USA) in seen
     assert (8, Side.USSR) not in seen
+
+
+# --------------------------------------------------------------------------- #
+# B9 -- DEFCON 1 always loses for the phasing player (Cuban Missile Crisis aside)
+# --------------------------------------------------------------------------- #
+
+
+def test_b9_opponent_event_coup_to_defcon_one_loses_for_the_phasing_player():
+    """FAQ #62 logic: the US plays Ortega for ops, the USSR's free coup hits DEFCON 1."""
+    game = Game(seed=3)
+    clear_board(game)
+    state = game.state
+    state.phase = Phase.ACTION_ROUND
+    state.phasing_player = Side.USA
+    state.defcon = 2
+    state.set_inf(Side.USA, "Cuba", 1)
+    state.set_inf(Side.USA, "Nicaragua", 1)
+    state.hands[Side.USA].append("Ortega Elected in Nicaragua")
+    drive(
+        game.play_card("Ortega Elected in Nicaragua", Side.USA),
+        prefer("use:influence", "yes", "country:Cuba", "country:Canada", "country:UK"),
+    )
+    assert state.is_over and state.win_reason is WinReason.DEFCON
+    assert state.winner is Side.USSR  # the US, as phasing player, loses
+
+
+def test_b9_ops_coup_to_defcon_one_still_loses_for_the_coup_maker_when_phasing():
+    game = Game(seed=3)
+    clear_board(game)
+    state = game.state
+    state.phasing_player = Side.USSR
+    state.defcon = 2
+    state.set_inf(Side.USA, "Angola", 1)  # Africa battleground, open at DEFCON 2
+    game.coup(Side.USSR, "Angola", 3)
+    assert state.is_over and state.winner is Side.USA
+
+
+def test_b9_cuban_missile_crisis_loses_for_the_coup_maker_even_if_not_phasing():
+    game = Game(seed=3)
+    clear_board(game)
+    state = game.state
+    state.phasing_player = Side.USA
+    state.defcon = 2
+    state.add_effect("Cuban Missile Crisis", owner=Side.USA, expires="end_of_turn")
+    state.set_inf(Side.USA, "Angola", 1)
+    game.coup(Side.USSR, "Angola", 3)
+    assert state.is_over
+    assert state.win_reason is WinReason.CUBAN_MISSILE_CRISIS
+    assert state.winner is Side.USA

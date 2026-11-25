@@ -1160,10 +1160,16 @@ class Game:
         """
         from .events.special import yuri_and_samantha_on_coup
 
+        # Cuban Missile Crisis: the moment the constrained player initiates a coup they
+        # lose, whoever is phasing (FAQ #40/#62; the card overrides rule 8.1.3).
+        self._check_cuban_missile_crisis(side)
         yuri_and_samantha_on_coup(self, side)
         result = rules.resolve_coup(self.state, side, name, ops, free=free)
-        self._check_cuban_missile_crisis(side)
-        self._check_defcon_loss(side)
+        # DEFCON 1 loses for the phasing player, not necessarily the coup maker: a
+        # free coup from an opponent's event played for operations is the phasing
+        # player's responsibility (rule 8.1.3, FAQ #62 Lone Gunman).
+        blame = self.state.phasing_player if self.state.phasing_player is not None else side
+        self._check_defcon_loss(blame)
         return result
 
     def _check_cuban_missile_crisis(self, actor: Side) -> None:
