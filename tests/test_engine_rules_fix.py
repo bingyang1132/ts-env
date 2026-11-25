@@ -548,3 +548,32 @@ def test_b9_cuban_missile_crisis_loses_for_the_coup_maker_even_if_not_phasing():
     assert state.is_over
     assert state.win_reason is WinReason.CUBAN_MISSILE_CRISIS
     assert state.winner is Side.USA
+
+
+# --------------------------------------------------------------------------- #
+# B1 -- Warsaw Pact Formed protects nothing; it only enables NATO
+# --------------------------------------------------------------------------- #
+
+
+def test_b1_warsaw_pact_gives_no_coup_or_realignment_protection():
+    game = Game(seed=1)
+    clear_board(game)
+    state = game.state
+    state.set_inf(Side.USSR, "Poland", 4)
+    state.set_inf(Side.USA, "Poland", 1)
+    run_event(game, "Warsaw Pact Formed", Side.USSR, prefer("option:1"))
+    assert rules.can_coup(state, Side.USA, "Poland")
+    assert rules.can_realign(state, Side.USA, "Poland")
+
+
+def test_b1_warsaw_pact_enables_nato_and_leaves_play():
+    from twilight.events import is_playable
+
+    game = Game(seed=1)
+    state = game.state
+    assert not is_playable(game, "NATO", Side.USA)
+    state.hands[Side.USSR].append("Warsaw Pact Formed")
+    drive(game.play_card("Warsaw Pact Formed", Side.USSR), prefer("use:event", "option:1"))
+    assert is_playable(game, "NATO", Side.USA)
+    assert not state.in_play("Warsaw Pact Formed")
+    assert "Warsaw Pact Formed" in state.removed

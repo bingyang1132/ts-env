@@ -299,8 +299,8 @@ def warsaw_pact_formed(game, ctx):
             prompt="Warsaw Pact Formed: add USSR influence in Eastern Europe (max 2 each)",
         )
 
-    # Either way the card stays in play, enabling NATO.
-    state.add_effect(ctx.card, owner=Side.USSR)
+    # Nothing stays in play: NATO's prerequisite reads state.has_resolved, and the card
+    # (asterisked) leaves the game.
 
 
 # --------------------------------------------------------------------------- #
@@ -423,7 +423,7 @@ def marshall_plan(game, ctx):
         max_per_country=1,
         prompt="Marshall Plan: 1 US influence in seven different Western European countries",
     )
-    game.state.add_effect(ctx.card, owner=Side.USA)
+    # Enables NATO through state.has_resolved; nothing stays in play.
 
 
 # --------------------------------------------------------------------------- #

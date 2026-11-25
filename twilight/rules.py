@@ -366,15 +366,10 @@ def _extra_operation_restrictions_allow(
         if Region.EUROPE in regions:
             return False
 
-    # NATO / Warsaw Pact: the opponent may not coup or realign in Europe countries
-    # that the card's owner controls.
-    for card_name in ("NATO", "Warsaw Pact Formed"):
-        effect = state.effects.get(card_name)
-        if effect is None or effect.owner is None or effect.owner is side:
-            continue
-        if Region.EUROPE in regions and controls(state, effect.owner, name):
-            if _nato_protects(state, card_name, name):
-                return False
+    # NATO: the USSR may not coup or realign in US-controlled European countries.
+    # (Warsaw Pact Formed has no such clause; it only allows NATO to be played.)
+    if side is Side.USSR and nato_protects(state, name):
+        return False
 
     # US/Japan Mutual Defense Pact: the USSR may never coup or realign in Japan.
     if name == "Japan" and side is Side.USSR and state.in_play("US/Japan Mutual Defense Pact"):
@@ -383,10 +378,18 @@ def _extra_operation_restrictions_allow(
     return True
 
 
-def _nato_protects(state: GameState, card_name: str, name: str) -> bool:
-    """NATO does not protect France or West Germany if the cancelling cards are out."""
-    if card_name != "NATO":
-        return True
+def nato_protects(state: GameState, name: str) -> bool:
+    """Whether NATO currently shields *name* from the USSR.
+
+    NATO covers US-controlled countries in Europe, except France once De Gaulle Leads
+    France has been played and West Germany while Willy Brandt is in effect.
+    """
+    if not state.in_play("NATO"):
+        return False
+    if Region.EUROPE not in COUNTRIES[name].regions:
+        return False
+    if not controls(state, Side.USA, name):
+        return False
     if name == "France" and state.has_resolved("De Gaulle Leads France"):
         return False
     if name == "West Germany" and state.has_resolved("Willy Brandt"):
@@ -597,6 +600,7 @@ __all__ = [
     "defcon_allows_operation",
     "influence_cost",
     "is_controlled_by_superpower",
+    "nato_protects",
     "placeable_countries",
     "reachable_countries",
     "realignment_modifier",
