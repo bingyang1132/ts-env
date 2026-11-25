@@ -82,9 +82,18 @@ def attempts_allowed(space_race: list[int], side: Side) -> int:
     return 2 if has_ability(space_race, side, TWO_ATTEMPTS) else 1
 
 
+#: Action rounds per turn for the Space Station holder (rule 6.4.4: "eight (8)").
+SPACE_STATION_ROUNDS = 8
+
+
 def action_rounds_for(space_race: list[int], side: Side, base: int) -> int:
-    """Action rounds *side* may take this turn, allowing for the Space Station."""
-    return base + 1 if has_ability(space_race, side, EIGHT_ACTION_ROUNDS) else base
+    """Action rounds *side* may take this turn, allowing for the Space Station.
+
+    Eight in all, whatever the stage: the same as one extra in the Mid and Late War.
+    """
+    if has_ability(space_race, side, EIGHT_ACTION_ROUNDS):
+        return max(base, SPACE_STATION_ROUNDS)
+    return base
 
 
 def victory_points(space_race: list[int], side: Side, box_number: int) -> int:
@@ -103,6 +112,7 @@ __all__ = [
     "EIGHT_ACTION_ROUNDS",
     "MAX_BOX",
     "OPPONENT_HEADLINE_FIRST",
+    "SPACE_STATION_ROUNDS",
     "SPACE_TRACK",
     "SpaceBox",
     "TWO_ATTEMPTS",

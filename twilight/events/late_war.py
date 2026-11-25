@@ -2,13 +2,8 @@
 
 Conventions are the ones documented in :mod:`twilight.events.early_war`.
 
-Two clauses in this range need engine support that does not exist yet and are
-therefore recorded in the effect payload but not enforced:
-
-* North Sea Oil's extra action round -- ``action_rounds_this_turn`` is read once per
-  turn and is shared by both players, so there is no per-side hook to raise;
-* Chernobyl's placement ban -- :meth:`twilight.engine.Game.spend_operations_influence`
-  does not consult the effect.
+North Sea Oil's eighth action round is read by ``Game._action_rounds_for`` every round,
+and Chernobyl's placement ban by :func:`twilight.rules.banned_placement_regions`.
 """
 
 from __future__ import annotations
@@ -179,8 +174,8 @@ def star_wars(game, ctx):
 def north_sea_oil(game, ctx):
     """OPEC is no longer playable, and the US takes an eighth action round this turn."""
     state = game.state
-    # The extra action round is recorded for the turn it was played; the engine has no
-    # per-side action-round hook, so only the OPEC clause is actually enforced.
+    # The turn it was played is recorded; Game._action_rounds_for gives the US eight
+    # action rounds on that turn, whether this resolved as a headline or mid-turn.
     state.add_effect(ctx.card, owner=Side.USA, extra_action_round_turn=state.turn)
     return (yield from nothing())
 

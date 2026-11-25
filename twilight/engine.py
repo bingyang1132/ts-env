@@ -474,23 +474,22 @@ class Game:
         if state.is_over:
             return
 
-        # The Space Station holder takes an extra action round, and so does the US on
-        # the turn North Sea Oil is played. Both are per-side, not per-turn.
-        rounds = {
-            side: spacerace.action_rounds_for(
-                state.space_race, side, state.action_rounds_this_turn
-            )
-            for side in Side
-        }
-        if state.effect_data("North Sea Oil", "extra_action_round_turn") == state.turn:
-            rounds[Side.USA] += 1
-        for round_number in range(1, max(rounds.values()) + 1):
+        # The Space Station holder may play 8 action rounds, and so may the US on the
+        # turn North Sea Oil is played. Both are per-side, and both can arrive in the
+        # middle of the turn -- North Sea Oil played in an action round, the Space Station
+        # reached or lost by a space race roll -- so the count is re-read every round.
+        round_number = 0
+        while True:
+            round_number += 1
+            rounds = {side: self._action_rounds_for(side) for side in Side}
+            if round_number > max(rounds.values()):
+                break
             state.action_round = round_number
             state.phase = Phase.ACTION_ROUND
             for side in (Side.USSR, Side.USA):
                 if state.is_over:
                     return
-                if round_number > rounds[side]:
+                if round_number > self._action_rounds_for(side):
                     continue
                 defcon_before = state.defcon
                 yield from self._action_round(side)
@@ -504,6 +503,21 @@ class Game:
                 )
 
         yield from self._turn_end()
+
+    def _action_rounds_for(self, side: Side) -> int:
+        """Action rounds *side* may take this turn, as things stand right now."""
+        state = self.state
+        rounds = spacerace.action_rounds_for(
+            state.space_race, side, state.action_rounds_this_turn
+        )
+        if (
+            side is Side.USA
+            and state.effect_data("North Sea Oil", "extra_action_round_turn") == state.turn
+        ):
+            # "US may play 8 cards this turn": eight in all, not one more than the
+            # Space Station already allows.
+            rounds = max(rounds, spacerace.SPACE_STATION_ROUNDS)
+        return rounds
 
     def _add_stage_cards(self) -> None:
         """Shuffle in any stage whose cards enter the deck on this turn.
