@@ -224,8 +224,12 @@ class GameState:
         space race, scoring and the military operations check all go through here. Play
         stops at the next decision point; see :meth:`twilight.engine.Game._advance`.
         The exception is scoring at the end of turn 10 (:attr:`final_scoring`).
+
+        Clipping therefore never changes a result: the award that reaches the end of
+        the track ends the game, and nothing is awarded once the game is over (code
+        still running to the next decision point cannot move the track past the win).
         """
-        if amount == 0:
+        if amount == 0 or self.phase is Phase.GAME_OVER:
             return
         delta = amount if side is Side.USSR else -amount
         if self.final_scoring:

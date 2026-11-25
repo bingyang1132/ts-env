@@ -150,6 +150,39 @@ def test_b10_first_ending_wins_and_is_not_overwritten():
     assert state.win_reason is WinReason.VICTORY_POINTS
 
 
+def test_b10_no_vp_are_awarded_after_the_game_has_ended():
+    """The track stays where the game was won: a later award in the same card play
+    (e.g. a war card's VP after Flower Power took the USSR to 20) is not applied."""
+    game = Game(seed=1)
+    state = game.state
+    state.vp = 19
+    state.award_vp(Side.USSR, 2)
+    assert state.vp == 20 and state.winner is Side.USSR
+    state.award_vp(Side.USA, 2)
+    assert state.vp == 20
+
+
+def test_b10_final_scoring_sums_before_judging():
+    """R 10.3.2: final scoring is a net tally; passing +20 in one region and dropping
+    back in a later one is not a win for the USSR."""
+    game = Game(seed=1)
+    clear_board(game)
+    state = game.state
+    state.turn = 10
+    state.vp = 18
+    # USSR: Europe presence (3); US: Asia presence + battlegrounds.
+    state.set_inf(Side.USSR, "Finland", 4)
+    state.set_inf(Side.USA, "Japan", 4)
+    state.set_inf(Side.USA, "South Korea", 3)
+    expected = 18 + sum(
+        rules.region_vp(state, r, Side.USSR) - rules.region_vp(state, r, Side.USA)
+        for r in (Region.EUROPE, Region.ASIA)
+    )
+    game._final_scoring()
+    assert state.vp == expected and expected < 20
+    assert state.winner is Side.USSR and state.win_reason is WinReason.FINAL_SCORING
+
+
 def test_b10_yuri_and_samantha_vp_ends_the_game_before_the_coup():
     game = Game(seed=1, optional_cards=True)
     clear_board(game)

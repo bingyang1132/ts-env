@@ -17,7 +17,6 @@ or FAQ).
 |---|---|---|
 | Cuban Missile Crisis cancel timing | Offered at the start of the threatened player's action round and again before any coup they could be given (their own operations, an event's operations, a free coup), in either player's round. Not offered at other moments, where cancelling cannot change anything. | Card: "at any time"; FAQ #40 |
 | "may" on beneficial effects | Some "may" / "up to" effects that can never hurt the player have no decline option: NORAD's and Puppet Governments' and Cambridge Five's influence, Chernobyl naming a region, an "as if N Ops" operations play. De-Stalinization, Pershing II, Wargames, The Reformer, Summit, Junta, Che, Ortega, Tear Down This Wall, SALT and Our Man in Tehran do offer the choice. | Card texts |
-| Two VP awards of opposite sign in one event | The VP track is clipped at +/-20 at each award, so an event awarding both sides would be judged on the clipped running total. No card in the game awards both sides within one event (scoring cards are applied as a net difference), so this never happens. | R 10.2.3, 10.3.1 NOTE |
 | Forced choices | A decision with exactly one country and no pass is auto-resolved; card choices (`choose_card`) are always asked, even with one option. | Engine simplification |
 | `Game.clone()` | Replays the action history (live generator frames cannot be copied). Exact, O(game length). | Engine |
 | Turn Zero, promo cards | Extracted into `twilight/data/cards.json` but excluded from play. Optional cards 104-110 are off unless `Game(optional_cards=True)`. | - |
@@ -84,6 +83,13 @@ be found (the Deluxe rule 7.4.3 cited by the FAQ is not in any available copy).
   *Card text; FAQ #50.*
 - **Olympic Games boycott** at DEFCON 2 loses for the sponsor (R 8.1.3 example).
 - **Both players holding a scoring card** at turn end: the US wins (FAQ 8.5).
+- **VP track**: every award is applied the moment it happens and reaching +/-20 ends
+  the game on the spot (R 10.3.1); nothing is awarded after the game has ended, so the
+  clip at +/-20 never changes a result. Settlements that score both sides at once apply
+  the net difference: scoring cards (per region), the military operations check (R
+  8.2.1) and final scoring (all regions plus the China Card, unclipped). No event
+  handler awards VP twice; awards to both sides inside one card play (Flower Power with
+  a US war card, U2 Incident with UN Intervention) are separate awards in card order.
 - **Final scoring**: 20 VP is not an automatic victory and the total is not clipped
   between regions; Europe control still wins outright. The China Card's turn-10 point is
   part of final scoring (R 10.3.2).
