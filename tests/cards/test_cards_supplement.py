@@ -65,8 +65,11 @@ class TestC049MissileEnvyV2:
         t.hand(USSR, "Fidel")
         t.dice(1)
         t.play(USA, "Missile Envy", "event")
-        if t.d is not None and t.d.type is DecisionType.CARD_USE:
-            t.answer("use:coup")
+        # The USSR picks the card to hand over (asked even when it holds only one).
+        assert t.d is not None and t.d.type is DecisionType.CHOOSE_CARD and t.d.player is USSR
+        t.answer("card:Fidel")
+        assert t.d is not None and t.d.type is DecisionType.CARD_USE and t.d.player is USA
+        t.answer("use:coup")
         t.finish_with()
         assert t.s.military_ops[USA] == 2
 
