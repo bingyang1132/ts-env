@@ -11,7 +11,7 @@ from __future__ import annotations
 from .. import rules
 from ..data import CARDS
 from ..decisions import Decision, DecisionType, region_action
-from ..enums import OpsUse, Region, Side, WinReason
+from ..enums import OpsUse, Phase, Region, Side, WinReason
 from . import is_playable, register
 from .helpers import adjacent_to, free_coup, in_region, nothing, war
 
@@ -531,6 +531,23 @@ def wargames(game, ctx):
     if not _wargames_playable(game, ctx.player):
         state.note("Wargames: not at DEFCON 2, no effect", ctx.player)
         return (yield from nothing())
+
+    # "you *may* immediately end the game" (FAQ #100). Choosing the event in an action
+    # round is that choice; a headline, or an event fired by another card (Missile
+    # Envy, Star Wars, Five-Year Plan), asks.
+    chosen_directly = (
+        state.phase is Phase.ACTION_ROUND and state.playing_card == ctx.card
+    )
+    if not chosen_directly:
+        end = yield from game.confirm(
+            ctx.player,
+            f"Wargames: give the opponent 6 VP and end the game now "
+            f"(VP {state.vp_for(ctx.player):+d} to you before the 6)?",
+            card=ctx.card,
+        )
+        if not end:
+            state.note("Wargames: the player declines to end the game", ctx.player)
+            return
 
     state.award_vp(ctx.player.opponent, 6)
 

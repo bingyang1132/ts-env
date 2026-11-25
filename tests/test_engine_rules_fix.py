@@ -773,3 +773,121 @@ def test_b13_ordinary_operations_still_respect_defcon():
     state.defcon = 4
     state.set_inf(Side.USSR, "Poland", 2)
     assert not rules.can_coup(state, Side.USA, "Poland")
+
+
+# --------------------------------------------------------------------------- #
+# B12a -- De-Stalinization may relocate into any non-US-controlled country
+# --------------------------------------------------------------------------- #
+
+
+def test_b12a_destalinization_destinations_include_ussr_controlled_countries():
+    game = Game(seed=1)
+    clear_board(game)
+    state = game.state
+    state.set_inf(Side.USSR, "Poland", 6)
+    state.set_inf(Side.USSR, "Cuba", 3)  # USSR-controlled
+    state.set_inf(Side.USA, "Japan", 4)  # US-controlled
+    log = []
+    run_event(game, "De-Stalinization", Side.USSR, prefer("country:Poland", "country:Cuba"), log)
+    place = [d for d in log if d.type.value == "place_influence"]
+    assert place and "country:Cuba" in place[0].legal_keys
+    assert "country:Poland" in place[0].legal_keys
+    assert "country:Japan" not in place[0].legal_keys
+    removal = [d for d in log if d.type.value == "remove_influence"]
+    assert "pass" in removal[0].legal_keys  # "up to 4"
+
+
+# --------------------------------------------------------------------------- #
+# B12b -- Five-Year Plan only fires a US event that could be played
+# --------------------------------------------------------------------------- #
+
+
+def test_b12b_five_year_plan_skips_an_unplayable_us_event():
+    game = Game(seed=1)
+    state = game.state
+    state.hands[Side.USSR][:] = ["NATO"]  # no Marshall Plan / Warsaw Pact yet
+    run_event(game, "Five-Year Plan", Side.USA)
+    assert not state.in_play("NATO")
+    assert "NATO" in state.discard and "NATO" not in state.removed
+
+
+def test_b12b_five_year_plan_kitchen_debates_needs_the_battleground_lead():
+    game = Game(seed=1)
+    state = game.state
+    vp0 = state.vp
+    state.hands[Side.USSR][:] = ["Kitchen Debates"]
+    run_event(game, "Five-Year Plan", Side.USA)
+    assert state.vp == vp0
+    assert "Kitchen Debates" in state.discard
+
+
+# --------------------------------------------------------------------------- #
+# O12 -- Wargames: "may" end the game
+# --------------------------------------------------------------------------- #
+
+
+def test_o12_wargames_triggered_indirectly_offers_the_choice():
+    game = Game(seed=1)
+    state = game.state
+    state.defcon = 2
+    state.phase = Phase.HEADLINE
+    log = []
+    run_event(game, "Wargames", Side.USSR, prefer("no"), log)
+    assert any(d.type.value == "confirm" for d in log)
+    assert not state.is_over
+    assert state.vp == 0
+
+
+def test_o12_wargames_accepted_ends_the_game():
+    game = Game(seed=1)
+    state = game.state
+    state.defcon = 2
+    state.phase = Phase.HEADLINE
+    state.vp = 10
+    run_event(game, "Wargames", Side.USSR, prefer("yes"))
+    assert state.is_over and state.win_reason is WinReason.WARGAMES
+    assert state.vp == 4 and state.winner is Side.USSR
+
+
+# --------------------------------------------------------------------------- #
+# O14 -- Flower Power ignores a war card whose event is banned
+# --------------------------------------------------------------------------- #
+
+
+def test_o14_flower_power_skips_arab_israeli_war_after_camp_david():
+    game = Game(seed=1)
+    state = game.state
+    state.add_effect("Flower Power", owner=Side.USSR)
+    state.add_effect("Camp David Accords", owner=Side.USA)
+    vp0 = state.vp
+    game._check_flower_power("Arab-Israeli War", Side.USA)
+    assert state.vp == vp0
+    game._check_flower_power("Korean War", Side.USA)
+    assert state.vp == vp0 + 2
+
+
+# --------------------------------------------------------------------------- #
+# O15 -- Junta's realignments stay in one of the two regions
+# --------------------------------------------------------------------------- #
+
+
+def test_o15_junta_realignments_are_confined_to_one_region():
+    game = Game(seed=1)
+    clear_board(game)
+    state = game.state
+    state.set_inf(Side.USA, "Mexico", 1)
+    state.set_inf(Side.USA, "Brazil", 1)
+    log = []
+
+    def chooser(d):
+        for key in ("country:Chile", "option:1", "region:Central America", "country:Mexico"):
+            a = d.find(key)
+            if a is not None:
+                return a
+        return d.options[0]
+
+    run_event(game, "Junta", Side.USSR, chooser, log)
+    realigns = [d for d in log if d.type.value == "realign_target"]
+    assert realigns
+    for d in realigns:
+        assert "country:Brazil" not in d.legal_keys

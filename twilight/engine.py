@@ -351,8 +351,12 @@ class Game:
         max_per_country: int | None = None,
         chooser: Side,
         prompt: str = "",
+        allow_pass: bool = False,
     ) -> Iterator[Decision]:
-        """Remove up to *points* of *target*'s influence, chosen by *chooser*."""
+        """Remove up to *points* of *target*'s influence, chosen by *chooser*.
+
+        *allow_pass* lets the chooser stop early, for events worded "up to".
+        """
         pool = list(allowed) if allowed is not None else list(COUNTRY_ORDER)
         removed: dict[str, int] = {}
 
@@ -371,6 +375,7 @@ class Game:
                 prompt or f"Remove {remaining} more {target.label} influence",
                 dtype=DecisionType.REMOVE_INFLUENCE,
                 labels=self._influence_labels(candidates),
+                allow_pass=allow_pass,
                 remaining=remaining,
                 for_side=target.label,
             )
@@ -930,6 +935,11 @@ class Game:
         if side is not Side.USA or name not in WAR_CARDS:
             return
         if not self.state.in_play("Flower Power"):
+            return
+        # "unless made unplayable by a subsequent card" (FAQ #59): Arab-Israeli War
+        # after Camp David Accords does not pay out.
+        owner = CARDS[name].side
+        if not self._event_is_playable(name, owner if owner is not None else side):
             return
         self.state.award_vp(Side.USSR, 2)
         self.state.note(f"Flower Power: {name} played by the US, USSR +2 VP", side)

@@ -63,11 +63,15 @@ def five_year_plan(game, ctx):
     discarded = CARDS[name]
     state.note(f"Five-Year Plan discards {name} at random", ctx.player)
 
-    if discarded.side is Side.USA:
+    if discarded.side is Side.USA and game._event_is_playable(name, Side.USA):
         # A US event fires immediately, resolved by the US player.
         yield from game._resolve_event(name, Side.USA)
         game._retire_card(name, Side.USA, as_event=True)
     else:
+        # USSR / neutral events, scoring cards, and a US event whose prerequisite or
+        # condition is not met (rule 5.2): discarded with no event, never removed.
+        if discarded.side is Side.USA:
+            state.note(f"Five-Year Plan: {name} cannot take effect now", ctx.player)
         state.discard_card(name)
 
 
@@ -564,7 +568,7 @@ def red_scare_purge(game, ctx):
 
 @register("De-Stalinization")
 def destalinization(game, ctx):
-    """Relocate up to 4 USSR influence to countries nobody controls, max 2 per country."""
+    """Relocate up to 4 USSR influence to non-US-controlled countries, max 2 per country."""
     state = game.state
     sources = with_influence(state, Side.USSR)
     taken = yield from game.remove_influence(
@@ -572,7 +576,8 @@ def destalinization(game, ctx):
         4,
         allowed=sources,
         chooser=ctx.player,
-        prompt="De-Stalinization: remove USSR influence to relocate (up to 4)",
+        prompt="De-Stalinization: remove USSR influence to relocate (up to 4; pass to stop)",
+        allow_pass=True,
     )
     moved = sum(taken.values())
     if not moved:
@@ -581,9 +586,12 @@ def destalinization(game, ctx):
     yield from game.add_influence(
         Side.USSR,
         moved,
-        allowed=uncontrolled(state, COUNTRY_ORDER),
+        allowed=[n for n in COUNTRY_ORDER if not rules.controls(state, Side.USA, n)],
         max_per_country=2,
-        prompt=f"De-Stalinization: place {moved} influence in uncontrolled countries (max 2 each)",
+        prompt=(
+            f"De-Stalinization: place {moved} influence in non-US-controlled countries "
+            "(max 2 each)"
+        ),
     )
 
 

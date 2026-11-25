@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from .. import rules
 from ..data import CARDS, COUNTRIES
-from ..decisions import DecisionType
+from ..decisions import Decision, DecisionType, region_action
 from ..enums import Region, Side
 from . import register, register_deferred
 from .helpers import adjacent_to, free_coup, in_region, nothing, war
@@ -335,12 +335,31 @@ def junta(game, ctx):
             prompt="Junta: free coup attempt in Central or South America",
         )
     elif kinds[choice] == "realign":
+        # The rolls all go to one of the two regions (FAQ #47).
+        regions = [
+            r for r in (Region.CENTRAL_AMERICA, Region.SOUTH_AMERICA)
+            if any(
+                rules.can_realign(state, ctx.player, n, ignore_defcon=True)
+                for n in in_region(r)
+            )
+        ]
+        region = regions[0]
+        if len(regions) > 1:
+            action = yield from game.ask(
+                Decision(
+                    DecisionType.CHOOSE_REGION,
+                    ctx.player,
+                    "Junta: realign in which region?",
+                    tuple(region_action(r, r.value) for r in regions),
+                )
+            )
+            region = Region(action.value)
         yield from _free_realignments(
             game,
             ctx.player,
             ops,
-            allowed=_LATIN_AMERICA,
-            prompt="Junta: free realignment in Central or South America",
+            allowed=in_region(region),
+            prompt=f"Junta: free realignment in {region}",
         )
 
 
