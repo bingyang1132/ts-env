@@ -362,3 +362,140 @@ def test_b4_without_the_ability_headlines_stay_secret_until_both_are_chosen():
     view = observe(game.state, second, game.decision)
     assert view.opponent_headline is None
     assert pick in view.unseen
+
+
+# --------------------------------------------------------------------------- #
+# B6 -- Vietnam Revolts: +1 op for a USSR card spent entirely in Southeast Asia
+# --------------------------------------------------------------------------- #
+
+_SEA = ("Vietnam", "Laos/Cambodia", "Thailand", "Burma", "Malaysia", "Indonesia", "Philippines")
+
+
+def _vietnam_game() -> Game:
+    game = Game(seed=1)
+    clear_board(game)
+    state = game.state
+    state.phase = Phase.ACTION_ROUND
+    state.phasing_player = Side.USSR
+    state.set_inf(Side.USSR, "Vietnam", 2)
+    state.add_effect("Vietnam Revolts", owner=Side.USSR, expires="end_of_turn")
+    return game
+
+
+def _place_in(*names):
+    order = list(names)
+
+    def chooser(decision):
+        if decision.type.value == "card_use":
+            return decision.find("use:influence")
+        for n in order:
+            action = decision.find(f"country:{n}")
+            if action is not None:
+                return action
+        return decision.options[0]
+
+    return chooser
+
+
+def _ussr_total(game, names):
+    return sum(game.state.inf(Side.USSR, n) for n in names)
+
+
+def test_b6_vietnam_revolts_adds_one_op_when_all_points_go_to_southeast_asia():
+    game = _vietnam_game()
+    game.state.hands[Side.USSR].append("Fidel")  # 2 ops, USSR event
+    before = _ussr_total(game, _SEA)
+    drive(game.play_card("Fidel", Side.USSR), _place_in("Thailand", "Laos/Cambodia"))
+    assert _ussr_total(game, _SEA) - before == 3
+
+
+def test_b6_no_bonus_when_a_point_leaves_southeast_asia():
+    game = _vietnam_game()
+    state = game.state
+    state.set_inf(Side.USSR, "India", 1)
+    state.hands[Side.USSR].append("Fidel")
+    drive(game.play_card("Fidel", Side.USSR), _place_in("India", "Thailand"))
+    assert state.inf(Side.USSR, "India") + _ussr_total(game, _SEA) == 1 + 2 + 2
+
+
+def test_b6_vietnam_revolts_stacks_with_the_china_card():
+    """Rule 7.4 example: the China Card all in SE Asia under Vietnam Revolts is 6 ops."""
+    game = _vietnam_game()
+    state = game.state
+    state.china_card_owner = Side.USSR
+    state.china_card_face_up = True
+    before = _ussr_total(game, _SEA)
+    drive(game.play_card("The China Card", Side.USSR), _place_in("Thailand", "Laos/Cambodia"))
+    assert _ussr_total(game, _SEA) - before == 6
+
+
+def test_b6_coup_in_southeast_asia_gets_the_bonus():
+    game = _vietnam_game()
+    state = game.state
+    state.set_inf(Side.USA, "Thailand", 1)
+    state.hands[Side.USSR].append("Fidel")
+    state.rng = FixedRoll([1])
+
+    def chooser(decision):
+        if decision.type.value == "card_use":
+            return decision.find("use:coup")
+        return decision.find("country:Thailand") or decision.options[0]
+
+    drive(game.play_card("Fidel", Side.USSR), chooser)
+    assert state.military_ops[Side.USSR] == 3  # 2 ops + 1 from Vietnam Revolts
+
+
+def test_b6_the_us_gets_no_bonus():
+    game = _vietnam_game()
+    state = game.state
+    state.set_inf(Side.USA, "Thailand", 1)
+    state.hands[Side.USA].append("Containment")  # 3 ops
+    before = sum(state.inf(Side.USA, n) for n in _SEA)
+
+    def chooser(decision):
+        if decision.type.value == "card_use":
+            return decision.find("use:influence")
+        return decision.find("country:Thailand") or decision.options[0]
+
+    drive(game.play_card("Containment", Side.USA), chooser)
+    assert sum(state.inf(Side.USA, n) for n in _SEA) - before == 3
+
+
+# --------------------------------------------------------------------------- #
+# B7 -- North Sea Oil's eighth action round, whenever the card is played
+# --------------------------------------------------------------------------- #
+
+
+def _rounds_taken(game: Game, side: Side, turn: int) -> int:
+    return len({
+        e.action_round for e in game.state.log
+        if e.turn == turn and e.player is side and e.action_round > 0
+    })
+
+
+def test_b7_round_count_is_read_every_round():
+    """The US plays North Sea Oil in its 7th (last) action round: an 8th follows."""
+    from twilight.engine import ACTION_ROUNDS
+    from twilight.enums import Stage
+
+    game = Game(seed=12)
+    state = game.state
+    state.turn = 8
+    state.stages_in_deck.update({Stage.MID_WAR, Stage.LATE_WAR})
+    assert ACTION_ROUNDS[Stage.LATE_WAR] == 7
+    # Record who acts in which round through the engine's own action-round hook.
+    seen: list[tuple[int, Side]] = []
+    original = game._action_round
+
+    def spy(side):
+        seen.append((state.action_round, side))
+        if state.action_round == 7 and side is Side.USA:
+            state.add_effect("North Sea Oil", owner=Side.USA, extra_action_round_turn=state.turn)
+        state.hands[side][:] = []  # nothing to play: the round is skipped
+        return (yield from original(side))
+
+    game._action_round = spy
+    game._headline_phase = lambda: iter(())
+    drive(game._play_turn())
+    assert (8, Side.USA) in seen
+    assert (8, Side.USSR) not in seen

@@ -812,6 +812,8 @@ class Game:
 
         ops = self.effective_ops(name, side)
         bonus = " (+1 more if every point goes to Asia)" if name == CHINA_CARD else ""
+        if Region.SOUTHEAST_ASIA in self._ops_bonus_regions(name, side):
+            bonus += " (+1 more if every point goes to Southeast Asia: Vietnam Revolts)"
         if ops > 0:
             options.append(use_action(OpsUse.INFLUENCE, f"place {ops} influence{bonus}"))
             if any(rules.can_coup(state, side, n) for n in COUNTRY_ORDER):
@@ -899,8 +901,7 @@ class Game:
             ops,
             use,
             card_name=name,
-            # The China Card is worth one more when every point is spent in Asia.
-            bonus_region=Region.ASIA if name == CHINA_CARD else None,
+            bonus_regions=self._ops_bonus_regions(name, side),
         )
 
         if opponent_event and not event_first:
@@ -958,6 +959,30 @@ class Game:
 
         return max(1, min(4, ops))
 
+    def _ops_bonus_regions(self, name: str, side: Side) -> tuple[Region, ...]:
+        """Regions in which spending every point of *name* earns one more point.
+
+        The China Card is worth one more when every point goes to Asia; Vietnam Revolts
+        gives the USSR one more for a card spent entirely in Southeast Asia for the rest
+        of the turn. They stack (rule 7.4 example: the China Card all in Southeast Asia
+        under Vietnam Revolts is worth 6).
+        """
+        regions: list[Region] = []
+        if name == CHINA_CARD:
+            regions.append(Region.ASIA)
+        if side is Side.USSR and self.state.in_play("Vietnam Revolts", owner=Side.USSR):
+            regions.append(Region.SOUTHEAST_ASIA)
+        return tuple(regions)
+
+    @staticmethod
+    def _bonus_list(
+        bonus_region: Region | None, bonus_regions: Sequence[Region]
+    ) -> list[Region]:
+        out = list(bonus_regions)
+        if bonus_region is not None and bonus_region not in out:
+            out.append(bonus_region)
+        return out
+
     def conduct_operations(
         self,
         side: Side,
@@ -967,21 +992,24 @@ class Game:
         card_name: str | None = None,
         free: bool = False,
         bonus_region: Region | None = None,
+        bonus_regions: Sequence[Region] = (),
     ) -> Iterator[Decision]:
         """Spend *ops* operations points as influence, a coup, or realignments.
 
-        *bonus_region* implements the China Card's "+1 Operations value when all points
-        are used in Asia". It cannot be folded into :meth:`effective_ops`, which runs
-        before the player has chosen any target, so the bonus is granted at the point
+        *bonus_regions* (or the single *bonus_region*) implement "+1 Operations value
+        when all points are used in" a region: the China Card (Asia) and Vietnam Revolts
+        (Southeast Asia). The bonus cannot be folded into :meth:`effective_ops`, which
+        runs before the player has chosen any target, so it is granted at the point
         where it becomes knowable and the extra point is confined to the same region.
         """
         del card_name  # kept for future card-specific ops modifiers
+        regions = self._bonus_list(bonus_region, bonus_regions)
         if use is OpsUse.INFLUENCE:
-            yield from self.spend_operations_influence(side, ops, bonus_region=bonus_region)
+            yield from self.spend_operations_influence(side, ops, bonus_regions=regions)
         elif use is OpsUse.COUP:
-            yield from self._coup_operation(side, ops, free=free, bonus_region=bonus_region)
+            yield from self._coup_operation(side, ops, free=free, bonus_regions=regions)
         elif use is OpsUse.REALIGN:
-            yield from self._realign_operation(side, ops, bonus_region=bonus_region)
+            yield from self._realign_operation(side, ops, bonus_regions=regions)
         else:
             raise ValueError(f"{use} is not an operations use")
 
@@ -1036,7 +1064,12 @@ class Game:
         yield from self.conduct_operations(side, ops, use, free=True)
 
     def spend_operations_influence(
-        self, side: Side, ops: int, *, bonus_region: Region | None = None
+        self,
+        side: Side,
+        ops: int,
+        *,
+        bonus_region: Region | None = None,
+        bonus_regions: Sequence[Region] = (),
     ) -> Iterator[Decision]:
         """Place influence with operations points.
 
@@ -1045,41 +1078,37 @@ class Game:
         Legal targets are frozen at the start of the placement, so newly placed
         influence cannot be chained outward to reach further countries.
 
-        If *bonus_region* is set and every point went into that region, one extra point
-        is granted, which must also go there.
+        For each of *bonus_regions* (or *bonus_region*) that every point went into, one
+        extra point is granted, which must also go there.
         """
         state = self.state
         budget = ops
         placed: dict[str, int] = {}
         reachable = rules.reachable_countries(state, side)
-        bonus_granted = False
+        pending = self._bonus_list(bonus_region, bonus_regions)
+        granted: list[Region] = []
 
         while True:
             if budget <= 0:
-                if (
-                    bonus_region is not None
-                    and not bonus_granted
-                    and self._all_in(placed, bonus_region)
-                ):
-                    bonus_granted = True
-                    budget = 1
-                    state.note(
-                        f"all operations points used in {bonus_region}: +1 bonus point",
-                        side,
-                    )
-                else:
+                earned = next((r for r in pending if self._all_in(placed, r)), None)
+                if earned is None:
                     break
+                pending.remove(earned)
+                granted.append(earned)
+                budget = 1
+                state.note(f"all operations points used in {earned}: +1 bonus point", side)
 
             candidates = rules.placeable_countries(
                 state, side, budget=budget, reachable=reachable
             )
-            if bonus_granted:
-                # The bonus point has to stay in the region that earned it.
+            if granted:
+                # A bonus point has to stay in the region that earned it.
                 candidates = [
-                    n for n in candidates if bonus_region in COUNTRIES[n].regions
+                    n for n in candidates
+                    if all(r in COUNTRIES[n].regions for r in granted)
                 ]
             if not candidates:
-                if not bonus_granted:
+                if not granted:
                     state.note(
                         f"{budget} operations point(s) wasted: nowhere legal to place", side
                     )
@@ -1142,6 +1171,7 @@ class Game:
         *,
         free: bool = False,
         bonus_region: Region | None = None,
+        bonus_regions: Sequence[Region] = (),
     ) -> Iterator[Decision]:
         state = self.state
         targets = [n for n in COUNTRY_ORDER if rules.can_coup(state, side, n)]
@@ -1156,9 +1186,10 @@ class Game:
         if name is None:
             return
         # A coup spends every point on one country, so the bonus is decided by the target.
-        if bonus_region is not None and bonus_region in COUNTRIES[name].regions:
-            ops += 1
-            state.note(f"all operations points used in {bonus_region}: coup at {ops} ops", side)
+        for region in self._bonus_list(bonus_region, bonus_regions):
+            if region in COUNTRIES[name].regions:
+                ops += 1
+                state.note(f"all operations points used in {region}: coup at {ops} ops", side)
         self.coup(side, name, ops, free=free)
 
     def coup_label(self, name: str, ops: int) -> str:
@@ -1172,31 +1203,34 @@ class Game:
         )
 
     def _realign_operation(
-        self, side: Side, ops: int, *, bonus_region: Region | None = None
+        self,
+        side: Side,
+        ops: int,
+        *,
+        bonus_region: Region | None = None,
+        bonus_regions: Sequence[Region] = (),
     ) -> Iterator[Decision]:
         state = self.state
         chosen: list[str] = []
         remaining = ops
-        bonus_granted = False
+        pending = self._bonus_list(bonus_region, bonus_regions)
+        granted: list[Region] = []
 
         while True:
             if remaining <= 0:
-                if (
-                    bonus_region is not None
-                    and not bonus_granted
-                    and self._all_in(chosen, bonus_region)
-                ):
-                    bonus_granted = True
-                    remaining = 1
-                    state.note(
-                        f"all realignments made in {bonus_region}: +1 bonus roll", side
-                    )
-                else:
+                earned = next((r for r in pending if self._all_in(chosen, r)), None)
+                if earned is None:
                     return
+                pending.remove(earned)
+                granted.append(earned)
+                remaining = 1
+                state.note(f"all realignments made in {earned}: +1 bonus roll", side)
 
             targets = [n for n in COUNTRY_ORDER if rules.can_realign(state, side, n)]
-            if bonus_granted:
-                targets = [n for n in targets if bonus_region in COUNTRIES[n].regions]
+            if granted:
+                targets = [
+                    n for n in targets if all(r in COUNTRIES[n].regions for r in granted)
+                ]
             if not targets:
                 return
             name = yield from self.choose_country(
