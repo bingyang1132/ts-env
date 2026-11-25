@@ -516,10 +516,10 @@ def pershing_ii_deployed(game, ctx):
         chooser=ctx.player,
         prompt=(
             "Pershing II Deployed: remove 1 US influence from each of up to three "
-            "Western European countries"
+            "Western European countries (pass to stop)"
         ),
-        # "up to three": no pass is offered, since removing US influence can never
-        # hurt the USSR; it stops early only when no target is left.
+        # "up to three" (card text): the USSR may stop early.
+        allow_pass=True,
     )
 
 

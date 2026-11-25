@@ -847,6 +847,18 @@ class TestC098AldrichAmesRemix:
 
 
 class TestC099PershingII:
+    def test_up_to_three_may_stop_early(self):
+        """PD #99 "from *up to* three countries": the USSR may remove fewer."""
+        t = Table(turn=8)
+        t.inf(usa={"UK": 5, "France": 3})
+        t.play(USSR, "Pershing II Deployed", "event")
+        assert "pass" in t.keys()
+        t.answer("country:UK", "pass")
+        assert t.done
+        assert (t.s.inf(USA, "UK"), t.s.inf(USA, "France")) == (4, 3)
+        assert t.s.vp == 1
+
+
     def test_vp_and_one_from_each_of_three_western_european(self):
         """PD #99: "USSR gains 1 VP. Remove 1 US Influence from up to three countries in
         Western Europe.\""""
@@ -855,7 +867,10 @@ class TestC099PershingII:
         t.play(USSR, "Pershing II Deployed", "event", "country:UK")
         assert "country:UK" not in t.keys(), "1 per country"
         assert "country:Poland" not in t.keys(), "Western Europe only"
-        t.answer("country:France")  # Italy is then the only target left
+        t.answer("country:France")
+        # "up to three": the USSR may stop, so even the last target is asked.
+        assert set(t.keys()) == {"country:Italy", "pass"}
+        t.answer("country:Italy")
         assert t.done
         assert (t.s.inf(USA, "UK"), t.s.inf(USA, "France"), t.s.inf(USA, "Italy")) == (4, 2, 1)
         assert t.s.inf(USA, "Poland") == 1
