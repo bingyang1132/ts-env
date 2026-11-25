@@ -203,11 +203,21 @@ class GameState:
     # ------------------------------------------------------------------ #
 
     def award_vp(self, side: Side, amount: int) -> None:
-        """Give *amount* VP to *side*, clamped to the ends of the track."""
+        """Give *amount* VP to *side*, clamped to the ends of the track.
+
+        Reaching either end of the track wins the game at once (rule 10.1.1), so this is
+        the single place the VP limit is checked: every card, the space race, scoring
+        and the military operations check all go through here. Play stops at the next
+        decision point; see :meth:`twilight.engine.Game._advance`.
+        """
         if amount == 0:
             return
         delta = amount if side is Side.USSR else -amount
         self.vp = max(-VP_LIMIT, min(VP_LIMIT, self.vp + delta))
+        if self.vp >= VP_LIMIT:
+            self.finish(Side.USSR, WinReason.VICTORY_POINTS)
+        elif self.vp <= -VP_LIMIT:
+            self.finish(Side.USA, WinReason.VICTORY_POINTS)
 
     def vp_for(self, side: Side) -> int:
         """The VP track read from *side*'s point of view."""
@@ -409,6 +419,15 @@ class GameState:
         return self.phase is Phase.GAME_OVER
 
     def finish(self, winner: Side | None, reason: WinReason) -> None:
+        """End the game. The first ending wins: a later call is ignored.
+
+        Code after the ending runs on until the engine's next decision point (an event
+        handler's remaining non-interactive lines, for instance), and may try to end
+        the game again -- a VP win followed by a DEFCON drop in the same coup. The game
+        already ended at the first one.
+        """
+        if self.phase is Phase.GAME_OVER:
+            return
         self.phase = Phase.GAME_OVER
         self.winner = winner
         self.win_reason = reason

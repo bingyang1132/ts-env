@@ -145,10 +145,22 @@ class Game:
     # ------------------------------------------------------------------ #
 
     def _advance(self, action: Action | None) -> Decision | None:
+        """Run the driver to its next decision, or to the end of the game.
+
+        The game can end deep inside a card -- a VP award, a DEFCON drop or a Cuban
+        Missile Crisis coup halfway through an event or an operations play -- and the
+        generator stack would otherwise go on asking for the rest of that card. Once the
+        state is over, no further decision is issued: the driver is closed and ``None``
+        returned.
+        """
         try:
-            return self._driver.send(action)
+            decision = self._driver.send(action)
         except StopIteration:
             return None
+        if self.state.is_over:
+            self._driver.close()
+            return None
+        return decision
 
     def step(self, choice: Action | str | int) -> Decision | None:
         """Apply one atomic action and return the next decision, or ``None`` if over."""
@@ -1415,7 +1427,6 @@ class Game:
         state = self.state
         state.note("--- final scoring ---")
 
-        europe_winner: Side | None = None
         for region in (
             Region.EUROPE,
             Region.ASIA,
@@ -1426,11 +1437,13 @@ class Game:
         ):
             _, _, auto = rules.score_region(state, region)
             if auto is not None:
-                europe_winner = auto
+                # Europe is scored first, and controlling it wins outright.
+                state.finish(auto, WinReason.EUROPE_CONTROL)
+            if state.is_over:
+                # Europe control, or the VP track reaching 20 (rule 10.1.1).
+                return
 
-        if europe_winner is not None:
-            state.finish(europe_winner, WinReason.EUROPE_CONTROL)
-        elif state.vp > 0:
+        if state.vp > 0:
             state.finish(Side.USSR, WinReason.FINAL_SCORING)
         elif state.vp < 0:
             state.finish(Side.USA, WinReason.FINAL_SCORING)
