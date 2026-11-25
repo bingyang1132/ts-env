@@ -40,43 +40,10 @@ def _conduct_operations(
     ops: int,
     *,
     prompt: str,
+    bonus_regions=(),
 ) -> Iterator[Decision]:
-    """Let *side* spend *ops* points as influence, a coup, or realignments.
-
-    This is :meth:`Game.free_operations` with ``free=False``: the three cards here
-    ("use its Operations value to Conduct Operations", "as if they played a 4 Ops
-    card") spend a real card's operations, so a coup taken with them counts toward the
-    required military operations. ``Game.free_operations`` marks its coups free, which
-    is right for events that *grant* a coup outside of card play but not for these.
-    """
-    state = game.state
-    available = []
-    if rules.placeable_countries(state, side):
-        available.append(use_action(OpsUse.INFLUENCE, f"place {ops} influence"))
-    if any(rules.can_coup(state, side, n) for n in COUNTRY_ORDER):
-        available.append(use_action(OpsUse.COUP, f"coup with {ops} ops"))
-    if any(rules.can_realign(state, side, n) for n in COUNTRY_ORDER):
-        available.append(use_action(OpsUse.REALIGN, f"{ops} realignment rolls"))
-
-    if not available:
-        state.note(f"{ops} operations point(s) wasted: nothing legal", side)
-        return
-
-    if len(available) == 1:
-        use = OpsUse(available[0].value)
-    else:
-        action = yield from game.ask(
-            Decision(
-                DecisionType.CARD_USE,
-                side,
-                prompt,
-                tuple(available),
-                {"ops": ops},
-            )
-        )
-        use = OpsUse(action.value)
-
-    yield from game.conduct_operations(side, ops, use)
+    """A normal operations play worth *ops*; see :meth:`Game.operations`."""
+    yield from game.operations(side, ops, prompt=prompt, bonus_regions=bonus_regions)
 
 
 def _card_label(name: str, side: Side) -> str:
@@ -191,8 +158,9 @@ def olympic_games(game, ctx):
     game.degrade_defcon(1, sponsor)
     if state.is_over:
         return
-    yield from _conduct_operations(
-        game, sponsor, 4, prompt="Olympic Games: conduct operations as if a 4 Op card"
+    # "as if they played a 4 Ops card": a normal operations play at the modified value.
+    yield from game.free_operations(
+        sponsor, 4, prompt="Olympic Games: conduct operations as if a 4 Op card"
     )
 
 
@@ -257,7 +225,11 @@ def un_intervention(game, ctx):
         )
 
     yield from _conduct_operations(
-        game, ctx.player, ops, prompt=f"UN Intervention: spend {chosen}'s {ops} ops"
+        game,
+        ctx.player,
+        ops,
+        prompt=f"UN Intervention: spend {chosen}'s {ops} ops",
+        bonus_regions=game._ops_bonus_regions(chosen, ctx.player),
     )
 
 
@@ -382,7 +354,7 @@ def _che_targets(game, exclude: str | None = None) -> list[str]:
         for n in in_region(region)
         if not COUNTRIES[n].battleground
         and n != exclude
-        and rules.can_coup(game.state, Side.USSR, n)
+        and rules.can_coup(game.state, Side.USSR, n, ignore_defcon=True)
     ]
 
 
@@ -392,6 +364,11 @@ def che(game, ctx):
     state = game.state
     ops = game.effective_ops(ctx.card, Side.USSR)
 
+    # A free coup in named regions (user ruling 2026-11-25): no military operations,
+    # DEFCON geography ignored (it never closes these regions anyway).
+    yield from game._offer_cuban_missile_crisis_cancel(Side.USSR)
+    if state.is_over:
+        return
     pool = _che_targets(game)
     first = yield from game.choose_country(
         Side.USSR,
@@ -405,7 +382,7 @@ def che(game, ctx):
     if first is None:
         return
 
-    result = game.coup(Side.USSR, first, ops)
+    result = game.coup(Side.USSR, first, ops, free=True)
     # A second attempt only if the first actually took US influence off the board.
     if result.removed == 0 or state.is_over:
         return
@@ -421,7 +398,7 @@ def che(game, ctx):
         ops=ops,
     )
     if again is not None:
-        game.coup(Side.USSR, again, ops)
+        game.coup(Side.USSR, again, ops, free=True)
 
 
 # --------------------------------------------------------------------------- #

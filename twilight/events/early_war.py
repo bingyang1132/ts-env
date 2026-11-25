@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from .. import rules
 from ..data import CARDS, COUNTRY_ORDER
+from ..decisions import DecisionType
 from ..enums import Phase, Region, Side
 from . import register
 from .helpers import (
@@ -517,18 +518,28 @@ def east_european_unrest(game, ctx):
 
     One point each in the Early and Mid War, two each in the Late War.
     """
-    per_country = 2 if game.state.turn >= 8 else 1
-    yield from game.remove_influence(
-        Side.USSR,
-        3 * per_country,
-        allowed=in_region(Region.EASTERN_EUROPE),
-        max_per_country=per_country,
-        chooser=ctx.player,
-        prompt=(
-            f"East European Unrest: remove {per_country} USSR influence from each of "
-            "three Eastern European countries"
-        ),
-    )
+    state = game.state
+    per_country = 2 if state.turn >= 8 else 1
+    # Three different countries, each losing per_country (or all it has, if less).
+    hit: list[str] = []
+    for left in (3, 2, 1):
+        pool = [
+            n for n in in_region(Region.EASTERN_EUROPE)
+            if state.inf(Side.USSR, n) > 0 and n not in hit
+        ]
+        name = yield from game.choose_country(
+            ctx.player,
+            pool,
+            f"East European Unrest: remove {per_country} USSR influence from a country "
+            f"in Eastern Europe ({left} countr{'ies' if left > 1 else 'y'} left)",
+            dtype=DecisionType.REMOVE_INFLUENCE,
+            labels=game._influence_labels(pool),
+        )
+        if name is None:
+            break
+        removed = state.remove_inf(Side.USSR, name, per_country)
+        hit.append(name)
+        state.note(f"USSR influence removed: {name} -{removed}", ctx.player)
 
 
 # --------------------------------------------------------------------------- #
@@ -640,6 +651,12 @@ def defectors(game, ctx):
     """
     state = game.state
     if state.phase is Phase.HEADLINE:
+        # Headlined by the US, the headline phase itself cancels the USSR pick. Played
+        # in the middle of the phase (Grain Sales to Soviets drawing it), it cancels a
+        # USSR headline that has not resolved yet (user ruling 2026-11-25).
+        if ctx.player is Side.USA and state.headline.get(int(Side.USSR)) is not None:
+            state.headline_cancelled.add(int(Side.USSR))
+            state.note("Defectors cancels the unresolved USSR headline", ctx.player)
         return (yield from nothing())
     if ctx.triggered_by_opponent:
         # The USSR played it for operations: the US scores 1 VP.

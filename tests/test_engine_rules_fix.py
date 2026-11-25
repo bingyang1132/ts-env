@@ -572,6 +572,9 @@ def test_b1_warsaw_pact_enables_nato_and_leaves_play():
     game = Game(seed=1)
     state = game.state
     assert not is_playable(game, "NATO", Side.USA)
+    for pile in (state.deck, state.hands[Side.USSR], state.hands[Side.USA]):
+        if "Warsaw Pact Formed" in pile:
+            pile.remove("Warsaw Pact Formed")
     state.hands[Side.USSR].append("Warsaw Pact Formed")
     drive(game.play_card("Warsaw Pact Formed", Side.USSR), prefer("use:event", "option:1"))
     assert is_playable(game, "NATO", Side.USA)
@@ -826,27 +829,92 @@ def test_b12b_five_year_plan_kitchen_debates_needs_the_battleground_lead():
 # --------------------------------------------------------------------------- #
 
 
-def test_o12_wargames_triggered_indirectly_offers_the_choice():
+def test_o12_wargames_offers_three_choices_and_declining_changes_nothing():
     game = Game(seed=1)
     state = game.state
     state.defcon = 2
-    state.phase = Phase.HEADLINE
     log = []
-    run_event(game, "Wargames", Side.USSR, prefer("no"), log)
-    assert any(d.type.value == "confirm" for d in log)
-    assert not state.is_over
-    assert state.vp == 0
+    run_event(game, "Wargames", Side.USSR, prefer("option:0"), log)
+    assert [d.type.value for d in log] == ["choose_option"]
+    assert len(log[0].options) == 3
+    assert not state.is_over and state.vp == 0
 
 
-def test_o12_wargames_accepted_ends_the_game():
+def test_o12_wargames_give_and_end():
     game = Game(seed=1)
     state = game.state
     state.defcon = 2
-    state.phase = Phase.HEADLINE
     state.vp = 10
-    run_event(game, "Wargames", Side.USSR, prefer("yes"))
+    run_event(game, "Wargames", Side.USSR, prefer("option:1"))
     assert state.is_over and state.win_reason is WinReason.WARGAMES
     assert state.vp == 4 and state.winner is Side.USSR
+
+
+def test_o12_wargames_give_but_go_on():
+    game = Game(seed=1)
+    state = game.state
+    state.defcon = 2
+    run_event(game, "Wargames", Side.USSR, prefer("option:2"))
+    assert not state.is_over and state.vp == -6
+
+
+def test_o12_wargames_exactly_level_is_a_draw():
+    """User ruling 2026-11-25: 0 VP after the 6 is a draw."""
+    game = Game(seed=1)
+    state = game.state
+    state.defcon = 2
+    state.vp = 6
+    run_event(game, "Wargames", Side.USSR, prefer("option:1"))
+    assert state.is_over and state.winner is None
+    assert state.win_reason is WinReason.WARGAMES
+
+
+def test_o12_wargames_always_leaves_the_game_at_defcon_two():
+    game = Game(seed=1)
+    state = game.state
+    for pile in (state.deck, state.hands[0], state.hands[1]):
+        if "Wargames" in pile:
+            pile.remove("Wargames")
+    state.defcon = 2
+    state.phase = Phase.ACTION_ROUND
+    state.hands[Side.USSR].append("Wargames")
+    drive(game.play_card("Wargames", Side.USSR), prefer("use:event", "option:0"))
+    assert "Wargames" in state.removed
+
+
+def test_o12_wargames_above_defcon_two_is_discarded_not_removed():
+    from twilight.events import is_playable
+
+    game = Game(seed=1)
+    state = game.state
+    for pile in (state.deck, state.hands[0], state.hands[1]):
+        if "Wargames" in pile:
+            pile.remove("Wargames")
+    state.defcon = 3
+    state.phase = Phase.ACTION_ROUND
+    assert not is_playable(game, "Wargames", Side.USSR)
+    state.hands[Side.USSR].append("Wargames")
+    drive(game.play_card("Wargames", Side.USSR), prefer("use:influence"))
+    assert "Wargames" in state.discard and "Wargames" not in state.removed
+
+
+def test_reformer_is_four_or_six_when_ahead():
+    """User ruling 2026-11-25: 4 or 6 (the USSR's choice when ahead), placed in full."""
+    game = Game(seed=1)
+    clear_board(game)
+    state = game.state
+    state.vp = 3
+    log = []
+    run_event(game, "The Reformer", Side.USSR, prefer("option:1"), log)
+    assert log[0].type.value == "choose_option" and len(log[0].options) == 2
+    assert sum(state.inf(Side.USSR, n) for n in COUNTRY_ORDER) == 4
+    game = Game(seed=1)
+    clear_board(game)
+    game.state.vp = -1
+    log = []
+    run_event(game, "The Reformer", Side.USSR, None, log)
+    assert all(d.type.value == "place_influence" for d in log)
+    assert sum(game.state.inf(Side.USSR, n) for n in COUNTRY_ORDER) == 4
 
 
 # --------------------------------------------------------------------------- #
@@ -892,3 +960,187 @@ def test_o15_junta_realignments_are_confined_to_one_region():
     assert len(realigns) == 2
     assert "country:Brazil" in realigns[0].legal_keys  # the first target is free
     assert "country:Brazil" not in realigns[1].legal_keys  # then Central America only
+
+
+# --------------------------------------------------------------------------- #
+# N3 / N4 and the "up to" sweep
+# --------------------------------------------------------------------------- #
+
+
+def test_n3_east_european_unrest_hits_exactly_three_countries_late():
+    game = Game(seed=1)
+    clear_board(game)
+    state = game.state
+    state.turn = 8
+    pool = ["Poland", "East Germany", "Hungary", "Romania", "Bulgaria", "Czechoslovakia"]
+    for n in pool:
+        state.set_inf(Side.USSR, n, 3)
+    order = iter(pool)
+    run_event(game, "East European Unrest", Side.USA,
+              lambda d: d.find(f"country:{next(order)}") or d.options[0])
+    touched = [n for n in pool if state.inf(Side.USSR, n) < 3]
+    assert touched == pool[:3]
+    assert all(state.inf(Side.USSR, n) == 1 for n in touched)
+
+
+# --------------------------------------------------------------------------- #
+# User rulings, 2026-11-25
+# --------------------------------------------------------------------------- #
+
+
+def _ar_game(phasing: Side, defcon: int = 5) -> Game:
+    game = Game(seed=1)
+    clear_board(game)
+    state = game.state
+    state.phase = Phase.ACTION_ROUND
+    state.phasing_player = phasing
+    state.player = phasing
+    state.defcon = defcon
+    state.action_round = 1
+    for side in Side:
+        state.hands[side][:] = []
+    return game
+
+
+@pytest.mark.parametrize(
+    "card, phasing, coup_side, target",
+    [("CIA Created", Side.USSR, Side.USA, "Angola"),
+     ("Lone Gunman", Side.USA, Side.USSR, "Angola")],
+)
+def test_ruling_as_if_coup_to_defcon_one_loses_for_the_card_player(
+    card, phasing, coup_side, target
+):
+    """The opponent's 'as if 1 Op' coup in a battleground at DEFCON 2: the phasing player
+    -- who played the card for operations -- loses."""
+    game = _ar_game(phasing, defcon=2)
+    state = game.state
+    state.set_inf(coup_side.opponent, target, 1)
+    state.set_inf(phasing, "Mexico" if phasing is Side.USA else "Poland", 1)
+    for pile in (state.deck, state.hands[0], state.hands[1]):
+        if card in pile:
+            pile.remove(card)
+    state.hands[phasing].append(card)
+    state.rng = FixedRoll([6])
+    def chooser(d):
+        if d.type.value == "card_use":
+            return d.find("use:influence" if d.player is phasing else "use:coup")
+        for key in ("yes", f"country:{target}", "country:Mexico", "country:Poland"):
+            a = d.find(key)
+            if a is not None:
+                return a
+        return d.options[0]
+
+    drive(game.play_card(card, phasing), chooser)
+    assert state.is_over and state.win_reason is WinReason.DEFCON
+    assert state.winner is coup_side  # the phasing player lost
+    assert state.military_ops[coup_side] == 1
+
+
+def test_ruling_missile_envy_takes_the_highest_modified_value():
+    game = _ar_game(Side.USSR)
+    state = game.state
+    # Containment (max 4): Duck and Cover (3) and Marshall Plan (4) are both worth 4.
+    state.add_effect("Containment", owner=Side.USA, expires="end_of_turn")
+    state.hands[Side.USA][:] = ["Duck and Cover", "Marshall Plan"]
+    log = []
+    run_event(game, "Missile Envy", Side.USSR, prefer("card:Duck and Cover"), log)
+    assert set(log[0].legal_keys) == {"card:Duck and Cover", "card:Marshall Plan"}
+
+
+def test_ruling_the_extra_eighth_round_may_be_forgone():
+    game = _ar_game(Side.USA)
+    state = game.state
+    state.turn = 8
+    state.action_rounds_this_turn = 7
+    state.action_round = 8
+    state.space_race = [0, 8]
+    state.hands[Side.USA][:] = ["Duck and Cover"]
+    log = []
+    drive(game._take_action_round(Side.USA), prefer("pass"), log)
+    assert "pass" in log[0].legal_keys
+    assert state.hands[Side.USA] == ["Duck and Cover"]
+
+
+def test_ruling_vietnam_revolts_applies_to_abm_treaty_ops():
+    game = _vietnam_game()
+    state = game.state
+    before = _ussr_total(game, _SEA)
+    run_event(game, "ABM Treaty", Side.USSR, _place_in("Thailand", "Laos/Cambodia"))
+    assert _ussr_total(game, _SEA) - before == 5
+
+
+def test_ruling_norad_does_not_fire_for_a_headline_drop():
+    game = Game(seed=1)
+    state = game.state
+    state.add_effect("NORAD", owner=Side.USA)
+    state.defcon = 3
+    state.phase = Phase.HEADLINE
+    state.change_defcon(-1)  # a headline takes DEFCON to 2
+    assert state.defcon_moved_to_two
+    # The first action round starts with the flag cleared by the turn loop.
+    state.defcon_moved_to_two = False
+    from twilight.events.special import norad_end_of_action_round
+
+    log = []
+    drive(norad_end_of_action_round(game, state.defcon_moved_to_two), None, log)
+    assert not log
+
+
+def test_ruling_chernobyl_names_only_whole_regions():
+    game = Game(seed=1)
+    log = []
+    run_event(game, "Chernobyl", Side.USA, None, log)
+    keys = set(log[0].legal_keys)
+    assert "region:Western Europe" not in keys and "region:Southeast Asia" not in keys
+    assert "region:Europe" in keys and "region:Asia" in keys
+
+
+def test_ruling_nuclear_subs_spares_ops_coups_but_not_free_coups():
+    game = _ar_game(Side.USA)
+    state = game.state
+    state.add_effect("Nuclear Subs", owner=Side.USA, expires="end_of_turn")
+    state.set_inf(Side.USSR, "Iran", 1)
+    state.set_inf(Side.USSR, "Cuba", 1)
+    game.coup(Side.USA, "Iran", 2)  # an operations coup (incl. 'as if N Ops')
+    assert state.defcon == 5
+    game.coup(Side.USA, "Cuba", 2, free=True)  # a free coup
+    assert state.defcon == 4
+
+
+def test_ruling_star_wars_fetching_a_ussr_event_is_resolved_by_the_ussr():
+    game = _ar_game(Side.USA)
+    state = game.state
+    state.space_race = [0, 2]
+    state.discard[:] = ["Decolonization"]
+    log = []
+    run_event(game, "Star Wars", Side.USA, prefer("card:Decolonization"), log)
+    placing = [d for d in log if d.type.value == "place_influence"]
+    assert placing and all(d.player is Side.USSR for d in placing)
+
+
+def test_ruling_grain_sales_defectors_cancels_an_unresolved_ussr_headline():
+    game = Game(seed=1)
+    state = game.state
+    for side in Side:
+        state.hands[side][:] = []
+    for pile in (state.deck,):
+        for c in ("Grain Sales to Soviets", "Defectors", "Fidel"):
+            if c in pile:
+                pile.remove(c)
+    state.hands[Side.USA][:] = ["Grain Sales to Soviets"]
+    state.hands[Side.USSR][:] = ["Fidel", "Defectors"]
+    state.rng.choice = lambda seq: "Defectors" if "Defectors" in seq else seq[0]
+    state.set_inf(Side.USA, "Cuba", 2)
+
+    def chooser(d):
+        for key in ("card:Grain Sales to Soviets", "card:Fidel", "yes", "use:event"):
+            a = d.find(key)
+            if a is not None:
+                return a
+        return d.options[0]
+
+    drive(game._headline_phase(), chooser)
+    # Grain Sales (2 ops) and Fidel (2 ops): the US resolves first on the tie, takes
+    # Defectors and plays it, cancelling Fidel before it resolves.
+    assert state.inf(Side.USA, "Cuba") == 2
+    assert "Fidel" in state.discard

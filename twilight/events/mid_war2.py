@@ -54,41 +54,11 @@ def _hand_label(name: str) -> str:
 
 
 def _operations_with_card(game, side: Side, ops: int, prompt: str):
-    """Conduct operations with the card being played, rather than a free grant.
-
-    ``Game.free_operations`` exists for events worded "as if they played an N Op
-    card", and marks any coup free so it does not count toward the required military
-    operations. Grain Sales to Soviets instead says "use this card to conduct
-    Operations normally", so the coup has to be a paid one.
-    """
-    state = game.state
-    available = []
-    if rules.placeable_countries(state, side):
-        available.append(use_action(OpsUse.INFLUENCE, f"place {ops} influence"))
-    if any(rules.can_coup(state, side, n) for n in COUNTRY_ORDER):
-        available.append(use_action(OpsUse.COUP, f"coup with {ops} ops"))
-    if any(rules.can_realign(state, side, n) for n in COUNTRY_ORDER):
-        available.append(use_action(OpsUse.REALIGN, f"{ops} realignment rolls"))
-
-    if not available:
-        state.note(f"{ops} operations point(s) wasted: nothing legal", side)
-        return
-
-    if len(available) == 1:
-        use = OpsUse(available[0].value)
-    else:
-        action = yield from game.ask(
-            Decision(
-                DecisionType.CARD_USE,
-                side,
-                prompt,
-                tuple(available),
-                {"ops": ops},
-            )
-        )
-        use = OpsUse(action.value)
-
-    yield from game.conduct_operations(side, ops, use)
+    """Grain Sales to Soviets: "use this card to conduct Operations normally"."""
+    yield from game.operations(
+        side, ops, prompt=prompt,
+        bonus_regions=game._ops_bonus_regions("Grain Sales to Soviets", side),
+    )
 
 
 # --------------------------------------------------------------------------- #

@@ -399,9 +399,10 @@ def missile_envy(game, ctx):
         state.note("Missile Envy: the opponent holds no operations card", ctx.player)
         return (yield from nothing())
 
-    # Printed operations value decides which card is highest; the opponent breaks ties.
-    best = max(CARDS[n].ops for n in pool)
-    tied = [n for n in pool if CARDS[n].ops == best]
+    # "Highest valued" is the holder's modified operations value (user ruling
+    # 2026-11-25); the opponent breaks ties.
+    best = max(game.effective_ops(n, opponent) for n in pool)
+    tied = [n for n in pool if game.effective_ops(n, opponent) == best]
     given = yield from game.choose_card(
         opponent, tied, f"Missile Envy: hand over one of your {best} ops cards"
     )
@@ -410,9 +411,10 @@ def missile_envy(game, ctx):
     # Held outside every pile until it is used and retired below.
     state.hold(given)
 
-    # Missile Envy itself changes hands rather than being discarded.
+    # Missile Envy itself changes hands rather than being discarded; Game._retire_card
+    # leaves it alone because it is now in a hand. Once the opponent spends it, it goes
+    # to the discard pile like any other card.
     state.hand(opponent).append(ctx.card)
-    state.add_effect(ctx.card, owner=opponent, expires="end_of_turn", do_not_discard=True)
     state.note(f"Missile Envy: exchanged for {given}", ctx.player)
 
     # The opponent is compelled to spend Missile Envy itself for operations on their
@@ -424,10 +426,17 @@ def missile_envy(game, ctx):
         yield from game._resolve_event(given, ctx.player)
         game._retire_card(given, ctx.player, as_event=True)
     else:
+        # "use Operations value without triggering event": a normal operations play
+        # with that card (verdict O4), Flower Power included.
+        game._check_flower_power(given, ctx.player)
         ops = game.effective_ops(given, ctx.player)
-        yield from game.free_operations(
-            ctx.player, ops, prompt=f"Missile Envy: use {given} for {ops} ops"
-        )
+        if not state.is_over:
+            yield from game.operations(
+                ctx.player,
+                ops,
+                prompt=f"Missile Envy: use {given} for {ops} ops",
+                bonus_regions=game._ops_bonus_regions(given, ctx.player),
+            )
         game._retire_card(given, ctx.player, as_event=False)
     # Released on the normal path only, so collecting an abandoned game cannot mutate
     # a state somebody is still reading.

@@ -144,6 +144,9 @@ def free_coup(
     still degrades DEFCON in a battleground, and does not count toward the required
     military operations (rule 8.2.5).
     """
+    yield from game._offer_cuban_missile_crisis_cancel(side)
+    if game.state.is_over:
+        return
     pool = [
         n for n in allowed
         if rules.can_coup(game.state, side, n, ignore_defcon=ignore_defcon)

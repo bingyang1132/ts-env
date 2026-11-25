@@ -149,6 +149,9 @@ class TestC086NorthSeaOilWithSpaceStation:
                 return "card:North Sea Oil"
             if d.type is DecisionType.CARD_USE and "use:influence" in d.legal_keys:
                 return "use:influence"
+            if d.type is DecisionType.PLAY_CARD:
+                # The 8th round may be forgone (user ruling 2026-11-25); take it.
+                return next(k for k in d.legal_keys if k != "pass")
             return "pass" if "pass" in d.legal_keys else d.legal_keys[0]
 
         t.play_turn().finish_with(policy)

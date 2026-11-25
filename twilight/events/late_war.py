@@ -194,7 +194,17 @@ def north_sea_oil(game, ctx):
 def the_reformer(game, ctx):
     """4 USSR influence in Europe, 6 while ahead on VP; no more USSR coups in Europe."""
     state = game.state
-    points = 6 if state.vp_for(ctx.player) > 0 else 4
+    # "If the USSR is ahead of the US in VP, 6 Influence may be added to Europe
+    # instead": 4 or 6, the USSR's choice when ahead, then placed in full (user ruling
+    # 2026-11-25).
+    points = 4
+    if state.vp_for(Side.USSR) > 0:
+        pick = yield from game.choose_option(
+            Side.USSR,
+            "The Reformer: the USSR leads on VP; add how much influence in Europe?",
+            ["add 6 influence", "add 4 influence"],
+        )
+        points = 6 if pick == 0 else 4
     yield from game.add_influence(
         Side.USSR,
         points,
@@ -508,6 +518,8 @@ def pershing_ii_deployed(game, ctx):
             "Pershing II Deployed: remove 1 US influence from each of up to three "
             "Western European countries"
         ),
+        # "up to three": no pass is offered, since removing US influence can never
+        # hurt the USSR; it stops early only when no target is left.
     )
 
 
@@ -532,24 +544,25 @@ def wargames(game, ctx):
         state.note("Wargames: not at DEFCON 2, no effect", ctx.player)
         return (yield from nothing())
 
-    # "you *may* immediately end the game" (FAQ #100). Choosing the event in an action
-    # round is that choice; a headline, or an event fired by another card (Missile
-    # Envy, Star Wars, Five-Year Plan), asks.
-    chosen_directly = (
-        state.phase is Phase.ACTION_ROUND and state.playing_card == ctx.card
+    # "you *may* immediately end the game ... after giving opponent 6 VPs". At DEFCON 2
+    # the event occurs whatever is chosen (the card leaves the game); FAQ #100 lets the
+    # player decline, or give the 6 VP and still not end (user ruling 2026-11-25).
+    choice = yield from game.choose_option(
+        ctx.player,
+        f"Wargames (VP {state.vp_for(ctx.player):+d} to you):",
+        [
+            "do not give the 6 VP and do not end the game",
+            "give the opponent 6 VP and end the game (no final scoring)",
+            "give the opponent 6 VP but do not end the game",
+        ],
     )
-    if not chosen_directly:
-        end = yield from game.confirm(
-            ctx.player,
-            f"Wargames: give the opponent 6 VP and end the game now "
-            f"(VP {state.vp_for(ctx.player):+d} to you before the 6)?",
-            card=ctx.card,
-        )
-        if not end:
-            state.note("Wargames: the player declines to end the game", ctx.player)
-            return
-
+    if choice == 0:
+        state.note("Wargames: the player declines", ctx.player)
+        return
     state.award_vp(ctx.player.opponent, 6)
+    if choice == 2 or state.is_over:
+        state.note(f"Wargames: {ctx.player.opponent.label} +6 VP, play goes on", ctx.player)
+        return
 
     if state.vp > 0:
         winner: Side | None = Side.USSR
@@ -559,7 +572,6 @@ def wargames(game, ctx):
         winner = None
     state.note(f"Wargames: {ctx.player.opponent.label} +6 VP, the game ends", ctx.player)
     state.finish(winner, WinReason.WARGAMES)
-    return (yield from nothing())
 
 
 # --------------------------------------------------------------------------- #

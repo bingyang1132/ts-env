@@ -140,6 +140,8 @@ class GameState:
     #: Sides whose ``headline`` pick has been revealed to both players: the opponent of
     #: a Man in Earth Orbit holder reveals first, and both are public once chosen.
     headline_public: set[int] = field(default_factory=set)
+    #: Headlines cancelled while the phase is under way (Defectors drawn by Grain Sales).
+    headline_cancelled: set[int] = field(default_factory=set)
     #: Set while resolving an opponent's event through UN Intervention and similar,
     #: so that "the player" inside an event means the right side.
     event_player: Side | None = None

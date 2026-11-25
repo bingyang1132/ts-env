@@ -1,21 +1,19 @@
 """Events worded "Conduct Operations as if they played an N Ops card" (V:B8).
 
 The Deluxe rule that governs them (7.4.3, cited by FAQ #26/#57/#62) is not in any
-available source, so the expectation here is the coordinator's chosen reading: such
-operations are a normal N-op play -- the player's own ops modifiers apply (R 7.4.2
+available source; the user ruled (2026-11-25) that such operations are a normal N-op
+play made outside one's own action round -- the player's own ops modifiers apply (R 7.4.2
 Example 3: Containment makes CIA Created worth 2), a coup counts toward required
-military operations (R 6.3.3 / 8.2.3), and the DEFCON geography restrictions apply (they
-are not "free" coups, R 6.3.5). Every test carries ``unverified_rule``.
+military operations (R 6.3.3 / 8.2.3), the DEFCON geography restrictions apply (they
+are not "free" coups, R 6.3.5), and DEFCON 1 loses for the phasing player.
 """
 
 from __future__ import annotations
 
-import pytest
 
 from _table import USA, USSR, Table
 from twilight.decisions import DecisionType
 
-pytestmark = pytest.mark.unverified_rule
 
 
 def count_placements(t: Table, country: str) -> int:

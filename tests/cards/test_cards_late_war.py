@@ -315,6 +315,8 @@ class TestC087TheReformer:
         instead.\""""
         t = Table(turn=8, vp=3)
         t.play(USSR, "The Reformer", "event")
+        # User ruling 2026-11-25: when ahead the USSR chooses 6 (option:0) or 4.
+        t.answer("option:0")
         for n in ("Poland", "Poland", "Italy", "Italy", "France", "France"):
             t.answer(f"country:{n}")
         assert t.done
@@ -381,7 +383,6 @@ class TestC089KAL007:
             t.answer("country:South Korea")
         assert t.done and t.s.inf(USA, "South Korea") == 7
 
-    @pytest.mark.unverified_rule
     def test_event_ops_reduced_by_red_scare(self):
         """Coordinator ruling for 'as if they played a 4 Ops card' (V:B8, Deluxe 7.4.3
         unavailable; FAQ #31 says the Deluxe rewording makes such ops subject to
@@ -884,6 +885,9 @@ class TestC100Wargames:
         for n in ("Poland", "East Germany", "France", "Italy", "West Germany"):
             t.inf(ussr={n: 6})
         t.play(USSR, "Wargames", "event")
+        # User ruling 2026-11-25: the "may" is a choice even when played as an event
+        # (give 6 VP and end / give and go on / neither); option:1 = give and end.
+        t.answer("option:1")
         assert t.s.is_over and t.s.win_reason is WinReason.WARGAMES
         assert t.s.vp == -3 and t.s.winner is USA
         assert t.done

@@ -273,12 +273,16 @@ class TestC107Che:
         assert t.done
         assert t.s.inf(USA, "Honduras") == 1 and t.s.inf(USA, "Zimbabwe") == 1
 
-    @pytest.mark.skip(
-        reason="V:B8 table: Che's wording does not say 'free'; whether its coups count "
-        "toward required military operations is marked 未能核实 in verdicts.md."
-    )
     def test_military_ops_credit(self):
-        """V:B8 #107: unverified."""
+        """User ruling 2026-11-25: Che's coups are free coups (R 8.2.5): they do not
+        count toward required military operations."""
+        t = Table(turn=5)
+        t.inf(usa={"Zimbabwe": 1})
+        t.dice(6)
+        t.play(USSR, "Che", "event", "country:Zimbabwe")
+        t.finish_with()
+        assert t.s.inf(USA, "Zimbabwe") == 0
+        assert t.s.military_ops[USSR] == 0
 
 
 # --------------------------------------------------------------------------- #

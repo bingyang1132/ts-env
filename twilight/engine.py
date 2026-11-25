@@ -627,6 +627,7 @@ class Game:
         cancelled: set[Side] = set()
         if picks[Side.USA] == "Defectors" and picks[Side.USSR] is not None:
             cancelled.add(Side.USSR)
+        state.headline_cancelled = set()
 
         for side in sorted(Side, key=sort_key):
             name = picks[side]
@@ -634,7 +635,9 @@ class Game:
                 continue
             state.headline[int(side)] = None
 
-            if side in cancelled:
+            # Defectors played mid-headline (Grain Sales drawing it) cancels a USSR
+            # headline that has not resolved yet (user ruling 2026-11-25).
+            if side in cancelled or int(side) in state.headline_cancelled:
                 state.note(f"{side.label} headline {name} cancelled by Defectors", side)
                 self._retire_card(name, side, as_event=False)
                 continue
@@ -827,19 +830,24 @@ class Game:
             options = list(scoring)
 
         # Rule 9.8: play of the China Card can never be compelled by a shortage of
-        # cards, so with nothing else left the player may pass.
+        # cards, so with nothing else left the player may pass. An extra round from the
+        # Space Station or North Sea Oil ("may play 8") may be forgone too (user ruling
+        # 2026-11-25).
         only_china = options == [CHINA_CARD]
+        extra_round = state.action_round > state.action_rounds_this_turn
+        may_pass = only_china or extra_round
         chosen = yield from self.choose_card(
             side,
             options,
-            "Choose a card to play" + (" (or pass: the China Card is never compelled)"
-                                       if only_china else ""),
+            "Choose a card to play"
+            + (" (or pass: the China Card is never compelled)" if only_china else "")
+            + (" (or pass: this extra action round is optional)" if extra_round else ""),
             dtype=DecisionType.PLAY_CARD,
-            allow_pass=only_china,
+            allow_pass=may_pass,
             labels={n: self._card_label(n, side) for n in options},
         )
         if chosen is None:
-            state.note("declines to play the China Card; action round passed", side)
+            state.note("passes the action round", side)
             yield from self._settle_we_will_bury_you(side, None)
             return
         yield from self._settle_we_will_bury_you(side, chosen)
@@ -1046,8 +1054,8 @@ class Game:
             return
         if state.in_play(name):
             return  # the event put it into play; it is not discarded
-        if state.effect_data(name, "do_not_discard"):
-            return
+        if state._is_accounted(name):
+            return  # the event moved it somewhere already (Missile Envy changes hands)
         state.resolve_card(name, as_event=as_event)
 
     # -- operations ------------------------------------------------------- #
@@ -1130,23 +1138,53 @@ class Game:
         names = list(names)
         return bool(names) and all(region in COUNTRIES[n].regions for n in names)
 
-    def free_operations(
+    def event_ops(self, ops: int, side: Side) -> int:
+        """An event's "as if they played an N Ops card" value for *side*, modified.
+
+        The player's own modifiers apply (rule 7.4.2 Example 3: CIA Created under
+        Containment is worth 2): Containment / Brezhnev Doctrine add one to a maximum
+        of 4, Red Scare/Purge takes one off to a minimum of 1.
+        """
+        state = self.state
+        value = ops
+        if state.in_play("Containment", owner=side):
+            value += 1
+        if state.in_play("Brezhnev Doctrine", owner=side):
+            value += 1
+        value = min(max(value, ops), 4) if value > ops else value
+        if state.in_play("Red Scare/Purge", owner=side.opponent):
+            value -= 1
+        return max(1, value)
+
+    def operations(
         self,
         side: Side,
         ops: int,
         *,
         uses: Sequence[OpsUse] = (OpsUse.INFLUENCE, OpsUse.COUP, OpsUse.REALIGN),
         prompt: str = "",
+        bonus_regions: Sequence[Region] = (),
     ) -> Iterator[Decision]:
-        """Let *side* conduct operations as if they had played an *ops*-value card.
+        """Let *side* conduct a normal operations play worth *ops* (already modified).
 
-        Used by the many events worded "conduct operations as if they played an N Op
-        card". A coup taken this way is free: it does not count toward the required
-        military operations.
+        Used for every "conduct operations" that is not a free coup: events worded "as
+        if they played an N Ops card", Grain Sales and UN Intervention spending a real
+        card, and a card taken by Missile Envy. It is exactly an operations play made
+        outside one's own action round (user ruling 2026-11-25): DEFCON geography
+        applies, a coup counts toward military operations and degrades DEFCON in a
+        battleground, and DEFCON 1 loses for the phasing player.
         """
         state = self.state
+        if OpsUse.COUP in uses:
+            # The threatened player may cancel the Cuban Missile Crisis before choosing
+            # ("at any time", FAQ #40).
+            yield from self._offer_cuban_missile_crisis_cancel(side)
+            if state.is_over:
+                return
         available: list[Action] = []
-        if OpsUse.INFLUENCE in uses and rules.placeable_countries(state, side):
+        if OpsUse.INFLUENCE in uses and rules.placeable_countries(
+            state, side, reachable=self.reachable_for(side)
+        ):
             available.append(use_action(OpsUse.INFLUENCE, f"place {ops} influence"))
         if OpsUse.COUP in uses and any(rules.can_coup(state, side, n) for n in COUNTRY_ORDER):
             available.append(use_action(OpsUse.COUP, f"coup with {ops} ops"))
@@ -1156,7 +1194,7 @@ class Game:
             available.append(use_action(OpsUse.REALIGN, f"{ops} realignment rolls"))
 
         if not available:
-            state.note(f"{ops} free operations point(s) wasted: nothing legal", side)
+            state.note(f"{ops} operations point(s) wasted: nothing legal", side)
             return
 
         if len(available) == 1:
@@ -1168,12 +1206,35 @@ class Game:
                     side,
                     prompt or f"Conduct operations as if playing a {ops} Op card",
                     tuple(available),
-                    {"ops": ops, "free": True},
+                    {"ops": ops},
                 )
             )
             use = OpsUse(action.value)
 
-        yield from self.conduct_operations(side, ops, use, free=True)
+        yield from self.conduct_operations(side, ops, use, bonus_regions=bonus_regions)
+
+    def free_operations(
+        self,
+        side: Side,
+        ops: int,
+        *,
+        uses: Sequence[OpsUse] = (OpsUse.INFLUENCE, OpsUse.COUP, OpsUse.REALIGN),
+        prompt: str = "",
+    ) -> Iterator[Decision]:
+        """Events worded "conduct operations as if they played an *ops* Op card".
+
+        A normal operations play (see :meth:`operations`) at the event's value as
+        modified for *side*. Vietnam Revolts' +1 applies to the USSR if every point goes
+        to Southeast Asia (user ruling 2026-11-25). The name is historical: these
+        operations are not "free" in the sense of rule 8.2.5.
+        """
+        value = self.event_ops(ops, side)
+        bonus: tuple[Region, ...] = ()
+        if side is Side.USSR and self.state.in_play("Vietnam Revolts", owner=Side.USSR):
+            bonus = (Region.SOUTHEAST_ASIA,)
+        yield from self.operations(
+            side, value, uses=uses, prompt=prompt, bonus_regions=bonus
+        )
 
     def spend_operations_influence(
         self,

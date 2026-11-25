@@ -519,8 +519,12 @@ def resolve_coup(
     if not free:
         state.military_ops[side] = min(5, state.military_ops[side] + ops)
 
-    # Nuclear Subs exempts US coups in battlegrounds from degrading DEFCON.
-    suppressed = side is Side.USA and state.in_play("Nuclear Subs", owner=Side.USA)
+    # Nuclear Subs exempts US coups made with operations points in battlegrounds from
+    # degrading DEFCON -- including an event's "as if N Ops" operations, but not a free
+    # coup (user ruling 2026-11-25).
+    suppressed = (
+        side is Side.USA and not free and state.in_play("Nuclear Subs", owner=Side.USA)
+    )
     if COUNTRIES[name].battleground and not suppressed:
         state.change_defcon(-1)
 
