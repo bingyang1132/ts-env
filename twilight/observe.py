@@ -249,7 +249,13 @@ def observe(
     analysis, replays and complete-information value networks -- never for a policy that
     has to play for real.
     """
-    reachable = rules.reachable_countries(state, player)
+    # Rule 6.1.1: during an action round, reach is the start-of-round snapshot.
+    snap = state.reach_snapshot.get(int(player)) if state.reach_snapshot else None
+    reachable = (
+        snap
+        if snap is not None and state.phase is Phase.ACTION_ROUND
+        else rules.reachable_countries(state, player)
+    )
 
     country_views = []
     for name in COUNTRY_ORDER:

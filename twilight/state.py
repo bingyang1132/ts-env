@@ -161,6 +161,11 @@ class GameState:
     #: per side. Set by Missile Envy.
     must_play: dict[int, str | None] = field(default_factory=lambda: {0: None, 1: None})
 
+    #: Rule 6.1.1 placement reach, per side, captured at the start of the current
+    #: action round. ``None`` outside action rounds.
+    reach_snapshot: dict[int, frozenset[str]] | None = None
+    #: Whether the DEFCON marker has moved to 2 during the current action round (NORAD).
+    defcon_moved_to_two: bool = False
     #: Set from the end of turn 10 on (the China Card point and final scoring). Reaching
     #: 20 VP then is not an automatic victory (rule 10.3.2); the final tally decides.
     final_scoring: bool = False
@@ -237,7 +242,10 @@ class GameState:
         return self.vp if side is Side.USSR else -self.vp
 
     def change_defcon(self, delta: int) -> None:
+        before = self.defcon
         self.defcon = max(MIN_DEFCON, min(MAX_DEFCON, self.defcon + delta))
+        if self.defcon == 2 and before != 2:
+            self.defcon_moved_to_two = True
 
     # ------------------------------------------------------------------ #
     # Effects

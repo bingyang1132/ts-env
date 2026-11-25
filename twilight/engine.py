@@ -496,16 +496,16 @@ class Game:
                     return
                 if round_number > self._action_rounds_for(side):
                     continue
-                defcon_before = state.defcon
+                state.defcon_moved_to_two = False
                 yield from self._action_round(side)
                 if state.is_over:
                     return
-                # NORAD triggers on DEFCON *arriving* at 2, once per round.
+                # NORAD: "at the conclusion of any Action Round in which the DEFCON
+                # marker moves to the '2' box" -- at any point in the round, even if it
+                # has moved off again since.
                 from .events.special import norad_end_of_action_round
 
-                yield from norad_end_of_action_round(
-                    self, defcon_before > 2 and state.defcon == 2
-                )
+                yield from norad_end_of_action_round(self, state.defcon_moved_to_two)
 
         yield from self._turn_end()
 
@@ -573,6 +573,7 @@ class Game:
         state.action_round = 0
         state.headline = {0: None, 1: None}
         state.headline_public = set()
+        state.reach_snapshot = None
 
         # Man in Earth Orbit: its holder chooses last, after the opponent has revealed.
         order = list(Side)
@@ -647,6 +648,11 @@ class Game:
                 self._retire_card(name, side, as_event=False)
                 continue
 
+            # Flower Power scores a war card the US headlines, as for any US play.
+            self._check_flower_power(name, side)
+            if state.is_over:
+                break
+
             note = f"headline resolves: {name}"
             if actor is not side:
                 note += f" (implemented by {actor.label})"
@@ -664,6 +670,11 @@ class Game:
         state.player = side
         state.phasing_player = side
         state.ar_sequence += 1
+        # Rule 6.1.1: operations influence goes next to markers that were in place at
+        # the start of the phasing player's action round, whatever an event does first.
+        state.reach_snapshot = {
+            int(s): rules.reachable_countries(state, s) for s in Side
+        }
 
         yield from self._fire_deferred(side, "start")
         if state.is_over:
@@ -673,21 +684,54 @@ class Game:
         if state.is_over:
             return
 
-        if not state.playable_hand(side):
+        trap = "Quagmire" if side is Side.USA else "Bear Trap"
+        if state.in_play(trap, owner=side):
+            # Quagmire and Bear Trap replace the action round with a discard and roll.
+            yield from self._settle_we_will_bury_you(side, None)
+            if not state.is_over:
+                yield from self._resolve_trap(side, trap)
+        elif not state.playable_hand(side):
+            yield from self._settle_we_will_bury_you(side, None)
             state.note("no cards to play; action round skipped", side)
-        elif state.in_play("Quagmire" if side is Side.USA else "Bear Trap", owner=side):
-            # Quagmire and Bear Trap force discards instead of a normal action round.
-            yield from self._resolve_trap(
-                side, "Quagmire" if side is Side.USA else "Bear Trap"
-            )
         else:
             yield from self._take_action_round(side)
 
-        # A compulsion only lasts for the one action round it was aimed at.
-        state.must_play[int(side)] = None
+        # Missile Envy's compulsion lasts until the card is spent (it can be put off by
+        # a scoring card that must be played, even into the next turn: FAQ).
+        forced = state.must_play[int(side)]
+        if forced is not None and forced not in state.hand(side):
+            state.must_play[int(side)] = None
 
         if not state.is_over:
             yield from self._fire_deferred(side, "end")
+
+    def _settle_we_will_bury_you(self, side: Side, chosen: str | None) -> Iterator[Decision]:
+        """We Will Bury You scores "the moment the US does not play UN Intervention"
+        (FAQ #50), before any US VP in that round.
+
+        Called once the US has chosen what to do with its action round. A card that can
+        still turn into a UN Intervention event -- UN Intervention itself, or Missile
+        Envy / Star Wars / Grain Sales, which can fetch it -- leaves the trigger for the
+        end of the round, where it fires unless cancelled.
+        """
+        from .events import deferred_handler_for
+        from .events.mid_war import WE_WILL_BURY_YOU
+
+        if chosen in (
+            "UN Intervention", "Missile Envy", "Star Wars", "Grain Sales to Soviets"
+        ):
+            return
+        state = self.state
+        ready = [
+            t for t in state.deferred
+            if t.kind == WE_WILL_BURY_YOU and t.player is side
+            and state.ar_sequence > t.not_before
+        ]
+        for trigger in ready:
+            if state.is_over:
+                return
+            state.deferred.remove(trigger)
+            yield from deferred_handler_for(trigger.kind)(self, trigger)
 
     def _fire_deferred(self, side: Side, when: str) -> Iterator[Decision]:
         """Resolve triggers a card scheduled for this point in *side*'s action round."""
@@ -707,11 +751,14 @@ class Game:
             yield from deferred_handler_for(trigger.kind)(self, trigger)
 
     def _offer_cuban_missile_crisis_cancel(self, side: Side) -> Iterator[Decision]:
-        """Let the threatened player buy the crisis off before acting.
+        """Let the threatened player buy the crisis off.
 
-        The USSR removes 2 influence from Cuba; the US removes 2 from West Germany or
-        Turkey. Offered at the start of their action round, which is the only moment the
-        choice can matter -- after this they either coup and lose, or they do not.
+        "May be cancelled at any time if the USSR player removes two Influence from
+        Cuba or the US player removes 2 Influence from either West Germany or Turkey"
+        -- two from one country, not one from each (FAQ #40). Offered at the start of
+        the threatened player's action round and again whenever they are about to be
+        given a coup they might take, in either player's round (FAQ #40: "at any
+        time"). Those are the only moments the choice can matter.
         """
         state = self.state
         effect = state.effects.get("Cuban Missile Crisis")
@@ -719,10 +766,11 @@ class Game:
             return
 
         sources = ["Cuba"] if side is Side.USSR else ["West Germany", "Turkey"]
-        if sum(state.inf(side, n) for n in sources) < 2:
+        payable = [n for n in sources if state.inf(side, n) >= 2]
+        if not payable:
             return
 
-        where = " or ".join(sources)
+        where = " or ".join(payable)
         cancel = yield from self.confirm(
             side,
             f"Cuban Missile Crisis is in effect: couping would lose you the game. "
@@ -732,35 +780,75 @@ class Game:
         if not cancel:
             return
 
-        yield from self.remove_influence(
+        name = yield from self.choose_country(
             side,
-            2,
-            allowed=sources,
-            chooser=side,
-            prompt=f"Remove 2 influence from {where} to cancel the Cuban Missile Crisis",
+            payable,
+            "Remove 2 influence from which country to cancel the Cuban Missile Crisis?",
+            dtype=DecisionType.REMOVE_INFLUENCE,
+            labels=self._influence_labels(payable),
         )
+        state.remove_inf(side, name, 2)
+        state.note(f"{side.label} influence removed: {name} -2", side)
         state.remove_effect("Cuban Missile Crisis")
         state.note("Cuban Missile Crisis cancelled", side)
+
+    def offer_crisis_cancel_before_coup(self, side: Side) -> Iterator[Decision]:
+        """Before *side* is offered a coup, give them the chance to cancel the crisis."""
+        yield from self._offer_cuban_missile_crisis_cancel(side)
+
+    def _rounds_left(self, side: Side) -> int:
+        """Action rounds *side* has left this turn, the current one included."""
+        return max(1, self._action_rounds_for(side) - self.state.action_round + 1)
 
     def _take_action_round(self, side: Side) -> Iterator[Decision]:
         state = self.state
         hand = state.playable_hand(side)
+        scoring = [n for n in state.hand(side) if CARDS[n].is_scoring]
+        # Scoring cards may never be held (rule 4.5D / 10.1.5): once the rounds left
+        # cannot spare one, a scoring card has to be playable now.
+        scoring_due = bool(scoring) and len(scoring) >= self._rounds_left(side)
 
-        # Missile Envy compels its recipient to spend the card it handed over.
+        options = list(hand)
+        if scoring_due and CHINA_CARD in options:
+            # Rule 9.5: the China Card may not be played if it prevents the play of a
+            # scoring card.
+            options.remove(CHINA_CARD)
+
+        # Missile Envy compels its recipient to spend the card it handed over -- unless
+        # a scoring card must be played instead, which puts the compulsion off (FAQ).
         forced = state.must_play[int(side)]
-        if forced is not None and forced in hand:
+        if forced is not None and forced in options:
+            if not scoring_due:
+                yield from self._settle_we_will_bury_you(side, forced)
+                state.note(f"compelled to play {forced} for operations", side)
+                yield from self.play_card(forced, side, forced_use=True)
+                return
+            # "would still have to play the scoring card and hold Missile Envy".
+            options = list(scoring)
+
+        # Rule 9.8: play of the China Card can never be compelled by a shortage of
+        # cards, so with nothing else left the player may pass.
+        only_china = options == [CHINA_CARD]
+        chosen = yield from self.choose_card(
+            side,
+            options,
+            "Choose a card to play" + (" (or pass: the China Card is never compelled)"
+                                       if only_china else ""),
+            dtype=DecisionType.PLAY_CARD,
+            allow_pass=only_china,
+            labels={n: self._card_label(n, side) for n in options},
+        )
+        if chosen is None:
+            state.note("declines to play the China Card; action round passed", side)
+            yield from self._settle_we_will_bury_you(side, None)
+            return
+        yield from self._settle_we_will_bury_you(side, chosen)
+        if state.is_over:
+            return
+        if chosen == forced:
             state.note(f"compelled to play {forced} for operations", side)
             yield from self.play_card(forced, side, forced_use=True)
             return
-
-        chosen = yield from self.choose_card(
-            side,
-            hand,
-            "Choose a card to play",
-            dtype=DecisionType.PLAY_CARD,
-            labels={n: self._card_label(n, side) for n in hand},
-        )
-        assert chosen is not None
         yield from self.play_card(chosen, side)
 
     def _card_label(self, name: str, side: Side) -> str:
@@ -1108,7 +1196,7 @@ class Game:
         state = self.state
         budget = ops
         placed: dict[str, int] = {}
-        reachable = rules.reachable_countries(state, side)
+        reachable = self.reachable_for(side)
         pending = self._bonus_list(bonus_region, bonus_regions)
         granted: list[Region] = []
 
@@ -1193,6 +1281,14 @@ class Game:
             f"{actor.label} couped during the Cuban Missile Crisis", actor
         )
         self.state.finish(effect.owner, WinReason.CUBAN_MISSILE_CRISIS)
+
+    def reachable_for(self, side: Side) -> frozenset[str]:
+        """Where *side* may place operations influence now (rule 6.1.1 snapshot)."""
+        state = self.state
+        snap = state.reach_snapshot.get(int(side)) if state.reach_snapshot else None
+        if snap is not None and state.phase is Phase.ACTION_ROUND:
+            return snap
+        return rules.reachable_countries(state, side)
 
     def _coup_operation(
         self,
@@ -1377,26 +1473,65 @@ class Game:
     # -- traps -------------------------------------------------------------- #
 
     def _resolve_trap(self, side: Side, trap: str) -> Iterator[Decision]:
-        """Quagmire / Bear Trap: discard a 2+ ops card, or all scoring-free options."""
-        state = self.state
-        hand = [n for n in state.hand(side) if CARDS[n].ops >= 2]
+        """Quagmire / Bear Trap: discard a 2+ ops card and roll 1-4 to escape.
 
-        if not hand:
-            playable = [n for n in state.hand(side) if not CARDS[n].is_scoring]
-            if not playable:
-                state.note(f"{trap}: no discardable card; action round lost", side)
+        Following the card and FAQ #42/#44:
+
+        * a qualifying card is any held card (never the China Card) whose *modified*
+          ops value is 2 or more (rule 7.4.2 Example 2); its event does not occur;
+        * a Missile Envy the player is compelled to spend must be the next discard;
+        * with no qualifying card the trap stays: the player may only play scoring
+          cards, otherwise the round passes;
+        * scoring cards take precedence: with as many scoring cards as rounds left, a
+          scoring card is played instead of the discard. Otherwise a player holding a
+          qualifying card must discard (user ruling 2026-11-25).
+        """
+        state = self.state
+        hand = state.hand(side)
+        scoring = [n for n in hand if CARDS[n].is_scoring]
+        qualifying = [
+            n for n in hand
+            if not CARDS[n].is_scoring and self.effective_ops(n, side) >= 2
+        ]
+        forced = state.must_play[int(side)]
+        if forced is not None and forced in qualifying:
+            qualifying = [forced]
+
+        if not qualifying:
+            if not scoring:
+                state.note(
+                    f"{trap}: no card worth 2 or more operations; the round passes", side
+                )
                 return
-            state.note(f"{trap}: no 2+ ops card, may play normally", side)
-            state.remove_effect(trap)
-            yield from self._take_action_round(side)
+            chosen = yield from self.choose_card(
+                side,
+                scoring,
+                f"{trap}: no card worth 2 or more operations; play a scoring card",
+                dtype=DecisionType.PLAY_CARD,
+                labels={n: self._card_label(n, side) for n in scoring},
+            )
+            yield from self.play_card(chosen, side)
+            return
+
+        if scoring and len(scoring) >= self._rounds_left(side):
+            # As many scoring cards as rounds left: one must be played now, discard or
+            # not (scoring cards may never be held; user ruling 2026-11-25).
+            chosen = yield from self.choose_card(
+                side,
+                scoring,
+                f"{trap}: a scoring card must be played this round",
+                dtype=DecisionType.PLAY_CARD,
+                labels={n: self._card_label(n, side) for n in scoring},
+            )
+            yield from self.play_card(chosen, side)
             return
 
         chosen = yield from self.choose_card(
             side,
-            hand,
+            qualifying,
             f"{trap}: discard a card with 2 or more operations points",
             dtype=DecisionType.DISCARD_CARD,
-            labels={n: self._card_label(n, side) for n in hand},
+            labels={n: self._card_label(n, side) for n in qualifying},
         )
         assert chosen is not None
         state.hand(side).remove(chosen)
