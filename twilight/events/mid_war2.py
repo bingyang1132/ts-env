@@ -2,14 +2,9 @@
 
 Conventions are the ones set out in :mod:`twilight.events.early_war`.
 
-Three cards here need a hook the engine does not yet offer, and are implemented as
-far as they can be from inside this module -- the effect is placed correctly, but
-nothing consults it yet. Each is marked with a ``HOOK NEEDED`` comment:
-
-* Flower Power, which watches every subsequent US card play;
-* U2 Incident, which watches for UN Intervention.
-
-(Shuttle Diplomacy's scoring hook now lives in :mod:`twilight.rules`.)
+Three cards here are read elsewhere: Flower Power by ``Game._check_flower_power``, U2
+Incident by UN Intervention's handler, Shuttle Diplomacy by
+:func:`twilight.rules.shuttle_diplomacy_excluded`.
 """
 
 from __future__ import annotations
@@ -74,9 +69,9 @@ def _flower_power_playable(game, side) -> bool:
 @register("Flower Power", playable_if=_flower_power_playable)
 def flower_power(game, ctx):
     """The USSR scores 2 VP for every war card the US subsequently plays."""
-    # HOOK NEEDED: the engine has to award 2 VP to the USSR whenever the US plays
-    # one of WAR_CARDS for its event or for operations -- but not on the space race
-    # -- while this effect is in play. The natural place is Game._perform_use.
+    # Scored by Game._check_flower_power: US plays of WAR_CARDS for the event or for
+    # operations (headline and Missile Envy included), not on the space race, and not a
+    # war card whose event is banned (FAQ #59).
     game.state.add_effect(ctx.card, owner=Side.USSR)
     return (yield from nothing())
 
@@ -89,8 +84,7 @@ def flower_power(game, ctx):
 @register("U2 Incident")
 def u2_incident(game, ctx):
     """1 VP to the USSR, and 1 more if UN Intervention is evented later this turn."""
-    # HOOK NEEDED: UN Intervention's handler has to award the USSR 1 further VP and
-    # remove this effect when it fires as an event while this card is in play.
+    # The further 1 VP is paid by UN Intervention's handler while this is in play.
     game.state.award_vp(Side.USSR, 1)
     game.state.add_effect(ctx.card, owner=Side.USSR, expires="end_of_turn")
     return (yield from nothing())

@@ -142,9 +142,10 @@ def arms_race(game, ctx):
 def cuban_missile_crisis(game, ctx):
     """DEFCON drops to 2; any further coup by the opponent this turn loses them the game.
 
-    The opponent may cancel it by removing 2 influence from Cuba (USSR) or from West
-    Germany or Turkey (US). Both halves need engine hooks that do not exist yet, so the
-    effect is only recorded here.
+    The opponent may cancel it by removing 2 influence from Cuba (USSR) or 2 from one of
+    West Germany or Turkey (US): ``Game._offer_cuban_missile_crisis_cancel``, offered at
+    the start of their round and before any coup they could take. The loss is checked
+    in ``Game.coup``.
     """
     state = game.state
     game.degrade_defcon(state.defcon - 2, ctx.player)

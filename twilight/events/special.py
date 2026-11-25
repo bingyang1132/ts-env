@@ -4,18 +4,15 @@ The China Card, UN Intervention and Olympic Games all reach into card play itsel
 rather than just moving influence around, so they live here alongside the optional
 cards rather than with their printed stage.
 
-Four effects in this module cannot be finished from inside an event handler, because
-they fire at moments the engine never routes through :meth:`Game._resolve_event`. Each
-is implemented as a plain generator/function here and marked ``ENGINE HOOK`` so the
-call site in :mod:`twilight.engine` is a one-liner once someone adds it:
+Three effects here fire at moments the engine never routes through
+:meth:`Game._resolve_event`, so they are plain functions the engine calls:
 
-* :func:`china_card_ops_bonus` -- the China Card's +1 Ops when every point went to Asia,
-  which is only knowable after the operations have been spent;
-* :func:`china_card_cancels_formosan_resolution` -- the China Card played by the US
-  removes Formosan Resolution from play;
-* :func:`norad_end_of_action_round` -- NORAD's bonus influence at the end of an action
-  round in which DEFCON dropped to 2;
-* :func:`yuri_and_samantha_on_coup` -- 1 VP to the USSR per US coup attempt.
+* :func:`china_card_cancels_formosan_resolution` -- from ``Game._retire_card``;
+* :func:`norad_end_of_action_round` -- from ``Game._play_turn`` after every action round;
+* :func:`yuri_and_samantha_on_coup` -- from ``Game.coup``.
+
+The China Card's +1 in Asia is the ``bonus_regions`` mechanism of
+``Game.conduct_operations``; :func:`china_card_ops_bonus` is kept as a pure helper.
 """
 
 from __future__ import annotations
@@ -75,10 +72,10 @@ def _china_card_never_an_event(game, side) -> bool:
 def the_china_card(game, ctx):
     """No event; the card is pure operations plus the bonuses handled by the engine.
 
-    Of the four lines of text, two are already live elsewhere -- the hand-off after
-    play (``Game._retire_card``) and the +1 VP at the end of turn 10 (``Game._turn_end``)
-    -- and two still need engine hooks, see :func:`china_card_ops_bonus` and
-    :func:`china_card_cancels_formosan_resolution`.
+    All four lines of text live in the engine: the hand-off after play and the
+    Formosan Resolution cancellation (``Game._retire_card``), the Asia bonus
+    (``Game._ops_bonus_regions``) and the +1 VP at the end of turn 10
+    (``Game._turn_end``). Rules 9.5 and 9.8 are in ``Game._take_action_round``.
     """
     return (yield from nothing())
 
@@ -92,11 +89,9 @@ def all_points_in_asia(names: Iterable[str]) -> bool:
 
 
 def china_card_ops_bonus(card_name: str, touched: Iterable[str]) -> int:
-    """ENGINE HOOK: the China Card's "+1 Operations value when all points are in Asia".
-
-    *touched* is every country the operations affected. Not called anywhere yet: the
-    bonus cannot be applied by ``Game.effective_ops``, which runs before the player has
-    chosen where the points go. See the module docstring for what the engine needs.
+    """The China Card's "+1 Operations value when all points are in Asia", as a pure
+    function of the countries *touched*. The engine applies it through
+    ``Game.conduct_operations(bonus_regions=...)``; this helper is not on that path.
     """
     if card_name != CHINA_CARD:
         return 0
@@ -104,11 +99,8 @@ def china_card_ops_bonus(card_name: str, touched: Iterable[str]) -> int:
 
 
 def china_card_cancels_formosan_resolution(game, side: Side) -> None:
-    """ENGINE HOOK: the US playing the China Card removes Formosan Resolution.
-
-    Belongs in ``Game._retire_card`` (or ``play_card``) next to the hand-off, since the
-    China Card has no event handler to run. Not called anywhere yet.
-    """
+    """The US playing the China Card (space race included, FAQ #6) removes Formosan
+    Resolution. Called from ``Game._retire_card``."""
     if side is Side.USA and game.state.in_play("Formosan Resolution"):
         game.state.remove_effect("Formosan Resolution")
         game.state.note("the China Card cancels Formosan Resolution", side)
@@ -315,13 +307,13 @@ def norad(game, ctx):
 
 
 def norad_end_of_action_round(game, defcon_dropped_to_2: bool) -> Iterator[Decision]:
-    """ENGINE HOOK: NORAD's bonus influence at the end of an action round.
+    """NORAD's bonus influence at the end of an action round.
 
     While NORAD is in play and the US controls Canada, an action round in which the
-    DEFCON marker moved to the 2 box lets the US add 1 influence to any country that
-    already contains US influence. Not called anywhere yet -- the engine's action-round
-    loop would have to remember the DEFCON level at the start of the round and call
-    this at the end of it.
+    DEFCON marker moved to the 2 box (``GameState.defcon_moved_to_two``) lets the US add
+    1 influence to any country that already contains US influence. Called by
+    ``Game._play_turn`` after every action round; a drop in the headline phase does not
+    count (user ruling 2026-11-25).
     """
     state = game.state
     if not defcon_dropped_to_2 or not state.in_play("NORAD", owner=Side.USA):
@@ -473,11 +465,8 @@ def yuri_and_samantha(game, ctx):
 
 
 def yuri_and_samantha_on_coup(game, side: Side) -> None:
-    """ENGINE HOOK: score Yuri and Samantha when the US attempts a coup.
-
-    Belongs in ``Game.coup``, which every coup goes through. Not called anywhere yet,
-    so the effect currently sits in play without paying out.
-    """
+    """Score Yuri and Samantha when the US attempts a coup (free coups included).
+    Called from ``Game.coup``, which every coup goes through."""
     state = game.state
     if side is Side.USA and state.in_play("Yuri and Samantha", owner=Side.USSR):
         state.award_vp(Side.USSR, 1)
