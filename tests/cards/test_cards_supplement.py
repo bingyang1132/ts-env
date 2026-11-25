@@ -171,3 +171,77 @@ class TestC100WargamesMay:
         t.play(USSR, "Missile Envy", "event", "card:Wargames")
         assert not t.s.is_over, "the game must not end without the player's choice"
         assert t.d is not None and t.d.player is USSR
+
+
+class TestC050WeWillBuryYouChains:
+    """PD #50: "USSR gains 3 VP prior to any US VP award"; FAQ #50: the VP are earned
+    "the moment the US does not play UN Intervention", and the US "could pull UN
+    Intervention with Missile Envy, Star Wars or Grain Sales". Inside such a chain the
+    3 VP are scored as soon as the chain commits to anything other than a UN
+    Intervention event -- before that card's own VP (or game end)."""
+
+    WWBY = "We Will Bury You"
+
+    def test_missile_envy_fetching_a_us_vp_event_scores_the_3_vp_first(self):
+        """USSR +17; the US plays Missile Envy and receives Kitchen Debates (US event,
+        +2 US VP, occurs immediately). The 3 VP come first: USSR automatic victory."""
+        t = Table(turn=5, defcon=5, vp=17)
+        t.inf(usa={"Iran": 2, "Panama": 2})
+        t.play(USSR, self.WWBY, "event")
+        t.hand(USSR, "Kitchen Debates")
+        t.play(USA, "Missile Envy", "event", "card:Kitchen Debates")
+        assert t.s.is_over and t.s.winner is USSR
+        assert t.s.win_reason is WinReason.VICTORY_POINTS
+
+    def test_star_wars_fetching_wargames_scores_the_3_vp_before_the_6(self):
+        """DEFCON 2, USSR -8 (US leads). Star Wars takes Wargames from the discard; the
+        US gives 6 VP and ends the game. Rule order: -8 +3 (We Will Bury You) +6 = +1,
+        a USSR win -- not -8 +6 = -2."""
+        t = Table(turn=8, defcon=3, vp=-8)
+        t.play(USSR, self.WWBY, "event")
+        assert t.s.defcon == 2
+        t.s.space_race = [0, 2]
+        t.discard("Wargames")
+        t.play(USA, "Star Wars", "event", "card:Wargames")
+        assert t.s.vp == -5, "We Will Bury You settled before Wargames resolves"
+        t.answer("option:1")  # give the opponent 6 VP and end the game
+        assert t.s.is_over and t.s.vp == 1 and t.s.winner is USSR
+
+    def test_star_wars_fetching_un_intervention_cancels_the_vp(self):
+        t = Table(turn=8, defcon=5)
+        t.play(USSR, self.WWBY, "event")
+        t.s.space_race = [0, 2]
+        t.discard("UN Intervention")
+        t.hand(USA, "Fidel")
+        t.play(USA, "Star Wars", "event", "card:UN Intervention")
+        t.finish_with()
+        assert t.s.vp == 0
+        assert not t.s.has_deferred(card=self.WWBY)
+
+    def test_grain_sales_drawing_un_intervention_played_as_event_cancels_the_vp(self):
+        t = Table(turn=5, defcon=5)
+        t.play(USSR, self.WWBY, "event")
+        t.hand(USSR, "UN Intervention")
+        t.hand(USA, "Fidel")
+        t.play(USA, "Grain Sales to Soviets", "event", "yes", "use:event")
+        t.finish_with()
+        assert t.s.vp == 0
+        assert not t.s.has_deferred(card=self.WWBY)
+
+    def test_grain_sales_returning_the_card_scores_before_the_operations(self):
+        """The drawn card is returned: the US has not played UN Intervention, so the 3 VP
+        are scored before Grain Sales' own operations, not at the end of the round."""
+        t = Table(turn=5, defcon=5)
+        t.play(USSR, self.WWBY, "event")
+        t.hand(USSR, "Fidel")
+        t.play(USA, "Grain Sales to Soviets", "event", "no")
+        assert t.d is not None and t.d.type is DecisionType.PLACE_INFLUENCE
+        assert t.s.vp == 3
+
+    def test_missile_envy_used_for_operations_scores_at_once(self):
+        t = Table(turn=5, defcon=5)
+        t.inf(usa={"Mexico": 1})
+        t.play(USSR, self.WWBY, "event")
+        t.play(USA, "Missile Envy", "influence")
+        assert t.d is not None and t.d.type is DecisionType.PLACE_INFLUENCE
+        assert t.s.vp == 3

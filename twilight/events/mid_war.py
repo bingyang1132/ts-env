@@ -457,9 +457,11 @@ WE_WILL_BURY_YOU = "we_will_bury_you_vp"
 def we_will_bury_you(game, ctx):
     """Degrade DEFCON one level; the USSR scores 3 VP unless the US plays UN Intervention.
 
-    The victory points are scheduled for the end of the US player's next action round
-    rather than awarded now, so that playing UN Intervention as an event in between
-    cancels them -- which is what the card says.
+    The victory points are scheduled for the US player's next action round rather
+    than awarded now: they are scored the moment that round commits to anything but a
+    UN Intervention event, before any US VP (``Game._settle_we_will_bury_you`` and
+    ``Game._settle_we_will_bury_you_before``), and a UN Intervention event cancels
+    them. The end of that round is the last resort.
     """
     game.degrade_defcon(1, ctx.player)
     if game.state.is_over:
@@ -469,8 +471,8 @@ def we_will_bury_you(game, ctx):
         ctx.card, WE_WILL_BURY_YOU, player=Side.USA, when="end", vp=3
     )
     game.state.note(
-        "We Will Bury You: USSR scores 3 VP at the end of the next US action round "
-        "unless UN Intervention is played as an event first",
+        "We Will Bury You: USSR scores 3 VP in the next US action round unless the US "
+        "plays UN Intervention as an event in it",
         ctx.player,
     )
     return (yield from nothing())

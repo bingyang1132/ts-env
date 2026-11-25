@@ -16,7 +16,6 @@ or FAQ).
 | Item | What the engine does | Rule |
 |---|---|---|
 | Cuban Missile Crisis cancel timing | Offered at the start of the threatened player's action round and again before any coup they could be given (their own operations, an event's operations, a free coup), in either player's round. Not offered at other moments, where cancelling cannot change anything. | Card: "at any time"; FAQ #40 |
-| We Will Bury You timing | The 3 VP are settled once the US has chosen its play for its next action round, before that play resolves. If the US plays UN Intervention, Missile Envy, Star Wars or Grain Sales (each can still lead to a UN Intervention event), they are settled at the end of the round instead, so a US VP award inside such a chain comes first. | Card: "prior to any US VP award"; FAQ #50 |
 | "may" on beneficial effects | Some "may" / "up to" effects that can never hurt the player have no decline option: Pershing II's removals, NORAD's and Puppet Governments' and Cambridge Five's influence, Chernobyl naming a region, an "as if N Ops" operations play. De-Stalinization, Wargames, The Reformer, Summit, Junta, Che, Ortega, Tear Down This Wall, SALT and Our Man in Tehran do offer the choice. | Card texts |
 | Two VP awards of opposite sign in one event | The VP track is clipped at +/-20 at each award, so an event awarding both sides would be judged on the clipped running total. No card in the game awards both sides within one event (scoring cards are applied as a net difference), so this never happens. | R 10.2.3, 10.3.1 NOTE |
 | Forced choices | A decision with exactly one country and no pass is auto-resolved; card choices (`choose_card`) are always asked, even with one option. | Engine simplification |
@@ -77,6 +76,12 @@ be found (the Deluxe rule 7.4.3 cited by the FAQ is not in any available copy).
 - **Grain Sales drawing Defectors** in the headline phase cancels the USSR headline if it
   has not resolved yet. *User ruling, 2026-11-25.*
 - **The Reformer / Glasnost**: Glasnost does not remove The Reformer (card text).
+- **We Will Bury You**: the 3 VP are scored the moment the US's next action round
+  commits to anything but a UN Intervention event -- its card choice, or, when that card
+  is UN Intervention / Missile Envy / Star Wars / Grain Sales (which can still fetch UN
+  Intervention), the first event, card use or operations play inside the chain that is
+  not one -- before any US VP. With no such moment the end of the round settles them.
+  *Card text; FAQ #50.*
 - **Olympic Games boycott** at DEFCON 2 loses for the sponsor (R 8.1.3 example).
 - **Both players holding a scoring card** at turn end: the US wins (FAQ 8.5).
 - **Final scoring**: 20 VP is not an automatic victory and the total is not clipped

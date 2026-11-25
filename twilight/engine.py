@@ -106,6 +106,13 @@ class EventContext:
 
 EventHandler = Callable[["Game", EventContext], Iterator[Decision]]
 
+#: Cards whose event can still end in a US UN Intervention event in the same action
+#: round (UN Intervention itself; Missile Envy, Star Wars and Grain Sales can fetch it,
+#: FAQ #50), so they leave We Will Bury You's victory points undecided.
+WE_WILL_BURY_YOU_CHAIN = frozenset(
+    {"UN Intervention", "Missile Envy", "Star Wars", "Grain Sales to Soviets"}
+)
+
 
 class Game:
     """A single game of Twilight Struggle.
@@ -714,16 +721,38 @@ class Game:
 
         Called once the US has chosen what to do with its action round. A card that can
         still turn into a UN Intervention event -- UN Intervention itself, or Missile
-        Envy / Star Wars / Grain Sales, which can fetch it -- leaves the trigger for the
-        end of the round, where it fires unless cancelled.
+        Envy / Star Wars / Grain Sales, which can fetch it (FAQ #50) -- leaves the
+        decision open; :meth:`_settle_we_will_bury_you_before` then settles it the
+        moment the chain commits to anything else, and the end of the round is the last
+        resort.
         """
+        if chosen in WE_WILL_BURY_YOU_CHAIN:
+            return
+        yield from self._pay_we_will_bury_you(side)
+
+    def _settle_we_will_bury_you_before(
+        self, card: str | None, *, as_event: bool
+    ) -> Iterator[Decision]:
+        """Settle a pending We Will Bury You as the US round commits to *card*.
+
+        Hooked into every resolution inside an action round -- an event
+        (:meth:`_resolve_event`), a card's use (:meth:`_perform_use`) and an
+        operations play (:meth:`operations`). In the US player's round, anything but a
+        UN Intervention event, or the event of a card that can still fetch one, means
+        the US has not played UN Intervention: the 3 VP are scored there and then,
+        before whatever that resolution awards.
+        """
+        state = self.state
+        if state.phase is not Phase.ACTION_ROUND or state.phasing_player is not Side.USA:
+            return
+        if as_event and card in WE_WILL_BURY_YOU_CHAIN:
+            return
+        yield from self._pay_we_will_bury_you(Side.USA)
+
+    def _pay_we_will_bury_you(self, side: Side) -> Iterator[Decision]:
         from .events import deferred_handler_for
         from .events.mid_war import WE_WILL_BURY_YOU
 
-        if chosen in (
-            "UN Intervention", "Missile Envy", "Star Wars", "Grain Sales to Soviets"
-        ):
-            return
         state = self.state
         ready = [
             t for t in state.deferred
@@ -967,6 +996,10 @@ class Game:
     def _perform_use(self, name: str, side: Side, use: OpsUse) -> Iterator[Decision]:
         state = self.state
         c = CARDS[name]
+
+        yield from self._settle_we_will_bury_you_before(name, as_event=use is OpsUse.EVENT)
+        if state.is_over:
+            return
         ops = self.effective_ops(name, side)
 
         # Flower Power scores against war cards however they are used, except when
@@ -1175,6 +1208,9 @@ class Game:
         battleground, and DEFCON 1 loses for the phasing player.
         """
         state = self.state
+        yield from self._settle_we_will_bury_you_before(None, as_event=False)
+        if state.is_over:
+            return
         if OpsUse.COUP in uses:
             # The threatened player may cancel the Cuban Missile Crisis before choosing
             # ("at any time", FAQ #40).
@@ -1494,6 +1530,10 @@ class Game:
         from .events import handler_for
 
         state = self.state
+        if not from_headline:
+            yield from self._settle_we_will_bury_you_before(name, as_event=True)
+            if state.is_over:
+                return
         state.events_resolved.add(name)
         previous, state.event_player = state.event_player, side
         # An event reached directly rather than through play_card -- Five-Year Plan's
@@ -1796,4 +1836,12 @@ def headline_label(name: str) -> str:
     return f"{c.ops}op" + (f", {c.side.label} event" if c.side else ", neutral")
 
 
-__all__ = ["ACTION_ROUNDS", "EventContext", "EventHandler", "FINAL_TURN", "Game", "HAND_SIZE"]
+__all__ = [
+    "ACTION_ROUNDS",
+    "EventContext",
+    "EventHandler",
+    "FINAL_TURN",
+    "Game",
+    "HAND_SIZE",
+    "WE_WILL_BURY_YOU_CHAIN",
+]
