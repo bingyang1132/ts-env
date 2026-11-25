@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from .. import rules
 from ..data import CARDS, COUNTRIES
-from ..decisions import Decision, DecisionType, region_action
+from ..decisions import DecisionType
 from ..enums import Region, Side
 from . import register, register_deferred
 from .helpers import adjacent_to, free_coup, in_region, nothing, war
@@ -41,12 +41,15 @@ _LATIN_AMERICA = tuple(in_region(Region.CENTRAL_AMERICA)) + tuple(
 )
 
 
-def _free_realignments(game, side, ops, *, allowed, prompt):
+def _free_realignments(game, side, ops, *, allowed, prompt, one_region_of=()):
     """Free realignment rolls granted by an event in a named region.
 
     The engine's own realignment loop covers the whole board, so the region-limited
     cards need their own. Like a free coup, they ignore DEFCON geography (FAQ).
+    With *one_region_of*, the first target's region (one of those listed) confines
+    the rest.
     """
+    allowed = list(allowed)
     for remaining in range(ops, 0, -1):
         targets = [
             n for n in allowed if rules.can_realign(game.state, side, n, ignore_defcon=True)
@@ -62,6 +65,11 @@ def _free_realignments(game, side, ops, *, allowed, prompt):
         if name is None:
             return
         rules.resolve_realignment(game.state, side, name)
+        for region in one_region_of:
+            if region in COUNTRIES[name].regions:
+                allowed = [n for n in allowed if region in COUNTRIES[n].regions]
+                one_region_of = ()
+                break
 
 
 def _controlled_battlegrounds(state, side) -> int:
@@ -335,31 +343,15 @@ def junta(game, ctx):
             prompt="Junta: free coup attempt in Central or South America",
         )
     elif kinds[choice] == "realign":
-        # The rolls all go to one of the two regions (FAQ #47).
-        regions = [
-            r for r in (Region.CENTRAL_AMERICA, Region.SOUTH_AMERICA)
-            if any(
-                rules.can_realign(state, ctx.player, n, ignore_defcon=True)
-                for n in in_region(r)
-            )
-        ]
-        region = regions[0]
-        if len(regions) > 1:
-            action = yield from game.ask(
-                Decision(
-                    DecisionType.CHOOSE_REGION,
-                    ctx.player,
-                    "Junta: realign in which region?",
-                    tuple(region_action(r, r.value) for r in regions),
-                )
-            )
-            region = Region(action.value)
+        # The rolls all go to one of the two regions (FAQ #47): the first target fixes
+        # which.
         yield from _free_realignments(
             game,
             ctx.player,
             ops,
-            allowed=in_region(region),
-            prompt=f"Junta: free realignment in {region}",
+            allowed=_LATIN_AMERICA,
+            prompt="Junta: free realignment in Central or South America",
+            one_region_of=(Region.CENTRAL_AMERICA, Region.SOUTH_AMERICA),
         )
 
 

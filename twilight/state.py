@@ -221,9 +221,12 @@ class GameState:
         if amount == 0:
             return
         delta = amount if side is Side.USSR else -amount
-        self.vp = max(-VP_LIMIT, min(VP_LIMIT, self.vp + delta))
         if self.final_scoring:
+            # Rule 10.3.2: every region is added to the score before victory is
+            # decided, so the running total is not clipped at +/-20 here.
+            self.vp += delta
             return
+        self.vp = max(-VP_LIMIT, min(VP_LIMIT, self.vp + delta))
         if self.vp >= VP_LIMIT:
             self.finish(Side.USSR, WinReason.VICTORY_POINTS)
         elif self.vp <= -VP_LIMIT:

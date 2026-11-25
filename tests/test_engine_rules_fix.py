@@ -875,12 +875,13 @@ def test_o15_junta_realignments_are_confined_to_one_region():
     game = Game(seed=1)
     clear_board(game)
     state = game.state
-    state.set_inf(Side.USA, "Mexico", 1)
+    state.set_inf(Side.USA, "Mexico", 6)
     state.set_inf(Side.USA, "Brazil", 1)
+    state.rng = FixedRoll([1, 1, 1, 1])  # realignments tie: nothing is removed
     log = []
 
     def chooser(d):
-        for key in ("country:Chile", "option:1", "region:Central America", "country:Mexico"):
+        for key in ("country:Chile", "option:1", "country:Mexico"):
             a = d.find(key)
             if a is not None:
                 return a
@@ -888,6 +889,6 @@ def test_o15_junta_realignments_are_confined_to_one_region():
 
     run_event(game, "Junta", Side.USSR, chooser, log)
     realigns = [d for d in log if d.type.value == "realign_target"]
-    assert realigns
-    for d in realigns:
-        assert "country:Brazil" not in d.legal_keys
+    assert len(realigns) == 2
+    assert "country:Brazil" in realigns[0].legal_keys  # the first target is free
+    assert "country:Brazil" not in realigns[1].legal_keys  # then Central America only
