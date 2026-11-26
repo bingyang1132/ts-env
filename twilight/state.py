@@ -11,6 +11,7 @@ order. Information hiding happens once, in the observation layer.
 
 from __future__ import annotations
 
+import copy
 import random
 from dataclasses import dataclass, field
 from typing import Any, Iterable
@@ -179,6 +180,49 @@ class GameState:
     # -- bookkeeping ------------------------------------------------------- #
     rng: random.Random = field(default_factory=random.Random)
     log: list[LogEntry] = field(default_factory=list)
+
+    # ------------------------------------------------------------------ #
+    # Copying
+    # ------------------------------------------------------------------ #
+
+    def copy(self) -> "GameState":
+        """An independent copy (what ``copy.deepcopy`` gives, faster).
+
+        Log entries, frozensets, enums and strings are immutable and shared; the RNG is
+        a new generator in the same state. A field this method does not know is
+        deep-copied, so adding one cannot make copies share mutable state.
+        """
+        new = object.__new__(GameState)
+        d = new.__dict__
+        for key, value in self.__dict__.items():
+            kind = _COPY.get(key)
+            if kind is None:
+                d[key] = copy.deepcopy(value)
+            elif kind == 0:
+                d[key] = value
+            elif kind == 1:
+                d[key] = value.copy()
+            elif kind == 2:
+                d[key] = [list(row) for row in value]
+            elif kind == 3:
+                d[key] = {
+                    name: ActiveEffect(e.card, e.owner, e.expires, copy.deepcopy(e.data))
+                    for name, e in value.items()
+                }
+            elif kind == 4:
+                d[key] = [
+                    DeferredTrigger(
+                        t.card, t.player, t.when, t.kind, t.not_before, copy.deepcopy(t.data)
+                    )
+                    for t in value
+                ]
+            elif kind == 5:
+                rng = random.Random()
+                rng.setstate(value.getstate())
+                d[key] = rng
+            else:  # 6: optional dict of frozensets
+                d[key] = None if value is None else dict(value)
+        return new
 
     # ------------------------------------------------------------------ #
     # Influence
@@ -460,3 +504,48 @@ class GameState:
         self.win_reason = reason
         who = "draw" if winner is None else f"{winner.label} wins"
         self.note(f"game over: {who} ({reason.value})")
+
+
+#: How :meth:`GameState.copy` copies each field: 0 immutable (shared), 1 shallow
+#: ``.copy()`` of a list / dict / set of immutables, 2 list of lists, 3 effects,
+#: 4 deferred triggers, 5 RNG, 6 ``reach_snapshot``. Unknown fields are deep-copied.
+_COPY = {
+    "influence": 2,
+    "vp": 0,
+    "defcon": 0,
+    "turn": 0,
+    "action_round": 0,
+    "space_race": 1,
+    "space_attempts": 1,
+    "military_ops": 1,
+    "hands": 2,
+    "deck": 1,
+    "discard": 1,
+    "removed": 1,
+    "china_card_owner": 0,
+    "china_card_face_up": 0,
+    "stages_in_deck": 1,
+    "optional_cards": 0,
+    "effects": 3,
+    "events_resolved": 1,
+    "phase": 0,
+    "player": 0,
+    "phasing_player": 0,
+    "action_rounds_this_turn": 0,
+    "headline": 1,
+    "headline_public": 1,
+    "headline_cancelled": 1,
+    "event_player": 0,
+    "playing_card": 0,
+    "transit": 1,
+    "ar_sequence": 0,
+    "deferred": 4,
+    "must_play": 1,
+    "reach_snapshot": 6,
+    "defcon_moved_to_two": 0,
+    "final_scoring": 0,
+    "winner": 0,
+    "win_reason": 0,
+    "rng": 5,
+    "log": 1,
+}

@@ -7,9 +7,19 @@ machine -- an event that says "remove 3 influence from Western Europe, no more t
 per country" is a loop that yields a country choice three times.
 
 The trade-off is that a running game holds live generator frames, which cannot be
-deep-copied. :meth:`Game.clone` therefore replays the action history against the same
-seed. That is exact (the engine is deterministic given seed + actions) but costs time
-proportional to game length, so tree search over long games wants its own snapshotting.
+deep-copied. A clone is therefore defined as a replay of the action history against the
+same seed (:meth:`Game.replay_clone`): exact, since the engine is deterministic given
+seed + actions, but O(history).
+
+:meth:`Game.clone` produces the same object faster. At the two points where the driver
+holds no state outside :class:`GameState` -- the start of a turn and the start of each
+action round -- a game being *replayed* by a clone records a checkpoint: a copy of the
+state, the history prefix, and where the driver stands. A later clone copies the latest
+checkpoint whose history is a prefix of the game's, restarts the driver at that point
+(``_run(resume=...)``) and replays only the actions after it. Checkpoints are made only
+by replay, never by a game's own :meth:`Game.step`, so they are replay results by
+construction: a state edited from outside (a determinized clone, a test fixture) is
+ignored by ``clone()`` exactly as it is by a replay.
 """
 
 from __future__ import annotations
@@ -114,6 +124,24 @@ WE_WILL_BURY_YOU_CHAIN = frozenset(
 )
 
 
+#: Order of the two action rounds within a round.
+_ROUND_ORDER = (Side.USSR, Side.USA)
+
+
+@dataclass(frozen=True, slots=True, eq=False)
+class _Checkpoint:
+    """A replay result at a resumable point of the driver (see :meth:`Game.clone`).
+
+    ``state`` is private to the checkpoint and never mutated; a resumed game gets a copy.
+    """
+
+    history: tuple[str, ...]
+    resume: tuple
+    state: GameState
+    unimplemented: tuple[str, ...]
+    config: tuple
+
+
 class Game:
     """A single game of Twilight Struggle.
 
@@ -143,6 +171,10 @@ class Game:
         self.history: list[str] = []
         #: Cards whose event was skipped for lack of an implementation.
         self.unimplemented: list[str] = []
+        #: Replay checkpoints known for this game's history (see :meth:`clone`).
+        self._checkpoints: tuple[_Checkpoint, ...] = ()
+        #: Set only while :meth:`clone` replays: the driver then records checkpoints.
+        self._recording: list[_Checkpoint] | None = None
 
         self._driver = self._run()
         self.decision: Decision | None = self._advance(None)
@@ -182,11 +214,9 @@ class Game:
     def is_over(self) -> bool:
         return self.decision is None or self.state.is_over
 
-    def clone(self) -> "Game":
-        """An independent copy, produced by replaying this game's action history.
-
-        Exact but O(history); see the module docstring.
-        """
+    def replay_clone(self) -> "Game":
+        """An independent copy, produced by replaying this game's whole action history
+        from the seed. The reference definition of a clone; O(history)."""
         twin = Game(
             self.seed,
             optional_cards=self.optional_cards,
@@ -198,6 +228,86 @@ class Game:
                 break
             twin.step(key)
         return twin
+
+    def clone(self) -> "Game":
+        """An independent copy, equal to :meth:`replay_clone` in every respect.
+
+        Resumes from the latest replay checkpoint on this game's history and replays
+        only the actions after it (see the module docstring). Like a replay, it ignores
+        any edit made to ``self.state`` from outside :meth:`step`.
+        """
+        base = self._usable_checkpoint()
+        recorded: list[_Checkpoint] = []
+        if base is None:
+            twin = Game.__new__(Game)
+            twin.optional_cards = self.optional_cards
+            twin.handicap = self.handicap
+            twin.strict_events = self.strict_events
+            twin.state = GameState(
+                rng=random.Random(self.seed), optional_cards=self.optional_cards
+            )
+            twin.seed = self.seed
+            twin.history = []
+            twin.unimplemented = []
+            twin._checkpoints = ()
+            twin._recording = recorded
+            twin._driver = twin._run()
+            twin.decision = twin._advance(None)
+            start, kept = 0, ()
+        else:
+            twin = Game.__new__(Game)
+            twin.optional_cards = self.optional_cards
+            twin.handicap = self.handicap
+            twin.strict_events = self.strict_events
+            twin.state = base.state.copy()
+            twin.seed = self.seed
+            twin.history = list(base.history)
+            twin.unimplemented = list(base.unimplemented)
+            twin._checkpoints = ()
+            twin._recording = recorded
+            twin._driver = twin._run(resume=base.resume)
+            twin.decision = twin._advance(None)
+            start = len(base.history)
+            kept = self._checkpoints[: self._checkpoints.index(base) + 1]
+        history = self.history
+        for i in range(start, len(history)):
+            if twin.decision is None:
+                break
+            twin.step(history[i])
+        twin._recording = None
+        if base is not None:
+            # The checkpoint resumed from is re-recorded at the same position.
+            recorded = [c for c in recorded if len(c.history) > start]
+        lineage = kept + tuple(recorded)
+        self._checkpoints = lineage
+        twin._checkpoints = lineage
+        return twin
+
+    def _usable_checkpoint(self) -> "_Checkpoint | None":
+        """The latest checkpoint whose history is a prefix of this game's history."""
+        n = len(self.history)
+        for cp in reversed(self._checkpoints):
+            m = len(cp.history)
+            if (
+                m <= n
+                and cp.config == (self.seed, self.optional_cards, self.handicap, self.strict_events)
+                and tuple(self.history[:m]) == cp.history
+            ):
+                return cp
+        return None
+
+    def _checkpoint(self, resume: tuple) -> None:
+        """Driver hook at a resumable point: record a checkpoint while replaying."""
+        if self._recording is not None:
+            self._recording.append(
+                _Checkpoint(
+                    history=tuple(self.history),
+                    resume=resume,
+                    state=self.state.copy(),
+                    unimplemented=tuple(self.unimplemented),
+                    config=(self.seed, self.optional_cards, self.handicap, self.strict_events),
+                )
+            )
 
     # ------------------------------------------------------------------ #
     # The event API used by card implementations
@@ -413,11 +523,21 @@ class Game:
     # Game flow
     # ------------------------------------------------------------------ #
 
-    def _run(self) -> Iterator[Decision]:
-        yield from self._setup()
+    def _run(self, resume: tuple | None = None) -> Iterator[Decision]:
+        """The whole game. *resume* restarts it at a checkpoint (see :meth:`clone`):
+        ``("turn",)`` at the start of a turn, ``("ar", round, side_index)`` at the start
+        of an action round, with the state as it was there."""
+        if resume is None:
+            yield from self._setup()
+        mid_turn = resume is not None and resume[0] == "ar"
 
-        while not self.state.is_over:
-            yield from self._play_turn()
+        while mid_turn or not self.state.is_over:
+            if mid_turn:
+                mid_turn = False
+                yield from self._play_turn(resume=resume[1:])
+            else:
+                self._checkpoint(("turn",))
+                yield from self._play_turn()
             if self.state.is_over or self.state.turn >= FINAL_TURN:
                 break
             self.state.turn += 1
@@ -471,50 +591,72 @@ class Game:
             return Stage.MID_WAR
         return Stage.EARLY_WAR
 
-    def _play_turn(self) -> Iterator[Decision]:
+    def _play_turn(self, resume: tuple | None = None) -> Iterator[Decision]:
+        """One turn; *resume* = ``(round, side_index)`` re-enters it at an action round."""
         state = self.state
-        stage = self._current_stage()
-        state.action_rounds_this_turn = ACTION_ROUNDS[stage]
-        state.action_round = 0
-        state.space_attempts = [0, 0]
+        if resume is None:
+            stage = self._current_stage()
+            state.action_rounds_this_turn = ACTION_ROUNDS[stage]
+            state.action_round = 0
+            state.space_attempts = [0, 0]
 
-        self._add_stage_cards()
-        self._deal_cards(stage)
-        state.note(f"--- turn {state.turn} ({stage.value}) ---")
+            self._add_stage_cards()
+            self._deal_cards(stage)
+            state.note(f"--- turn {state.turn} ({stage.value}) ---")
 
-        yield from self._headline_phase()
-        if state.is_over:
+            yield from self._headline_phase()
+            if state.is_over:
+                return
+            finished = yield from self._action_rounds(0, 0, resumed=False)
+        else:
+            finished = yield from self._action_rounds(resume[0], resume[1], resumed=True)
+        if not finished:
             return
 
+        yield from self._turn_end()
+
+    def _action_rounds(
+        self, round_number: int, side_index: int, *, resumed: bool
+    ) -> Iterator[Decision]:
+        """The action rounds of a turn. Returns False if the game ended in one of them.
+
+        *resumed*: enter directly at *side_index* of round *round_number* (a checkpoint),
+        skipping the round's header, which had already run when the checkpoint was made.
+        """
+        state = self.state
         # The Space Station holder may play 8 action rounds, and so may the US on the
         # turn North Sea Oil is played. Both are per-side, and both can arrive in the
         # middle of the turn -- North Sea Oil played in an action round, the Space Station
         # reached or lost by a space race roll -- so the count is re-read every round.
-        round_number = 0
         while True:
-            round_number += 1
-            rounds = {side: self._action_rounds_for(side) for side in Side}
-            if round_number > max(rounds.values()):
-                break
-            state.action_round = round_number
-            state.phase = Phase.ACTION_ROUND
-            for side in (Side.USSR, Side.USA):
+            if resumed:
+                resumed = False
+            else:
+                round_number += 1
+                rounds = {side: self._action_rounds_for(side) for side in Side}
+                if round_number > max(rounds.values()):
+                    break
+                state.action_round = round_number
+                state.phase = Phase.ACTION_ROUND
+                side_index = 0
+            for index in range(side_index, 2):
+                side = _ROUND_ORDER[index]
+                self._checkpoint(("ar", round_number, index))
                 if state.is_over:
-                    return
+                    return False
                 if round_number > self._action_rounds_for(side):
                     continue
                 state.defcon_moved_to_two = False
                 yield from self._action_round(side)
                 if state.is_over:
-                    return
+                    return False
                 # NORAD: "at the conclusion of any Action Round in which the DEFCON
                 # marker moves to the '2' box" -- at any point in the round, even if it
                 # has moved off again since.
                 from .events.special import norad_end_of_action_round
 
                 yield from norad_end_of_action_round(self, state.defcon_moved_to_two)
-
-        yield from self._turn_end()
+        return True
 
     def _action_rounds_for(self, side: Side) -> int:
         """Action rounds *side* may take this turn, as things stand right now."""
