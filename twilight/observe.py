@@ -267,6 +267,8 @@ def observe(
     usa_row = state.influence[Side.USA]
     is_ussr = player is Side.USSR
     enemy_adjacent = COUNTRIES["USA" if is_ussr else "USSR"].adjacent
+    can_coup_fn = rules.can_coup
+    can_realign_fn = rules.can_realign
     for name in COUNTRY_ORDER:
         c = COUNTRIES[name]
         slot = COUNTRY_SLOT[name]
@@ -274,12 +276,24 @@ def observe(
         usa = usa_row[slot]
         mine = ussr if is_ussr else usa
         theirs = usa if is_ussr else ussr
-        controller = rules.controller(state, name)
-        to_control = max(0, c.stability + theirs - mine)
+        # rules.controller, inlined (rules.controls for the USSR, then the US).
+        stability = c.stability
+        if ussr and ussr - usa >= stability:
+            controller = Side.USSR
+        elif usa and usa - ussr >= stability:
+            controller = Side.USA
+        else:
+            controller = None
+        to_control = max(0, stability + theirs - mine)
         can_place = name in reachable
-        place_cost = rules.influence_cost(state, player, name)
-        can_coup = rules.can_coup(state, player, name)
-        can_realign = rules.can_realign(state, player, name)
+        # rules.influence_cost: 2 iff the opponent controls it (rules.controls, inlined).
+        place_cost = 2 if (theirs and theirs - mine >= stability) else 1
+        # rules.can_coup / can_realign return False at once without opponent influence.
+        if theirs:
+            can_coup = can_coup_fn(state, player, name)
+            can_realign = can_realign_fn(state, player, name)
+        else:
+            can_coup = can_realign = False
         adjacent = name in enemy_adjacent
         # Views are immutable, so equal ones are shared (building one is most of the
         # cost of an observation). The key holds every field that is not fixed by *name*.

@@ -276,7 +276,8 @@ def countries_decision(
 ) -> Decision:
     """Build a decision over a list of countries, in canonical board order."""
     labels = labels or {}
-    ordered = [n for n in COUNTRY_ORDER if n in set(names)]
+    wanted = set(names)
+    ordered = [n for n in COUNTRY_ORDER if n in wanted]
     options = [country_action(n, labels.get(n, "")) for n in ordered]
     if allow_pass:
         options.append(PASS)

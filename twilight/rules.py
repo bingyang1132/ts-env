@@ -195,33 +195,70 @@ def region_status(
     sees the board as it is.
     """
     scoring = scoring or shuttle
-    names = REGION_COUNTRIES[region]
     excluded = None
     if shuttle:
         excluded = shuttle_choice or shuttle_diplomacy_excluded(state, region)
+    # counts_as_battleground, inlined: a printed battleground, or Taiwan while Formosan
+    # Resolution makes it one (scoring only, Asia / Southeast Asia, US-controlled).
+    formosan = (
+        scoring
+        and region in _FORMOSAN_REGIONS
+        and state.in_play("Formosan Resolution")
+        and controls(state, Side.USA, "Taiwan")
+    )
+    table = _REGION_TABLE[region]
+    influence = state.influence
     per_side: list[RegionSide] = []
 
     for side in SIDES:
-        controlled = [n for n in names if controls(state, side, n) and n != excluded]
-        bgs = [
-            n for n in controlled
-            if counts_as_battleground(state, n, region, scoring=scoring)
-        ]
+        # controls(state, side, n), inlined.
+        mine_row = influence[side]
+        theirs_row = influence[1 - side]
         adjacent = ADJACENT_TO_SUPERPOWER[side.opponent]
+        countries = battlegrounds = adjacent_count = 0
+        for name, slot, stability, battleground in table:
+            mine = mine_row[slot]
+            if mine == 0 or mine - theirs_row[slot] < stability or name == excluded:
+                continue
+            countries += 1
+            if battleground or (formosan and name == "Taiwan"):
+                battlegrounds += 1
+            if name in adjacent:
+                adjacent_count += 1
         per_side.append(
             RegionSide(
-                countries=len(controlled),
-                battlegrounds=len(bgs),
-                non_battlegrounds=len(controlled) - len(bgs),
-                adjacent_to_enemy_superpower=sum(1 for n in controlled if n in adjacent),
+                countries=countries,
+                battlegrounds=battlegrounds,
+                non_battlegrounds=countries - battlegrounds,
+                adjacent_to_enemy_superpower=adjacent_count,
             )
         )
 
-    total_bgs = sum(
-        1 for n in REGION_COUNTRIES[region]
-        if counts_as_battleground(state, n, region, scoring=scoring)
-    )
+    total_bgs = _REGION_BG_COUNT[region]
+    if formosan and _TAIWAN_EXTRA_BG[region]:
+        total_bgs += 1
     return RegionStatus(region=region, total_battlegrounds=total_bgs, sides=tuple(per_side))
+
+
+#: Per region, in REGION_COUNTRIES order: (name, slot, stability, printed battleground).
+_REGION_TABLE: dict[Region, tuple[tuple[str, int, int, bool], ...]] = {
+    region: tuple(
+        (n, COUNTRY_SLOT[n], COUNTRIES[n].stability, COUNTRIES[n].battleground) for n in names
+    )
+    for region, names in REGION_COUNTRIES.items()
+}
+#: Printed battlegrounds per region.
+_REGION_BG_COUNT: dict[Region, int] = {
+    region: sum(1 for *_, bg in table if bg) for region, table in _REGION_TABLE.items()
+}
+#: Regions in which Formosan Resolution can make Taiwan a battleground for scoring.
+_FORMOSAN_REGIONS = (Region.ASIA, Region.SOUTHEAST_ASIA)
+#: Whether Formosan Resolution adds a battleground to the region's total (Taiwan is in
+#: the region and not a printed battleground).
+_TAIWAN_EXTRA_BG: dict[Region, bool] = {
+    region: "Taiwan" in names and not COUNTRIES["Taiwan"].battleground
+    for region, names in REGION_COUNTRIES.items()
+}
 
 
 def region_vp(
@@ -328,18 +365,26 @@ def reachable_countries(state: GameState, side: Side) -> frozenset[str]:
     adjacency against the markers in place when the round began, so influence placed
     during the round cannot be chained outward to reach further countries.
     """
+    # Same insertion order as a loop over COUNTRIES, so the set is built identically.
     out: set[str] = set()
-    for name, c in COUNTRIES.items():
-        if c.superpower:
-            continue
-        if state.inf(side, name) > 0:
+    row = state.influence[side]
+    for name, slot, neighbours in _REACH_TABLE:
+        if row[slot] > 0:
             out.add(name)
-            out.update(n for n in c.adjacent if not COUNTRIES[n].superpower)
+            out.update(neighbours)
     # Always reachable: neighbours of the player's own homeland.
     out.update(
         n for n in COUNTRIES[SUPERPOWER_SPACE[side]].adjacent if not COUNTRIES[n].superpower
     )
     return frozenset(out)
+
+
+#: Non-superpower countries in COUNTRIES order: (name, slot, non-superpower neighbours).
+_REACH_TABLE: tuple[tuple[str, int, tuple[str, ...]], ...] = tuple(
+    (name, COUNTRY_SLOT[name], tuple(n for n in c.adjacent if not COUNTRIES[n].superpower))
+    for name, c in COUNTRIES.items()
+    if not c.superpower
+)
 
 
 def can_place_influence(
