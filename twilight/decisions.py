@@ -57,9 +57,13 @@ class Action:
 
     @property
     def key(self) -> str:
+        kind = self.kind
+        # ``str(kind)`` / ``f"{kind}"`` is the member's value; read it directly, as
+        # formatting an enum member is slow and keys are built constantly.
+        text = kind._value_ if type(kind) is ActionKind else str(kind)
         if self.value is None:
-            return str(self.kind)
-        return f"{self.kind}:{self.value}"
+            return text
+        return f"{text}:{self.value}"
 
     @property
     def index(self) -> int:

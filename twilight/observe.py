@@ -26,7 +26,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from . import rules, spacerace
-from .data import CARDS, CARD_ORDER, CHINA_CARD, COUNTRIES, COUNTRY_ORDER
+from .data import CARDS, CARD_ORDER, CHINA_CARD, COUNTRIES, COUNTRY_ORDER, COUNTRY_SLOT
 from .decisions import Decision
 from .enums import AUTO_VICTORY, SCORING_REGIONS, Phase, Region, Side
 from .state import GameState
@@ -232,6 +232,11 @@ def _unseen_cards(state: GameState, player: Side) -> tuple[str, ...]:
     )
 
 
+#: Shared :class:`CountryView` objects, keyed by their variable fields (see observe).
+_VIEW_CACHE: dict[tuple, CountryView] = {}
+_VIEW_CACHE_SIZE = 50_000
+
+
 def observe(
     state: GameState,
     player: Side,
@@ -258,36 +263,59 @@ def observe(
     )
 
     country_views = []
+    ussr_row = state.influence[Side.USSR]
+    usa_row = state.influence[Side.USA]
+    is_ussr = player is Side.USSR
+    enemy_adjacent = COUNTRIES["USA" if is_ussr else "USSR"].adjacent
     for name in COUNTRY_ORDER:
         c = COUNTRIES[name]
-        ussr = state.inf(Side.USSR, name)
-        usa = state.inf(Side.USA, name)
-        mine = ussr if player is Side.USSR else usa
-        theirs = usa if player is Side.USSR else ussr
-        country_views.append(
-            CountryView(
+        slot = COUNTRY_SLOT[name]
+        ussr = ussr_row[slot]
+        usa = usa_row[slot]
+        mine = ussr if is_ussr else usa
+        theirs = usa if is_ussr else ussr
+        controller = rules.controller(state, name)
+        to_control = max(0, c.stability + theirs - mine)
+        can_place = name in reachable
+        place_cost = rules.influence_cost(state, player, name)
+        can_coup = rules.can_coup(state, player, name)
+        can_realign = rules.can_realign(state, player, name)
+        adjacent = name in enemy_adjacent
+        # Views are immutable, so equal ones are shared (building one is most of the
+        # cost of an observation). The key holds every field that is not fixed by *name*.
+        key = (
+            name, ussr, usa, -1 if controller is None else int(controller), to_control,
+            can_place, place_cost, can_coup, can_realign, adjacent,
+        )
+        view = _VIEW_CACHE.get(key)
+        if view is None:
+            view = CountryView(
                 name=name,
                 region=c.region,
                 stability=c.stability,
                 battleground=c.battleground,
                 ussr=ussr,
                 usa=usa,
-                controller=rules.controller(state, name),
-                to_control=max(0, c.stability + theirs - mine),
-                can_place=name in reachable,
-                place_cost=rules.influence_cost(state, player, name),
-                can_coup=rules.can_coup(state, player, name),
-                can_realign=rules.can_realign(state, player, name),
-                adjacent_to_enemy_superpower=name
-                in COUNTRIES[("USA" if player is Side.USSR else "USSR")].adjacent,
+                controller=controller,
+                to_control=to_control,
+                can_place=can_place,
+                place_cost=place_cost,
+                can_coup=can_coup,
+                can_realign=can_realign,
+                adjacent_to_enemy_superpower=adjacent,
             )
-        )
+            if len(_VIEW_CACHE) >= _VIEW_CACHE_SIZE:
+                _VIEW_CACHE.clear()
+            _VIEW_CACHE[key] = view
+        country_views.append(view)
 
     region_views = []
     for region in SCORING_REGIONS:
         # A preview of the scoring card, so Shuttle Diplomacy applies.
         status = rules.region_status(state, region, scoring=True, shuttle=True)
-        vp = tuple(rules.region_vp(state, region, s, shuttle=True) for s in Side)
+        vp = tuple(
+            rules.region_vp(state, region, s, shuttle=True, status=status) for s in rules.SIDES
+        )
         # Europe control is an automatic win rather than a VP amount; report the swing
         # as the VP cap so it still reads as overwhelmingly good.
         capped = tuple(min(v, AUTO_VICTORY) for v in vp)

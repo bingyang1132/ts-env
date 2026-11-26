@@ -14,6 +14,7 @@ from .data import (
     ADJACENT_TO_SUPERPOWER,
     COUNTRIES,
     COUNTRY_ORDER,
+    COUNTRY_SLOT,
     REGION_BATTLEGROUNDS,
     REGION_COUNTRIES,
     SUPERPOWER_SPACE,
@@ -34,20 +35,28 @@ from .state import GameState
 # --------------------------------------------------------------------------- #
 
 
+#: Both sides in definition order (iterating the enum class itself is slow).
+SIDES = (Side.USSR, Side.USA)
+
+
 def controls(state: GameState, side: Side, name: str) -> bool:
     """Whether *side* controls *name*.
 
     A player controls a country when their influence there exceeds the opponent's by
     at least the country's stability value. With no influence present, nobody controls.
     """
-    mine = state.inf(side, name)
+    # Same as ``state.inf(side, name) - state.inf(side.opponent, name)``, inlined: this
+    # is the engine's hottest function.
+    slot = COUNTRY_SLOT[name]
+    influence = state.influence
+    mine = influence[side][slot]
     if mine == 0:
         return False
-    return mine - state.inf(side.opponent, name) >= country(name).stability
+    return mine - influence[1 - side][slot] >= COUNTRIES[name].stability
 
 
 def controller(state: GameState, name: str) -> Side | None:
-    for side in Side:
+    for side in SIDES:
         if controls(state, side, name):
             return side
     return None
@@ -192,7 +201,7 @@ def region_status(
         excluded = shuttle_choice or shuttle_diplomacy_excluded(state, region)
     per_side: list[RegionSide] = []
 
-    for side in Side:
+    for side in SIDES:
         controlled = [n for n in names if controls(state, side, n) and n != excluded]
         bgs = [
             n for n in controlled
@@ -222,11 +231,14 @@ def region_vp(
     *,
     shuttle: bool = False,
     shuttle_choice: str | None = None,
+    status: RegionStatus | None = None,
 ) -> int:
     """VP *side* would score for *region* right now, before the opponent's total.
 
     *shuttle*: as the scoring card would, applying Shuttle Diplomacy (to
-    *shuttle_choice*, if the US has picked one).
+    *shuttle_choice*, if the US has picked one). *status*, if given, must be
+    ``region_status(state, region, scoring=True, shuttle=shuttle,
+    shuttle_choice=shuttle_choice)`` for the current state; it saves recomputing it.
     """
     if region not in SCORING_VALUES:
         raise ValueError(
@@ -239,9 +251,10 @@ def region_vp(
             if controls(state, side, n)
         )
 
-    status = region_status(
-        state, region, scoring=True, shuttle=shuttle, shuttle_choice=shuttle_choice
-    )
+    if status is None:
+        status = region_status(
+            state, region, scoring=True, shuttle=shuttle, shuttle_choice=shuttle_choice
+        )
     presence, domination, control = SCORING_VALUES[region]
     tier = status.tier(side)
     base = {"control": control, "domination": domination, "presence": presence, "none": 0}[tier]

@@ -75,38 +75,66 @@ def encode_countries(obs: Observation) -> np.ndarray:
             a.value for a in obs.decision.options if a.kind is ActionKind.COUNTRY
         }
 
-    matrix = np.zeros((NUM_COUNTRIES, NUM_COUNTRY_FEATURES), dtype=np.float32)
-    for row, view in enumerate(obs.countries):
-        mine = view.mine(obs.player)
-        theirs = view.theirs(obs.player)
+    rows: list[list[float]] = []
+    player = obs.player
+    opponent = obs.opponent
+    static = _country_static(player)
+    for view in obs.countries:
+        mine = view.mine(player)
+        theirs = view.theirs(player)
         # Faces of a d6 that would beat twice the stability, given a 4-op coup. A
         # perspective-free difficulty signal that saves the policy the arithmetic.
         coup_chance = max(0, min(6, 4 - 2 * view.stability + 6)) / 6.0
+        adjacent_mine, regions = static[view.name]
 
+        # ``_sat`` inlined (same arithmetic); this loop runs for every observation.
         features: list[float] = [
-            _sat(view.ussr, INFLUENCE_CAP),
-            _sat(view.usa, INFLUENCE_CAP),
-            _sat(mine, INFLUENCE_CAP),
-            _sat(theirs, INFLUENCE_CAP),
-            1.0 if view.controller is obs.player else 0.0,
-            1.0 if view.controller is obs.opponent else 0.0,
+            min(float(view.ussr), INFLUENCE_CAP) / INFLUENCE_CAP,
+            min(float(view.usa), INFLUENCE_CAP) / INFLUENCE_CAP,
+            min(float(mine), INFLUENCE_CAP) / INFLUENCE_CAP,
+            min(float(theirs), INFLUENCE_CAP) / INFLUENCE_CAP,
+            1.0 if view.controller is player else 0.0,
+            1.0 if view.controller is opponent else 0.0,
             1.0 if view.controller is None else 0.0,
             1.0 if view.battleground else 0.0,
             view.stability / 5.0,
-            _sat(view.to_control, 10.0),
+            min(float(view.to_control), 10.0) / 10.0,
             1.0 if view.can_place else 0.0,
             1.0 if view.place_cost == 2 else 0.0,
             1.0 if view.can_coup else 0.0,
             coup_chance,
             1.0 if view.can_realign else 0.0,
             1.0 if view.adjacent_to_enemy_superpower else 0.0,
-            1.0 if view.name in COUNTRIES[obs.player.label].adjacent else 0.0,
+            adjacent_mine,
             1.0 if view.name in legal_targets else 0.0,
         ]
-        regions = COUNTRIES[view.name].regions
-        features.extend(1.0 if r in regions else 0.0 for r in _REGIONS)
-        matrix[row] = features
+        features.extend(regions)
+        rows.append(features)
+    # One float64 -> float32 rounding per value, as row-by-row assignment would do.
+    matrix = np.array(rows, dtype=np.float32)
+    if matrix.shape != (NUM_COUNTRIES, NUM_COUNTRY_FEATURES):
+        raise ValueError(f"country matrix has shape {matrix.shape}")
     return matrix
+
+
+_COUNTRY_STATIC: dict[Side, dict[str, tuple[float, tuple[float, ...]]]] = {}
+
+
+def _country_static(player: Side) -> dict[str, tuple[float, tuple[float, ...]]]:
+    """Per country, the features that depend only on the map: adjacency to the
+    observer's superpower and the region one-hot."""
+    table = _COUNTRY_STATIC.get(player)
+    if table is None:
+        home = COUNTRIES[player.label].adjacent
+        table = {
+            name: (
+                1.0 if name in home else 0.0,
+                tuple(1.0 if r in c.regions else 0.0 for r in _REGIONS),
+            )
+            for name, c in COUNTRIES.items()
+        }
+        _COUNTRY_STATIC[player] = table
+    return table
 
 
 def encode_global(obs: Observation) -> np.ndarray:
